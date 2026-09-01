@@ -1,0 +1,127 @@
+// config.js — ALL tunable numbers of Muntstad live here.
+// Every price and every per-level income is an integer. Change numbers, keep the shape.
+
+export const CONFIG = Object.freeze({
+  saveVersion: 1,
+  saveKey: 'muntstad.save',
+
+  // Timing
+  tickMs: 1000,                       // economy tick cadence (the loop itself works from timestamps)
+  autosaveMs: 5000,                   // autosave interval
+  offlineCapMs: 4 * 60 * 60 * 1000,   // earnings while away are capped at 4 hours per absence
+  offlinePopupMinMs: 60 * 1000,       // an absence of at least 60 s shows the "terwijl je weg was" popup
+
+  // WERK (washing cars). Work is linear and bounded on purpose: only coin-makers compound.
+  work: {
+    coinsPerCar: 2,                   // coins per washed car
+    dirtMin: 3,                       // dirt spots per car (min)
+    dirtMax: 4,                       // dirt spots per car (max)
+    tiredAfterCars: 10,               // mentor's "hands get tired" line after this many cars (once)
+    windowMs: 60 * 1000,              // work rate = best coins over a trailing 60 s window
+    minSessionSec: 15,                // shorter sessions are extrapolated from at least 15 s
+    carArriveMs: 700,                 // car drive-in animation
+    carLeaveMs: 600,                  // car drive-out animation
+    minCycleMs: 4000,                 // a new car never arrives sooner than 4 s after the previous one → ceiling 30 coins/min
+  },
+
+  // Costs: one gentle recurring cost, paid automatically when possible.
+  pet: {
+    foodCost: 5,                      // coins per meal per pet
+    foodIntervalMs: 2 * 60 * 1000,    // one meal every 2 minutes
+  },
+
+  // Mentor Muntje
+  mentor: {
+    tipGapMs: 90 * 1000,              // at most one unsolicited line per 90 s
+    speechRate: 0.95,
+  },
+
+  // Parent gate
+  papa: {
+    holdMs: 3000,                     // hold PAPA for 3 s
+    sumMin: 23,                       // gate sum: two numbers in [sumMin, sumMax], always with a carry
+    sumMax: 69,
+  },
+
+  // Coin-makers. One of each, level 1..maxLevel. Upgrade price from level n to n+1 = price * 2^n.
+  // The next type unlocks when the total coins earned reach its price. Index 0 is always unlocked.
+  maxLevel: 5,
+  makers: [
+    { id: 'limonade',  name: 'Limonadekraam',    icon: '🍋', price: 20,    income: [12, 18, 27, 41, 61] },
+    { id: 'wasstraat', name: 'Wasstraat',        icon: '🚿', price: 120,   income: [50, 75, 113, 170, 250] },
+    { id: 'pizzeria',  name: 'Pizzeria',         icon: '🍕', price: 400,   income: [150, 225, 338, 510, 750] },
+    { id: 'fabriek',   name: 'Speelgoedfabriek', icon: '🤖', price: 2000,  income: [600, 900, 1350, 2040, 3000] },
+    { id: 'flat',      name: 'Flatgebouw',       icon: '🏢', price: 10000, income: [2500, 3750, 5625, 8500, 12500] },
+  ],
+
+  // LEUK catalogue: fixed prices, all visible from the start, no randomness.
+  // kind: hat | skin | vehicle | paint (one equipped per kind) · garden | pet (toggle on/off) · show | dance | toy (actions on HUIS)
+  fun: [
+    { id: 'pet',        name: 'Pet',            icon: '🧢', price: 15,  kind: 'hat' },
+    { id: 'strohoed',   name: 'Strohoed',       icon: '👒', price: 20,  kind: 'hat' },
+    { id: 'helm',       name: 'Helm',           icon: '⛑️', price: 25,  kind: 'hat' },
+    { id: 'hogehoed',   name: 'Hoge hoed',      icon: '🎩', price: 30,  kind: 'hat' },
+    { id: 'feestmuts',  name: 'Feestmuts',      icon: '🥳', price: 35,  kind: 'hat' },
+    { id: 'piraat',     name: 'Piratenhoed',    icon: '☠️', price: 40,  kind: 'hat' },
+    { id: 'cowboy',     name: 'Cowboyhoed',     icon: '🤠', price: 45,  kind: 'hat' },
+    { id: 'tovenaar',   name: 'Tovenaarshoed',  icon: '🧙', price: 50,  kind: 'hat' },
+    { id: 'kroon',      name: 'Kroon',          icon: '👑', price: 60,  kind: 'hat' },
+
+    { id: 'zombie',     name: 'Zombie',         icon: '🧟', price: 40,  kind: 'skin' },
+    { id: 'kikker',     name: 'Kikker',         icon: '🐸', price: 50,  kind: 'skin' },
+    { id: 'astronaut',  name: 'Astronaut',      icon: '🚀', price: 60,  kind: 'skin' },
+    { id: 'ninja',      name: 'Ninja',          icon: '🥷', price: 70,  kind: 'skin' },
+    { id: 'superheld',  name: 'Superheld',      icon: '🦸', price: 80,  kind: 'skin' },
+
+    { id: 'scooter',    name: 'Scooter',        icon: '🛴', price: 150, kind: 'vehicle' },
+    { id: 'auto',       name: 'Auto',           icon: '🚗', price: 500, kind: 'vehicle' },
+
+    { id: 'verf-rood',  name: 'Rood huis',      icon: '🟥', price: 100, kind: 'paint' },
+    { id: 'verf-blauw', name: 'Blauw huis',     icon: '🟦', price: 100, kind: 'paint' },
+    { id: 'verf-geel',  name: 'Geel huis',      icon: '🟨', price: 100, kind: 'paint' },
+
+    { id: 'bloemen',    name: 'Bloemen',        icon: '🌷', price: 30,  kind: 'garden' },
+    { id: 'vlag',       name: 'Vlag',           icon: '🚩', price: 35,  kind: 'garden' },
+    { id: 'zandbak',    name: 'Zandbak',        icon: '🏖️', price: 40,  kind: 'garden' },
+    { id: 'bankje',     name: 'Bankje',         icon: '🪑', price: 40,  kind: 'garden' },
+    { id: 'hek',        name: 'Hek',            icon: '🪵', price: 45,  kind: 'garden' },
+    { id: 'boom',       name: 'Boom',           icon: '🌳', price: 50,  kind: 'garden' },
+    { id: 'lantaarn',   name: 'Lantaarn',       icon: '🏮', price: 55,  kind: 'garden' },
+    { id: 'brievenbus', name: 'Brievenbus',     icon: '📮', price: 60,  kind: 'garden' },
+    { id: 'sneeuwpop',  name: 'Sneeuwpop',      icon: '⛄', price: 70,  kind: 'garden' },
+    { id: 'vijver',     name: 'Vijver',         icon: '🐟', price: 80,  kind: 'garden' },
+    { id: 'tent',       name: 'Tent',           icon: '🎪', price: 100, kind: 'garden' },
+    { id: 'fontein',    name: 'Fontein',        icon: '⛲', price: 120, kind: 'garden' },
+
+    { id: 'kat',        name: 'Kat',            icon: '🐱', price: 80,  kind: 'pet' },
+    { id: 'hond',       name: 'Hond',           icon: '🐶', price: 100, kind: 'pet' },
+    { id: 'dino',       name: 'Dino',           icon: '🦖', price: 200, kind: 'pet' },
+
+    { id: 'vuurwerk',   name: 'Vuurwerk',       icon: '🎆', price: 30,  kind: 'show' },
+    { id: 'dansje',     name: 'Dansje',         icon: '🕺', price: 50,  kind: 'dance' },
+    { id: 'salto',      name: 'Salto',          icon: '🤸', price: 60,  kind: 'dance' },
+    { id: 'trampoline', name: 'Trampoline',     icon: '🦘', price: 300, kind: 'toy' },
+  ],
+
+  // Milestones: fanfare + confetti + a sticker on the HUIS sticker wall. Rewards, not catalogue items.
+  milestones: [
+    { id: 'eerste-geldmaker', kind: 'makers',             value: 1,      sticker: '🍋', title: 'Eerste geldmaker!' },
+    { id: 'geld-werkt',       kind: 'passive-beats-work', value: 0,      sticker: '💪', title: 'Je geld werkt harder dan jij!' },
+    { id: 'duizend',          kind: 'earned',             value: 1000,   sticker: '💰', title: '1 000 munten verdiend!' },
+    { id: 'alle-geldmakers',  kind: 'all-makers',         value: 0,      sticker: '🏙️', title: 'Alle geldmakers!' },
+    { id: 'level-5',          kind: 'level',              value: 5,      sticker: '⭐', title: 'Eerste level 5!' },
+    { id: 'honderdduizend',   kind: 'earned',             value: 100000, sticker: '🏆', title: '100 000 munten verdiend!' },
+  ],
+
+  // Avatar colours offered on START (id → CSS colour)
+  colors: [
+    { id: 'blauw',  hex: '#3b82f6' },
+    { id: 'rood',   hex: '#ef4444' },
+    { id: 'groen',  hex: '#22c55e' },
+    { id: 'geel',   hex: '#facc15' },
+    { id: 'paars',  hex: '#a855f7' },
+    { id: 'oranje', hex: '#f97316' },
+  ],
+});
+
+export default CONFIG;

@@ -5,7 +5,7 @@
   "description": "Muntstad: an iPad web game (PWA) that teaches a 6-year-old that money put to work makes more money.",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/unit/",
+    "test": "node --test \"tests/unit/**/*.test.js\"",
     "test:e2e": "playwright test",
     "test:live": "playwright test --config playwright.live.config.js",
     "serve": "node scripts/serve.js",
