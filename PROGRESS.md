@@ -4,9 +4,9 @@ Resume rule: re-read SPEC.md, then this file. Continue at the first unchecked mi
 
 ## Milestones
 - [x] Phase 0 — bootstrap: CLAUDE.md, PROGRESS.md, git init on main, toolbox check
-- [ ] Phase 1 — PLAN.md (M1–M7 with acceptance criteria)
-- [ ] Phase 2 — economy core (config.js, economy.js, save.js), simulator, unit tests incl. balance assertions
-- [ ] Phase 3 — playable game: START, STAD (scene), WERK, WINKEL, HUIS, PAPA, popups, mentor, milestones, offline earnings
+- [x] Phase 1 — PLAN.md (M1–M7 with acceptance criteria)
+- [x] Phase 2 — economy core (config.js, economy.js, save.js), simulator, unit tests incl. balance assertions (43 tests green; 3.68× / 2.5× / 2.8 min)
+- [~] Phase 3 — playable game: all screens built and hand-tested in Chromium (start → werk → koop → milestone → building card → huis → gate → papa). Next: Playwright e2e + audits.
 - [ ] Phase 4 — PWA (manifest, sw.js, icons), Web Audio, speech, visual polish
 - [ ] Phase 5 — verification loop: unit + e2e (6 projects), screenshots reviewed, kid-tester + economy-review subagents
 - [ ] Phase 6 — deploy to GitHub Pages, live smoke test
@@ -23,6 +23,13 @@ Resume rule: re-read SPEC.md, then this file. Continue at the first unchecked mi
 ## Decision log
 - 2026-09-02 SPEC.md is a verbatim copy of geldspel-SPEC.md (the name the spec refers to). geldspel-handleiding.md is personal and stays out of git.
 - 2026-09-02 Node installed portable (no admin rights available; winget MSI would need a UAC click). Documented in RAPPORT.md.
+
+## Decision log (continued)
+- 2026-09-02 Vuurwerk is bought once and can be played unlimited on HUIS (spec said one-time show; buy-once is simpler for a 6-year-old and keeps the catalogue strategy sane).
+- 2026-09-02 Work rate = coins in the trailing 60 s WERK window; sessions shorter than 60 s are extrapolated from at least 15 s (so a first car never yields a silly rate).
+- 2026-09-02 A new car never arrives sooner than 4 s after the previous one (config.work.minCycleMs) → hard ceiling of 30 coins/min, as the spec intends.
+- 2026-09-02 Investor policy in the simulator = save for the shortest-payback option among unlocked ones (matches the spec reference numbers).
+- 2026-09-02 Bash heredocs are truncated at ~8 KB on this Windows setup; large files are written with the Write tool.
 
 ## Known issues
 - none yet

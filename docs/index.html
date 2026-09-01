@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <title>Muntstad</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Muntstad: een dorpje waar je munten maakt, geldmakers koopt en leuke dingen doet.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Muntstad">
+  <meta name="theme-color" content="#38bdf8">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <div id="app" class="app" data-screen="start">
+
+    <!-- Top bar: coins + income per minute (STAD, WERK, WINKEL, HUIS) -->
+    <header id="topbar" class="topbar" hidden>
+      <div class="wallet" id="wallet">
+        <span class="wallet-icon" id="wallet-icon" aria-hidden="true">🪙</span>
+        <span class="wallet-amount" id="wallet-amount">0</span>
+      </div>
+      <div class="income" id="income"><span id="income-amount">+0</span> per minuut</div>
+    </header>
+
+    <!-- START -->
+    <section class="screen screen-start active" data-screen="start" id="screen-start">
+      <div class="start-sky"></div>
+      <div class="start-panel panel">
+        <div class="start-left">
+          <h1 class="start-title">Muntstad</h1>
+          <div class="start-avatar" id="start-avatar" aria-hidden="true"></div>
+        </div>
+        <div class="start-new" id="start-new">
+          <p class="start-label">Kies je kleur</p>
+          <div class="color-row" id="color-row"></div>
+          <label class="start-label" for="name-input">Je naam (mag ook leeg)</label>
+          <input id="name-input" class="name-input" type="text" maxlength="12" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="kapitein">
+        </div>
+        <button class="btn btn-primary btn-xl" id="btn-start" type="button">SPEEL ▶</button>
+      </div>
+    </section>
+
+    <!-- STAD -->
+    <section class="screen screen-stad" data-screen="stad" id="screen-stad">
+      <canvas id="town" class="town" aria-label="Muntstad"></canvas>
+      <nav class="bottombar" id="bottombar">
+        <button class="btn btn-nav btn-werk" id="nav-werk" type="button"><span class="btn-icon">🧽</span>WERK</button>
+        <button class="btn btn-nav btn-winkel" id="nav-winkel" type="button"><span class="btn-icon">🛒</span>WINKEL</button>
+        <button class="btn btn-nav btn-huis" id="nav-huis" type="button"><span class="btn-icon">🏠</span>HUIS</button>
+        <button class="btn btn-papa" id="nav-papa" type="button" aria-label="PAPA"><span class="papa-ring" id="papa-ring"></span><span class="papa-label">PAPA</span></button>
+      </nav>
+    </section>
+
+    <!-- WERK -->
+    <section class="screen screen-werk" data-screen="werk" id="screen-werk">
+      <div class="werk-bg"></div>
+      <div class="werk-stage" id="werk-stage">
+        <div class="werk-car" id="werk-car"></div>
+      </div>
+      <div class="werk-hud">
+        <div class="werk-count panel-mini" id="werk-count">🚗 0</div>
+        <button class="btn btn-primary btn-xl" id="btn-klaar" type="button">KLAAR ✔</button>
+      </div>
+    </section>
+
+    <!-- WINKEL -->
+    <section class="screen screen-winkel" data-screen="winkel" id="screen-winkel">
+      <div class="tabs">
+        <button class="btn btn-tab active" id="tab-makers" type="button"><span class="btn-icon">🏭</span>GELDMAKERS<span class="tab-hint" id="tab-makers-hint"></span></button>
+        <button class="btn btn-tab" id="tab-fun" type="button"><span class="btn-icon">🎉</span>LEUK</button>
+      </div>
+      <div class="shop-grid" id="shop-grid"></div>
+      <div class="shop-footer">
+        <button class="btn btn-arrow" id="shop-prev" type="button" aria-label="Vorige">◀</button>
+        <div class="shop-dots" id="shop-dots"></div>
+        <button class="btn btn-arrow" id="shop-next" type="button" aria-label="Volgende">▶</button>
+        <button class="btn btn-secondary btn-lg" id="shop-stad" type="button"><span class="btn-icon">🏘️</span>STAD</button>
+      </div>
+    </section>
+
+    <!-- HUIS -->
+    <section class="screen screen-huis" data-screen="huis" id="screen-huis">
+      <div class="huis-scene" id="huis-scene"></div>
+      <aside class="sticker-wall panel" id="sticker-wall">
+        <div class="sticker-title">Stickers</div>
+        <div class="sticker-grid" id="sticker-grid"></div>
+      </aside>
+      <div class="huis-actions" id="huis-actions"></div>
+      <div class="huis-footer">
+        <button class="btn btn-secondary btn-lg" id="huis-winkel" type="button"><span class="btn-icon">🛒</span>WINKEL</button>
+        <button class="btn btn-secondary btn-lg" id="huis-stad" type="button"><span class="btn-icon">🏘️</span>STAD</button>
+      </div>
+    </section>
+
+    <!-- PAPA gate -->
+    <section class="screen screen-gate" data-screen="gate" id="screen-gate">
+      <div class="panel gate-panel">
+        <p class="gate-text">Voor papa of mama. Hoeveel is</p>
+        <p class="gate-sum" id="gate-sum">37 + 48</p>
+        <p class="gate-answer" id="gate-answer">?</p>
+        <div class="keypad" id="keypad"></div>
+        <button class="btn btn-secondary btn-lg gate-back" id="gate-stad" type="button"><span class="btn-icon">🏘️</span>STAD</button>
+      </div>
+    </section>
+
+    <!-- PAPA -->
+    <section class="screen screen-papa" data-screen="papa" id="screen-papa">
+      <div class="papa-scroll">
+        <div class="papa-head">
+          <h2 class="papa-title">Voor papa en mama</h2>
+          <button class="btn btn-primary btn-lg" id="papa-stad" type="button"><span class="btn-icon">🏘️</span>STAD</button>
+        </div>
+        <div class="papa-columns">
+          <div class="panel papa-panel">
+            <h3>Cijfers</h3>
+            <dl class="stats" id="papa-stats"></dl>
+          </div>
+          <div class="panel papa-panel">
+            <h3>Praat eens samen</h3>
+            <ul class="starters" id="papa-starters"></ul>
+            <h3>Instellingen</h3>
+            <div class="toggles" id="papa-toggles"></div>
+          </div>
+          <div class="panel papa-panel">
+            <h3>Bewaar-code</h3>
+            <p class="papa-help">Zet deze code ergens neer. Op een andere iPad plak je hem hieronder en druk je op LADEN.</p>
+            <textarea class="code-out" id="code-out" readonly rows="3"></textarea>
+            <div class="row">
+              <button class="btn btn-secondary btn-lg" id="code-copy" type="button">KOPIEER</button>
+            </div>
+            <input class="code-in" id="code-in" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Plak hier een code">
+            <div class="row">
+              <button class="btn btn-secondary btn-lg" id="code-load" type="button">LADEN</button>
+            </div>
+            <p class="papa-status" id="code-status"></p>
+            <h3>Opnieuw beginnen</h3>
+            <div class="reset-area" id="reset-area">
+              <button class="btn btn-danger btn-lg" id="reset-1" type="button">ALLES WISSEN</button>
+              <div class="reset-confirm" id="reset-confirm" hidden>
+                <p class="papa-help">Echt alles wissen? Dit kan niet terug.</p>
+                <div class="row">
+                  <button class="btn btn-danger btn-lg" id="reset-yes" type="button">JA, WIS ALLES</button>
+                  <button class="btn btn-secondary btn-lg" id="reset-no" type="button">NEE</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mentor Muntje -->
+    <div class="mentor" id="mentor" hidden>
+      <div class="bubble" id="bubble">
+        <span class="bubble-text" id="bubble-text"></span>
+        <button class="btn btn-round" id="bubble-replay" type="button" aria-label="Nog een keer">🔊</button>
+      </div>
+      <div class="muntje" id="muntje" aria-hidden="true"></div>
+    </div>
+
+    <!-- Popups -->
+    <div class="overlay" id="overlay" hidden>
+      <div class="panel popup" id="popup" role="dialog"></div>
+    </div>
+    <canvas id="fx" class="fx" aria-hidden="true"></canvas>
+
+    <!-- Portrait hint -->
+    <div class="rotate" id="rotate" aria-hidden="true">
+      <div class="rotate-icon">📱</div>
+      <div class="rotate-text">Draai je iPad</div>
+    </div>
+  </div>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
