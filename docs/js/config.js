@@ -17,8 +17,7 @@ export const CONFIG = Object.freeze({
     dirtMin: 3,                       // dirt spots per car (min)
     dirtMax: 4,                       // dirt spots per car (max)
     tiredAfterCars: 10,               // mentor's "hands get tired" line after this many cars (once)
-    windowMs: 60 * 1000,              // work rate = best coins over a trailing 60 s window
-    minSessionSec: 15,                // shorter sessions are extrapolated from at least 15 s
+    windowMs: 60 * 1000,              // work rate = best coins over a trailing 60 s window (capped by minCycleMs)
     carArriveMs: 700,                 // car drive-in animation
     carLeaveMs: 600,                  // car drive-out animation
     minCycleMs: 4000,                 // a new car never arrives sooner than 4 s after the previous one → ceiling 30 coins/min
@@ -50,7 +49,7 @@ export const CONFIG = Object.freeze({
     { id: 'limonade',  name: 'Limonadekraam',    icon: '🍋', price: 20,    income: [12, 18, 27, 41, 61] },
     { id: 'wasstraat', name: 'Wasstraat',        icon: '🚿', price: 120,   income: [50, 75, 113, 170, 250] },
     { id: 'pizzeria',  name: 'Pizzeria',         icon: '🍕', price: 400,   income: [150, 225, 338, 510, 750] },
-    { id: 'fabriek',   name: 'Speelgoedfabriek', icon: '🤖', price: 2000,  income: [600, 900, 1350, 2040, 3000] },
+    { id: 'fabriek',   name: 'Fabriek',          icon: '🤖', price: 2000,  income: [600, 900, 1350, 2040, 3000] },
     { id: 'flat',      name: 'Flatgebouw',       icon: '🏢', price: 10000, income: [2500, 3750, 5625, 8500, 12500] },
   ],
 
@@ -62,9 +61,9 @@ export const CONFIG = Object.freeze({
     { id: 'helm',       name: 'Helm',           icon: '⛑️', price: 25,  kind: 'hat' },
     { id: 'hogehoed',   name: 'Hoge hoed',      icon: '🎩', price: 30,  kind: 'hat' },
     { id: 'feestmuts',  name: 'Feestmuts',      icon: '🥳', price: 35,  kind: 'hat' },
-    { id: 'piraat',     name: 'Piratenhoed',    icon: '☠️', price: 40,  kind: 'hat' },
-    { id: 'cowboy',     name: 'Cowboyhoed',     icon: '🤠', price: 45,  kind: 'hat' },
-    { id: 'tovenaar',   name: 'Tovenaarshoed',  icon: '🧙', price: 50,  kind: 'hat' },
+    { id: 'piraat',     name: 'Piraat',         icon: '☠️', price: 40,  kind: 'hat' },
+    { id: 'cowboy',     name: 'Cowboy',         icon: '🤠', price: 45,  kind: 'hat' },
+    { id: 'tovenaar',   name: 'Tovenaar',       icon: '🧙', price: 50,  kind: 'hat' },
     { id: 'kroon',      name: 'Kroon',          icon: '👑', price: 60,  kind: 'hat' },
 
     { id: 'zombie',     name: 'Zombie',         icon: '🧟', price: 40,  kind: 'skin' },

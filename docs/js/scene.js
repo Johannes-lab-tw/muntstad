@@ -256,7 +256,7 @@ function drawTownHouse(ctx, x, y, paint) {
   ctx.restore();
 }
 
-function drawEmptyPlot(ctx, x, y, maker, unlocked, price, t) {
+function drawEmptyPlot(ctx, x, y, maker, unlocked, price, t, affordable) {
   ctx.save();
   ctx.translate(x, y);
   ctx.setLineDash([10, 8]);
@@ -277,9 +277,12 @@ function drawEmptyPlot(ctx, x, y, maker, unlocked, price, t) {
     ctx.fillText(maker.icon, -22, -94);
     ctx.font = 'bold 22px sans-serif';
     ctx.fillText(`${price}🪙`, 20, -92);
-    const bob = Math.sin(t / 250) * 4;
-    ctx.font = '26px sans-serif';
-    ctx.fillText('👇', 0, -144 + bob);
+    if (affordable) {
+      // the pointing hand only appears when the coins are there: "you can buy this now"
+      const bob = Math.sin(t / 250) * 5;
+      ctx.font = '40px sans-serif';
+      ctx.fillText('👇', 0, -152 + bob);
+    }
   } else {
     ctx.font = '30px sans-serif';
     ctx.globalAlpha = 0.5;
@@ -338,6 +341,7 @@ export function createScene(canvas, game) {
   let avatarDist = 0;
   let lastTime = 0;
   let lastCoinSound = 0;
+  let hopUntil = 0; // a tap on the avatar makes it hop (visible feedback even when muted)
   const clouds = [{ x: 0.1, y: 0.16, s: 1 }, { x: 0.5, y: 0.13, s: 0.8 }, { x: 0.8, y: 0.18, s: 1.1 }];
 
   function image(key, svg) {
@@ -512,12 +516,12 @@ export function createScene(canvas, game) {
     box(c, p.x - 40, p.y - 84, 80, 12, '#92400e', 4);
     box(c, p.x - 36, p.y - 72, 8, 16, '#78350f', 2);
     box(c, p.x + 28, p.y - 72, 8, 16, '#78350f', 2);
-    box(c, p.x - 66, layout.road.y - 6, 132, 34, '#fff', 8);
+    box(c, p.x - 66, p.y + 60, 132, 34, '#fff', 8);
     c.fillStyle = INK;
     c.font = 'bold 22px sans-serif';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText('MUNTSTAD', p.x, layout.road.y + 11);
+    c.fillText('MUNTSTAD', p.x, p.y + 77);
     // plot pavements
     for (const m of config.makers) {
       const pl = layout.plots[m.id];
@@ -582,7 +586,7 @@ export function createScene(canvas, game) {
         BUILDERS[m.id](ctx, p.x, p.y, level, t);
         for (let i = 0; i < level; i++) star(ctx, p.x - (level - 1) * 11 + i * 22, p.y + 4, 8);
       } else {
-        drawEmptyPlot(ctx, p.x, p.y, m, game.isUnlocked(m.id), m.price, t);
+        drawEmptyPlot(ctx, p.x, p.y, m, game.isUnlocked(m.id), m.price, t, state.wallet >= m.price);
       }
     }
     const h = layout.house;
@@ -622,10 +626,12 @@ export function createScene(canvas, game) {
     const dir = b[0] - a[0] < -0.01 ? -1 : 1;
     const colorHex = (config.colors.find((c) => c.id === state.color) || config.colors[0]).hex;
     const img = image(avatarKey(), avatarSVG({ color: colorHex, hat: state.equipped.hat, skin: state.equipped.skin }));
+    const hop = hopUntil > t ? Math.sin(((hopUntil - t) / 350) * Math.PI) * 34 : 0;
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(dir, 1);
-    shadow(ctx, 0, 14, 50);
+    shadow(ctx, 0, 14, 50 - hop * 0.6);
+    ctx.translate(0, -hop);
     if (vehicle) {
       const vimg = image(`veh|${vehicle}|${colorHex}`, vehicleSVG(vehicle, colorHex));
       if (vimg.complete && vimg.naturalWidth) ctx.drawImage(vimg, -48, -46, 96, 60);
@@ -700,5 +706,9 @@ export function createScene(canvas, game) {
     for (let i = 0; i < 6; i++) setTimeout(() => spawnCoin(id), i * 60);
   }
 
-  return { resize, render, hitTest, spawnCoin, burst, setState, plotPoint, get particleCount() { return particles.length; } };
+  function hop() {
+    hopUntil = performance.now() + 350;
+  }
+
+  return { resize, render, hitTest, spawnCoin, burst, setState, plotPoint, hop, get particleCount() { return particles.length; } };
 }

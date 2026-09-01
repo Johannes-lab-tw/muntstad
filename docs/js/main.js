@@ -168,9 +168,17 @@ function tick() {
   const now = Date.now();
   const r = E.advance(state, CONFIG, now);
   state = r.state;
-  if (r.offline && r.earned >= 1) {
-    if (screen === 'start') pendingOffline = { earned: (pendingOffline ? pendingOffline.earned : 0) + r.earned, elapsedMs: r.elapsedMs };
-    else game.popups.offline(r.earned, r.elapsedMs);
+  if (r.offline) {
+    // the popup shows what the coin-makers made; without any coin-maker it explains once what one would do
+    let show = r.earned >= 1;
+    if (!show && E.ownedMakerCount(state, CONFIG) === 0 && !state.flags.offlineNoMakersSaid) {
+      state = E.setFlag(state, 'offlineNoMakersSaid', true);
+      show = true;
+    }
+    if (show) {
+      if (screen === 'start') pendingOffline = { earned: (pendingOffline ? pendingOffline.earned : 0) + r.earned, elapsedMs: r.elapsedMs };
+      else game.popups.offline(r.earned, r.elapsedMs);
+    }
   }
   if (r.foodPaid > 0) onFoodPaid();
   afterUpdate();

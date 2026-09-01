@@ -2,7 +2,7 @@
 // Every function takes (state, config, ...) and returns a NEW state; nothing is mutated.
 // The game, the unit tests and the balance simulator all share this exact logic.
 
-export const THIN_SPACE = ' ';
+export const THIN_SPACE = ' '; // narrow no-break space: thin, and '2 000' never breaks over two lines
 
 /** Fresh state for a new player. `now` is a timestamp in ms. */
 export function createState(config, now) {
@@ -173,20 +173,23 @@ export function endWork(state) {
   return { ...state, work: { sessionStart: null, log: [] } };
 }
 
+/** The most coins per minute WERK can ever pay: one car every minCycleMs. */
+export function workCeiling(config) {
+  return (config.work.coinsPerCar * 60000) / config.work.minCycleMs;
+}
+
 /**
  * One car washed: +coinsPerCar. Also updates the work rate:
- * best coins per minute over any trailing 60 s window of a WERK session
- * (sessions shorter than 60 s are extrapolated from at least minSessionSec).
+ * best coins per minute over any trailing 60 s window of a WERK session — literally the coins
+ * earned in the last 60 s (no extrapolation, so a quick burst never counts as a full minute of work),
+ * capped at the pace ceiling.
  */
 export function washCar(state, config, now) {
   const coins = config.work.coinsPerCar;
   const sessionStart = state.work.sessionStart == null ? now : state.work.sessionStart;
   const log = state.work.log.filter(([t]) => now - t < config.work.windowMs).concat([[now, coins]]);
   const windowSum = log.reduce((s, [, c]) => s + c, 0);
-  const sessionSec = (now - sessionStart) / 1000;
-  const rate = sessionSec >= config.work.windowMs / 1000
-    ? windowSum
-    : (windowSum * 60) / Math.max(sessionSec, config.work.minSessionSec);
+  const rate = Math.min(workCeiling(config), windowSum * (60000 / config.work.windowMs));
   return {
     ...state,
     wallet: state.wallet + coins,

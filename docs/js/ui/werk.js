@@ -38,14 +38,15 @@ export function createWerk(game) {
     carIndex++;
     car.innerHTML = carSVG(CAR_COLORS[carIndex % CAR_COLORS.length]);
     const n = randomInt(game.config.work.dirtMin, game.config.work.dirtMax);
-    const slots = [[30, 40], [52, 40], [74, 40], [18, 68], [40, 68], [62, 68], [84, 68]];
+    // slots are at least 110 px apart on a 620 px car and stay off the wheels, so spots never merge
+    const slots = [[26, 36], [50, 36], [74, 36], [38, 66], [62, 66], [12, 58], [88, 58]];
     // pick n distinct slots
     const chosen = slots.slice().sort(() => Math.random() - 0.5).slice(0, n);
     for (const [x, y] of chosen) {
       const d = document.createElement('div');
       d.className = 'dirt';
-      d.style.left = `${x + (Math.random() - 0.5) * 6}%`;
-      d.style.top = `${y + (Math.random() - 0.5) * 6}%`;
+      d.style.left = `${x + (Math.random() - 0.5) * 3}%`;
+      d.style.top = `${y + (Math.random() - 0.5) * 3}%`;
       car.appendChild(d);
     }
     dirtLeft = n;

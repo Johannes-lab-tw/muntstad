@@ -85,8 +85,13 @@ export function createHuis(game) {
     yard.innerHTML = yardSVG();
     yard.firstElementChild.classList.add('yard');
     scene.appendChild(yard.firstElementChild);
-    // house
-    scene.appendChild(svgEl(houseSVG(state.equipped.paint || 'none'), 'house', 22, 66));
+    // house (a tap makes it bounce: every tap gets an answer)
+    const house = svgEl(houseSVG(state.equipped.paint || 'none'), 'house', 22, 66);
+    house.addEventListener('pointerdown', () => {
+      game.audio.play('pop');
+      animate(house, 'bump', 400);
+    });
+    scene.appendChild(house);
     // garden items
     let slot = 0;
     for (const f of game.config.fun) {

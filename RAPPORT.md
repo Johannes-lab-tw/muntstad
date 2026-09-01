@@ -27,7 +27,7 @@ Eén les, zonder uitleg-tekst: **geld dat je aan het werk zet, maakt meer geld, 
 ## 3. Zo speel je, per scherm
 
 - **START:** kies een kleur, naam mag leeg, tik SPEEL. De eerste tik zet ook het geluid en de stem aan (regel van iOS).
-- **STAD:** het dorp. Bovenin munten en "per minuut". Tik op een gebouw voor de kaart met level, opbrengst en UPGRADE. Onderin WERK, WINKEL, HUIS. PAPA staat klein rechtsonder.
+- **STAD:** het dorp. Bovenin munten en "per minuut". Tik op een gebouw voor de kaart met level, opbrengst en BETER (de upgrade). Een wijzend handje verschijnt boven een leeg plekje zodra hij genoeg munten heeft. Onderin WERK, WINKEL, HUIS. PAPA staat klein rechtsonder.
 - **WERK:** een auto rijdt binnen met 3 of 4 vlekken; tik of veeg ze weg, de auto rijdt schoon weg, 2 munten. KLAAR brengt je terug.
 - **WINKEL:** tab GELDMAKERS (kraam 20, wasstraat 120, pizzeria 400, fabriek 2 000, flat 10 000; de volgende gaat open als hij in totaal zoveel verdiend heeft) en tab LEUK (hoeden, kleuren, scooter, auto, verf, tuin, huisdieren, vuurwerk, dansjes, trampoline). Te duur? De kaart blijft staan met "nog 12 🪙" en een balkje.
 - **HUIS:** zijn huis en tuin: hoed en pak op de poppetje, huisdieren, trampoline (tik = springen), VUURWERK, DANSJE, SALTO en de stickermuur met mijlpalen.
@@ -53,7 +53,9 @@ Na elke verandering: `npm test` draait de balanssimulatie en zegt of de les nog 
 
 ## 5. Wat er getest is
 
-**Unit tests (48, allemaal groen):** rekenwerk van de economie (opbrengst per tik, upgradeprijzen 40/80/160/320, vrijspelen, hondenvoer automatisch betaald, saldo nooit onder nul, 4-uur-plafond, oude save-versie wordt omgezet, kapotte save geeft een schone start), stemkeuze (nl-NL eerst, dan andere nl, anders stil), de service-worker-lijst (elk bestand in `docs/` staat erin), manifest en iOS-metatags, en de balanssimulatie.
+**Unit tests (51, allemaal groen):** rekenwerk van de economie (opbrengst per tik, upgradeprijzen 40/80/160/320, vrijspelen, hondenvoer automatisch betaald, saldo nooit onder nul, 4-uur-plafond, werktempo = munten in de laatste 60 seconden met een plafond van 30 per minuut, oude save-versie wordt omgezet, kapotte save geeft een schone start), stemkeuze (nl-NL eerst, dan andere nl, anders stil), de service-worker-lijst (elk bestand in `docs/` staat erin), manifest en iOS-metatags, en de balanssimulatie in vijf varianten (twee lezingen van "kortste terugverdientijd", werken in korte uitbarstingen, met een huisdier zodat het voer meetelt, en een langzamer en sneller kind).
+
+**Twee onafhankelijke reviews** (een "kind-tester" op de screenshots en de UX-regels, en een economie-check tegen de SPEC) leverden samen twintig punten op; allemaal verwerkt. De belangrijkste: het werktempo werd bij korte sessies te hoog geschat (nu letterlijk "munten in de laatste minuut"), vergrendelde winkelkaarten reageerden niet op een tik, getallen als "2 000" braken af over twee regels, de vijf geldmakers staan nu op één rij, lange woorden zijn ingekort (Fabriek, Piraat, Cowboy, Tovenaar) en UPGRADE heet BETER.
 
 **Balanssimulatie (20 minuten, kind verdient 15 munten per minuut met WERK):**
 

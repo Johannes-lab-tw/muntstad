@@ -8,7 +8,7 @@ export const T = {
 
   ui: {
     koop: 'KOOP',
-    upgrade: 'UPGRADE',
+    upgrade: 'BETER',
     max: 'MAX ⭐',
     aan: 'AAN',
     uit: 'UIT',
@@ -41,6 +41,7 @@ export const T = {
   popups: {
     offlineTitle: 'Terwijl je weg was…',
     offlineText: 'maakten je geldmakers',
+    offlineNone: 'Je hebt nog geen geldmaker. Die maakt munten, ook als jij weg bent!',
     milestoneTitle: 'Sticker!',
     buildingLevel: 'Level {n}',
     buildingIncome: '{n} per minuut',
@@ -61,6 +62,7 @@ export const T = {
     upgrade: 'Nog beter! Je {ding} maakt nu {n} munten per minuut.',
     passiveBeatsWork: 'Wauw! Je geldmakers verdienen nu meer dan jij. Je geld werkt voor jou!',
     offline: 'Terwijl je weg was, maakten je geldmakers {n} munten!',
+    offlineNone: 'Je hebt nog geen geldmaker. Die maakt munten, ook als jij weg bent!',
     hatBought: 'Gave hoed! Leuk hè, wat je met munten kunt doen?',
     funBought: 'Gave {ding}! Leuk hè, wat je met munten kunt doen?',
     petBought: 'Een {ding}! Die krijgt elke twee minuten eten. Je geldmakers betalen dat.',

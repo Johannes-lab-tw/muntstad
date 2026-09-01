@@ -78,8 +78,10 @@ test('normalize clamps nonsense values and drops unknown ids', () => {
     color: 'roze',
     name: 'x'.repeat(50),
     settings: { voice: false },
+    foodTimerMs: 1e15,
   }, CONFIG, 3);
   assert.equal(s.wallet, 0);
+  assert.ok(s.foodTimerMs <= CONFIG.pet.foodIntervalMs, 'food timer is clamped so the first tick cannot loop forever');
   assert.equal(s.makers.limonade, CONFIG.maxLevel);
   assert.equal('bogus' in s.makers, false);
   assert.deepEqual(Object.keys(s.fun), ['pet']);

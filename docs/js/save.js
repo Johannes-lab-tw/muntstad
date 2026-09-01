@@ -88,7 +88,7 @@ export function normalize(data, config, now) {
     fun,
     equipped,
     hidden,
-    foodTimerMs: num(data.foodTimerMs),
+    foodTimerMs: Math.min(num(data.foodTimerMs), config.pet.foodIntervalMs), // a corrupted timer can never loop for ages
     petHungry: !!data.petHungry,
     carsWashed: Math.floor(num(data.carsWashed)),
     work: { sessionStart: null, log: [] },

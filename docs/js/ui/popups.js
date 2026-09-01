@@ -60,7 +60,6 @@ export function createPopups(game) {
 
   function offline(earned, elapsedMs) {
     const n = Math.floor(earned);
-    if (n < 1) return;
     present((box) => {
       box.dataset.popup = 'offline';
       box.appendChild(el('h2', 'popup-title', game.t('popups.offlineTitle')));
@@ -68,6 +67,15 @@ export function createPopups(game) {
       const hours = Math.floor(mins / 60);
       const rest = mins % 60;
       const when = hours > 0 ? `${hours} uur${rest ? ` en ${rest} minuten` : ''}` : `${mins} minuten`;
+      if (n < 1) {
+        // no coin-maker yet: explain once what one would have done meanwhile
+        box.appendChild(el('p', 'popup-text', `Je was ${when} weg.`));
+        box.appendChild(el('div', 'popup-icon', '🍋💤'));
+        box.appendChild(el('p', 'popup-text', game.t('popups.offlineNone')));
+        box.appendChild(button(game.t('ui.top'), 'btn-primary btn-xl', close));
+        game.mentor.say('lines.offlineNone');
+        return;
+      }
       box.appendChild(el('p', 'popup-text', `Je was ${when} weg. Je geldmakers maakten:`));
       const big = el('div', 'popup-big', '+0 🪙');
       big.id = 'offline-amount';

@@ -180,13 +180,22 @@ test('washCar pays 2 coins and tracks the best trailing-60 s work rate', () => {
   // a slower later window does not lower the best rate
   s = E.washCar(s, CONFIG, 200000);
   assert.equal(s.bestWorkRate, 30);
-  // short sessions are extrapolated from at least 15 s: 1 car at 3 s → 8/min
+  // no extrapolation: one car 3 s into a session counts as 2 coins in the window, not as 40/min
   let q = E.startWork(E.createState(CONFIG, 0), 0);
   q = E.washCar(q, CONFIG, 3000);
-  assert.equal(q.bestWorkRate, 8);
+  assert.equal(q.bestWorkRate, 2);
   const ended = E.endWork(q);
   assert.equal(ended.work.sessionStart, null);
-  assert.equal(ended.bestWorkRate, 8);
+  assert.equal(ended.bestWorkRate, 2);
+  // a quick burst (8 cars at the 4 s floor) reads as 16 coins in the window, not as a full minute of work
+  let b = E.startWork(E.createState(CONFIG, 0), 0);
+  for (let i = 0; i < 8; i++) b = E.washCar(b, CONFIG, 2500 + i * 4000);
+  assert.equal(b.bestWorkRate, 16);
+  // the rate can never exceed the pace ceiling (a car every minCycleMs → 30/min)
+  assert.equal(E.workCeiling(CONFIG), 30);
+  let f = E.startWork(E.createState(CONFIG, 0), 0);
+  for (let t = 1000; t <= 60000; t += 1000) f = E.washCar(f, CONFIG, t);
+  assert.equal(f.bestWorkRate, 30);
 });
 
 test('milestones fire once, in order of achievement', () => {
@@ -217,7 +226,7 @@ test('formatCoins: integers, thin-space thousands, never abbreviated', () => {
   assert.equal(E.formatCoins(0), '0');
   assert.equal(E.formatCoins(999), '999');
   const T = E.THIN_SPACE;
-  assert.equal(T, ' ');
+  assert.equal(T, ' ');
   assert.equal(E.formatCoins(1000), '1' + T + '000');
   assert.equal(E.formatCoins(12345.9), '12' + T + '345');
   assert.equal(E.formatCoins(1234567), '1' + T + '234' + T + '567');

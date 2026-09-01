@@ -8,7 +8,7 @@ Resume rule: re-read SPEC.md, then this file. Continue at the first unchecked mi
 - [x] Phase 2 — economy core (config.js, economy.js, save.js), simulator, unit tests incl. balance assertions (43 tests green; 3.68× / 2.5× / 2.8 min)
 - [x] Phase 3 — playable game: all screens, canvas town, WERK, WINKEL, HUIS, PAPA gate + screen, popups, mentor, milestones, offline earnings
 - [x] Phase 4 — PWA (manifest, sw.js precache verified by a unit test, icons via make-icons), Web Audio synth + music loop, speech wrapper, visual pass (static scenery layer, decorations, yard)
-- [~] Phase 5 — verification loop: 48 unit tests green; e2e green on Chromium × 3 iPads (WebKit blocked on this PC, see decision log); screenshots reviewed; kid-tester + economy-review subagents running
+- [x] Phase 5 — verification loop: 51 unit tests green; e2e green on Chromium × 3 iPads (45 tests); screenshots reviewed; kid-tester (12 findings) and economy-review (8 findings) subagents ran, all findings applied
 - [~] Phase 6 — repo https://github.com/Johannes-lab-tw/muntstad created (public) and pushed; Pages enabled via REST (main:/docs) → https://johannes-lab-tw.github.io/muntstad/ ; waiting for the first build, then live smoke test
 - [ ] Phase 7 — RAPPORT.md, README.md, final push, console summary
 
@@ -32,6 +32,12 @@ Resume rule: re-read SPEC.md, then this file. Continue at the first unchecked mi
 - 2026-09-02 Bash heredocs are truncated at ~8 KB on this Windows setup; large files are written with the Write tool.
 
 - 2026-09-02 WebKit cannot launch on this PC: Windows application-control policy blocks Playwright's unsigned libxslt.dll. Security setting, not changed. Chromium only; WebKit opt-in via WEBKIT=1 on another machine.
+
+- 2026-09-02 Work rate = literally the coins in the trailing 60 s WERK window, capped at the pace ceiling (30/min). No extrapolation any more (economy review: bursts inflated it above the ceiling).
+- 2026-09-02 UPGRADE button is labelled BETER (Dutch-only rule beats the spec's literal label); long names shortened: Fabriek, Piraat, Cowboy, Tovenaar.
+- 2026-09-02 Thousands separator is U+202F (narrow no-break space) so "2 000" never wraps.
+- 2026-09-02 The return popup also shows once (with 0 coins) for a child without any coin-maker, explaining what a coin-maker would have done; after that only when coins were earned.
+- 2026-09-02 Simulator has variants (policy affordable/best, burst pacing, petFirst, work rates 10/20); all pass the lesson assertions.
 
 ## Known issues
 - none yet

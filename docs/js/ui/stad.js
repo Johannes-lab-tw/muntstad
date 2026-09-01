@@ -35,6 +35,7 @@ export function createStad(game) {
   }
   function startHold(e) {
     if (e && e.pointerType === 'mouse' && e.button !== 0) return;
+    game.audio.play('tap');
     holdStart = performance.now();
     cancelAnimationFrame(holdRaf);
     holdRaf = requestAnimationFrame(holdFrame);
@@ -66,6 +67,7 @@ export function createStad(game) {
       game.show('huis');
     } else if (hit.type === 'avatar') {
       game.audio.play('jump');
+      game.scene.hop();
     }
   });
 
