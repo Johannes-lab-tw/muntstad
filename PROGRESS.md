@@ -9,8 +9,8 @@ Resume rule: re-read SPEC.md, then this file. Continue at the first unchecked mi
 - [x] Phase 3 — playable game: all screens, canvas town, WERK, WINKEL, HUIS, PAPA gate + screen, popups, mentor, milestones, offline earnings
 - [x] Phase 4 — PWA (manifest, sw.js precache verified by a unit test, icons via make-icons), Web Audio synth + music loop, speech wrapper, visual pass (static scenery layer, decorations, yard)
 - [x] Phase 5 — verification loop: 51 unit tests green; e2e green on Chromium × 3 iPads (45 tests); screenshots reviewed; kid-tester (12 findings) and economy-review (8 findings) subagents ran, all findings applied
-- [~] Phase 6 — repo https://github.com/Johannes-lab-tw/muntstad created (public) and pushed; Pages enabled via REST (main:/docs) → https://johannes-lab-tw.github.io/muntstad/ ; waiting for the first build, then live smoke test
-- [ ] Phase 7 — RAPPORT.md, README.md, final push, console summary
+- [x] Phase 6 — deployed: public repo https://github.com/Johannes-lab-tw/muntstad, Pages main:/docs, live https://johannes-lab-tw.github.io/muntstad/ (sw cache v2), live smoke test green (Chromium, iPad gen 7 profile; WebKit blocked on this PC)
+- [x] Phase 7 — RAPPORT.md (Dutch), README.md, screenshots committed, final push, console summary printed
 
 ## Toolbox (checked 2026-09-02)
 - node v24.20.0 — was NOT installed; installed as a portable build in C:\Users\jgsno\.local\node (SHA256 verified against nodejs.org) and added to the user PATH. New terminals see it; this session uses the absolute path.

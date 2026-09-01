@@ -75,6 +75,8 @@ Verhouding LEUK-munten 3,68× (eis ≥ 3×), leuke spullen 2,5× (eis ≥ 1,5×)
 
 **Browsertests (Playwright, 45 groen):** drie iPad-formaten (iPad gen 7 1080×810, iPad mini 1024×768, iPad Pro 11 1194×834) in Chromium: geen foutmeldingen op geen enkel scherm · volledig doorspelen (start → werken tot 20 munten → limonadekraam kopen → portemonnee groeit zonder tikken → hoed kopen → hoed zichtbaar in HUIS → ouderpoort) · herladen bewaart de voortgang · gesimuleerde afwezigheid (1 uur weg = 720 munten; 5 uur weg = precies het plafond van 4 uur = 2 880) · echt offline (server uitgezet, spel laadt uit de cache) · manifest en iconen bereikbaar · tikdoelen ≥ 64×64 zonder overlap · alle tekst ≥ 20 px · geen Engelse woorden · staand scherm toont "Draai je iPad".
 
+**Live rooktest** tegen https://johannes-lab-tw.github.io/muntstad/ (Chromium met het iPad gen 7-profiel): laadt, start, WERK en WINKEL werken, manifest, iconen en service worker worden geserveerd, geen foutmeldingen. Geslaagd.
+
 **WebKit (≈ Safari) kon op deze pc niet draaien:** Windows blokkeert de ongesigneerde WebKit-bestanden van Playwright via het toepassingsbeheerbeleid (Smart App Control). Dat is een beveiligingsinstelling van Windows die ik niet heb aangepast. Op een andere machine: `WEBKIT=1 npm run test:e2e`. De echte Safari-check doe je op de iPad, zie punt 6.
 
 **Screenshots:** `screenshots/chromium-ipad-gen7/`, `screenshots/chromium-ipad-mini/`, `screenshots/chromium-ipad-pro11/` (12 per formaat: start, stad, werk, winkel ×2, huis, poort, papa, staand, sticker-popup, huis met hoed, weg-geweest-popup). Ik heb ze zelf bekeken en de gevonden punten (huis dat buiten beeld viel, vlekken die over elkaar lagen, Muntje over de winkelknoppen) verholpen.
