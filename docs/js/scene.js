@@ -8,9 +8,9 @@ import { makerLevel, makerIncome } from './economy.js';
 const INK = '#1f2937';
 const MAX_PARTICLES = 30;
 
-function roundRect(ctx, x, y, w, h, r) {
+function roundRect(ctx, x, y, w, h, r, newPath = true) {
   const rr = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
+  if (newPath) ctx.beginPath();
   ctx.moveTo(x + rr, y);
   ctx.lineTo(x + w - rr, y);
   ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
@@ -427,15 +427,15 @@ export function createScene(canvas, game) {
     roundRect(c, is.x, is.y, is.w, is.h, 54);
     c.fillStyle = '#7ed957';
     c.fill();
-    // beach corner (bottom right)
+    // beach corner (top right, where nothing covers it)
     c.beginPath();
-    c.moveTo(is.x + is.w, is.y + is.h - 170);
-    c.quadraticCurveTo(is.x + is.w - 50, is.y + is.h - 50, is.x + is.w - 220, is.y + is.h);
-    c.lineTo(is.x + is.w, is.y + is.h);
+    c.moveTo(is.x + is.w, is.y + 200);
+    c.quadraticCurveTo(is.x + is.w - 60, is.y + 60, is.x + is.w - 250, is.y);
+    c.lineTo(is.x + is.w, is.y);
     c.closePath();
     c.fillStyle = '#fde68a';
     c.fill();
-    const px = is.x + is.w - 70, py = is.y + is.h - 60;
+    const px = is.x + is.w - 62, py = is.y + 150;
     c.save();
     c.translate(px, py);
     box(c, -5, -60, 10, 60, '#92400e', 4);
@@ -551,7 +551,7 @@ export function createScene(canvas, game) {
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, 0, W, H);
-    roundRect(ctx, is.x - 10, is.y - 10, is.w + 20, is.h + 20, 60);
+    roundRect(ctx, is.x - 10, is.y - 10, is.w + 20, is.h + 20, 60, false);
     ctx.clip('evenodd');
     ctx.strokeStyle = 'rgba(255,255,255,0.45)';
     ctx.lineWidth = 3;

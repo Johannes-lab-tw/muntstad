@@ -524,7 +524,7 @@ input, textarea {
 .sticker-wall {
   position: absolute;
   right: 18px;
-  top: calc(var(--topbar-h) + 10px);
+  top: calc(var(--topbar-h) + 104px + env(safe-area-inset-top));
   width: 236px;
   padding: 12px 14px 14px 14px;
   z-index: 5;
@@ -545,13 +545,13 @@ input, textarea {
 .sticker.got { border: 3px solid var(--ink); background: linear-gradient(#fff7d6, #fde68a); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2); animation: bump 0.4s; }
 .huis-actions {
   position: absolute;
-  left: 140px;
-  bottom: 118px;
-  bottom: calc(118px + env(safe-area-inset-bottom));
+  left: 20px;
+  top: calc(var(--topbar-h) + 8px + env(safe-area-inset-top));
   display: flex;
-  gap: 14px;
+  gap: 12px;
   z-index: 6;
 }
+.huis-actions .btn { padding: 0 16px; }
 .huis-footer {
   position: absolute;
   right: 18px;

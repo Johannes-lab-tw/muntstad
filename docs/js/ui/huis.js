@@ -4,7 +4,7 @@ import { avatarSVG, petSVG, houseSVG, trampolineSVG, yardSVG } from '../art.js';
 import { isFunActive, setFlag } from '../economy.js';
 
 // yard positions in % of the screen (x, y = where the item's feet touch the ground)
-const GARDEN_SLOTS = [[6, 74], [14, 86], [26, 72], [38, 84], [48, 74], [58, 80], [70, 72], [84, 80], [93, 68], [20, 62], [66, 62], [34, 64]];
+const GARDEN_SLOTS = [[6, 74], [17, 84], [26, 72], [38, 86], [48, 74], [58, 82], [70, 72], [84, 80], [93, 68], [20, 62], [66, 62], [34, 64]];
 const PET_SLOTS = [[57, 68], [38, 72], [63, 82]];
 
 export function createHuis(game) {

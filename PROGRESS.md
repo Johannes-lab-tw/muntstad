@@ -6,9 +6,9 @@ Resume rule: re-read SPEC.md, then this file. Continue at the first unchecked mi
 - [x] Phase 0 — bootstrap: CLAUDE.md, PROGRESS.md, git init on main, toolbox check
 - [x] Phase 1 — PLAN.md (M1–M7 with acceptance criteria)
 - [x] Phase 2 — economy core (config.js, economy.js, save.js), simulator, unit tests incl. balance assertions (43 tests green; 3.68× / 2.5× / 2.8 min)
-- [~] Phase 3 — playable game: all screens built and hand-tested in Chromium (start → werk → koop → milestone → building card → huis → gate → papa). Next: Playwright e2e + audits.
-- [ ] Phase 4 — PWA (manifest, sw.js, icons), Web Audio, speech, visual polish
-- [ ] Phase 5 — verification loop: unit + e2e (6 projects), screenshots reviewed, kid-tester + economy-review subagents
+- [x] Phase 3 — playable game: all screens, canvas town, WERK, WINKEL, HUIS, PAPA gate + screen, popups, mentor, milestones, offline earnings
+- [x] Phase 4 — PWA (manifest, sw.js precache verified by a unit test, icons via make-icons), Web Audio synth + music loop, speech wrapper, visual pass (static scenery layer, decorations, yard)
+- [~] Phase 5 — verification loop: 48 unit tests green; e2e green on Chromium × 3 iPads (WebKit blocked on this PC, see decision log); screenshots reviewed; kid-tester + economy-review subagents running
 - [ ] Phase 6 — deploy to GitHub Pages, live smoke test
 - [ ] Phase 7 — RAPPORT.md, README.md, final push, console summary
 
@@ -30,6 +30,8 @@ Resume rule: re-read SPEC.md, then this file. Continue at the first unchecked mi
 - 2026-09-02 A new car never arrives sooner than 4 s after the previous one (config.work.minCycleMs) → hard ceiling of 30 coins/min, as the spec intends.
 - 2026-09-02 Investor policy in the simulator = save for the shortest-payback option among unlocked ones (matches the spec reference numbers).
 - 2026-09-02 Bash heredocs are truncated at ~8 KB on this Windows setup; large files are written with the Write tool.
+
+- 2026-09-02 WebKit cannot launch on this PC: Windows application-control policy blocks Playwright's unsigned libxslt.dll. Security setting, not changed. Chromium only; WebKit opt-in via WEBKIT=1 on another machine.
 
 ## Known issues
 - none yet
