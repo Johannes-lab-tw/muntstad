@@ -13,7 +13,10 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report-live' }]],
   outputDir: 'test-results-live',
   use: { baseURL: process.env.BASE_URL, trace: 'retain-on-failure' },
+  // WebKit when WEBKIT=1 (blocked by the application-control policy on the build PC), otherwise Chromium.
   projects: [
-    { name: 'webkit-ipad-gen7-live', use: { ...devices['iPad (gen 7) landscape'], browserName: 'webkit' } },
+    process.env.WEBKIT === '1'
+      ? { name: 'webkit-ipad-gen7-live', use: { ...devices['iPad (gen 7) landscape'], browserName: 'webkit' } }
+      : { name: 'chromium-ipad-gen7-live', use: { ...devices['iPad (gen 7) landscape'], browserName: 'chromium' } },
   ],
 });

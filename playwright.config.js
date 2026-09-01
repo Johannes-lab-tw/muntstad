@@ -31,8 +31,10 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 30000,
   },
+  // WebKit is opt-in (WEBKIT=1): on the build PC Windows' application-control policy blocks Playwright's
+  // unsigned WebKit DLLs (libxslt.dll), so the default run is Chromium only. See RAPPORT.md.
   projects: IPADS.flatMap(([name, id]) => [
     { name: `chromium-${id}`, use: { ...devices[name], browserName: 'chromium' } },
-    { name: `webkit-${id}`, use: { ...devices[name], browserName: 'webkit' } },
+    ...(process.env.WEBKIT === '1' ? [{ name: `webkit-${id}`, use: { ...devices[name], browserName: 'webkit' } }] : []),
   ]),
 });

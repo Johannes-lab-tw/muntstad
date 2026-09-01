@@ -496,8 +496,9 @@ input, textarea {
 .screen-huis { background: linear-gradient(#8fd3ff 0 55%, #7ed957 55%); }
 .huis-scene { position: absolute; inset: 0; overflow: hidden; }
 .huis-scene svg { position: absolute; }
-.huis-scene .house { left: 8%; top: 64%; width: 30vw; height: auto; transform: translateY(-100%); }
-.huis-scene .avatar { left: 46%; top: 78%; width: 120px; height: auto; transform-origin: 50% 100%; }
+.huis-scene .yard { left: 0; top: 0; width: 100%; height: 100%; }
+.huis-scene .house { width: min(34vw, 380px); height: auto; filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.18)); }
+.huis-scene .avatar { width: 124px; height: auto; transform-origin: 50% 100%; }
 .huis-scene .avatar.dance { animation: dance 0.6s ease-in-out 4; }
 .huis-scene .avatar.salto { animation: salto 1s ease-in-out 1; }
 .huis-scene .avatar.jump { animation: jump 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 1; }
@@ -516,7 +517,7 @@ input, textarea {
   30% { transform: translateY(-14px) scaleX(1.04); }
   60% { transform: translateY(0) scaleX(0.98); }
 }
-.huis-scene .garden-item { position: absolute; font-size: 64px; line-height: 1; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.25)); }
+.huis-scene .garden-item { position: absolute; font-size: 64px; line-height: 1; translate: -50% -100%; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.25)); }
 .huis-scene .trampoline { position: absolute; left: 66%; top: 62%; width: 200px; height: 70px; touch-action: manipulation; }
 .huis-scene .zzz { position: absolute; font-size: 28px; animation: zzz 1.6s ease-in-out infinite; }
 @keyframes zzz { 0% { transform: translateY(0); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-30px); opacity: 0; } }
@@ -683,6 +684,8 @@ input, textarea {
   z-index: 1;
 }
 .bubble.hidden { display: none; }
+.app[data-screen="winkel"] .mentor, .app[data-screen="winkel"] .muntje { width: 100px; height: 100px; }
+.app[data-screen="winkel"] .bubble { bottom: 112px; }
 .bubble-text { flex: 1; }
 @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 

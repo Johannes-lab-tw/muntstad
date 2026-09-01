@@ -140,6 +140,29 @@ export function trampolineSVG() {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 70"><rect x="30" y="40" width="10" height="28" fill="#6b7280" ${STROKE} stroke-width="3"/><rect x="160" y="40" width="10" height="28" fill="#6b7280" ${STROKE} stroke-width="3"/><ellipse cx="100" cy="36" rx="92" ry="18" fill="#3b82f6" ${STROKE}/><ellipse cx="100" cy="34" rx="72" ry="11" fill="#1e3a8a" ${STROKE} stroke-width="3"/></svg>`;
 }
 
+/** The yard behind the house on HUIS: sky, sun, clouds, grass, picket fence, path and bushes (viewBox 0 0 1080 810). */
+export function yardSVG() {
+  const pickets = [];
+  for (let x = 0; x <= 1080; x += 34) pickets.push(`<rect x="${x}" y="418" width="14" height="52" rx="3" fill="#fff" ${STROKE} stroke-width="3"/>`);
+  const clouds = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="0" rx="70" ry="26" fill="#fff"/><ellipse cx="46" cy="-14" rx="46" ry="28" fill="#fff"/><ellipse cx="-46" cy="-8" rx="40" ry="24" fill="#fff"/></g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 810" preserveAspectRatio="none">
+  <defs><linearGradient id="yard-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc9ff"/><stop offset="1" stop-color="#d9f2ff"/></linearGradient></defs>
+  <rect width="1080" height="450" fill="url(#yard-sky)"/>
+  <g><circle cx="560" cy="120" r="46" fill="#fde047" ${STROKE}/>${[0, 45, 90, 135].map((a) => `<rect x="490" y="115" width="140" height="10" rx="5" fill="#fde047" transform="rotate(${a} 560 120)" opacity="0.7"/>`).join('')}<circle cx="560" cy="120" r="46" fill="#fde047" ${STROKE}/></g>
+  ${clouds(200, 150, 0.9)}${clouds(880, 110, 0.7)}${clouds(430, 210, 0.55)}
+  <rect y="446" width="1080" height="364" fill="#7ed957"/>
+  <rect y="446" width="1080" height="10" fill="#5fbf3f"/>
+  <rect x="0" y="440" width="1080" height="8" rx="4" fill="#fff" ${STROKE} stroke-width="3"/>
+  ${pickets.join('')}
+  <rect x="0" y="452" width="1080" height="7" rx="3" fill="#fff" ${STROKE} stroke-width="3"/>
+  <path d="M250 520 Q400 560 430 810 L330 810 Q300 600 190 560 Z" fill="#e5d3a1" ${STROKE} stroke-width="4"/>
+  ${[[300, 560], [345, 620], [370, 690], [395, 760]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="26" ry="12" fill="#f5e7bd" ${STROKE} stroke-width="3"/>`).join('')}
+  ${[[60, 500], [118, 506], [960, 496], [1016, 506]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="26" fill="#16a34a" ${STROKE} stroke-width="3"/><circle cx="${x - 12}" cy="${y + 6}" r="16" fill="#22c55e" ${STROKE} stroke-width="3"/>`).join('')}
+  ${[[500, 700], [640, 740], [760, 690], [880, 760], [140, 690], [220, 770]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="7" fill="${['#f472b6', '#fde047', '#fb7185', '#a78bfa', '#fb923c', '#38bdf8'][i]}" ${STROKE} stroke-width="2"/><circle cx="${x}" cy="${y}" r="2.5" fill="#fff"/>`).join('')}
+  ${[80, 460, 700, 1000].map((x) => `<rect x="${x}" y="${600 + (x % 7) * 10}" width="14" height="5" fill="#5fbf3f"/>`).join('')}
+</svg>`;
+}
+
 /** SVG string → data URL for canvas images. */
 export function svgToDataURL(svg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;

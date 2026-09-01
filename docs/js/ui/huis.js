@@ -1,10 +1,11 @@
 // huis.js — the child's house and yard: paint, garden items, pets with idle animation, the avatar with hat/skin,
 // trampoline (tap → jump), fireworks, dance moves, and the sticker wall of milestones. Pure joy screen.
-import { avatarSVG, petSVG, houseSVG, trampolineSVG } from '../art.js';
+import { avatarSVG, petSVG, houseSVG, trampolineSVG, yardSVG } from '../art.js';
 import { isFunActive, setFlag } from '../economy.js';
 
-const GARDEN_SLOTS = [[6, 74], [14, 84], [28, 88], [40, 80], [50, 90], [60, 84], [84, 92], [90, 78], [4, 56], [70, 74], [22, 70], [78, 66]];
-const PET_SLOTS = [[56, 66], [36, 70], [62, 80]];
+// yard positions in % of the screen (x, y = where the item's feet touch the ground)
+const GARDEN_SLOTS = [[6, 74], [14, 86], [26, 72], [38, 84], [48, 74], [58, 80], [70, 72], [84, 80], [93, 68], [20, 62], [66, 62], [34, 64]];
+const PET_SLOTS = [[57, 68], [38, 72], [63, 82]];
 
 export function createHuis(game) {
   const scene = document.getElementById('huis-scene');
@@ -23,6 +24,7 @@ export function createHuis(game) {
     return e;
   }
 
+  /** Inline SVG placed with its bottom-centre at (left%, top%). */
   function svgEl(svg, cls, left, top) {
     const wrap = el('div', cls);
     wrap.innerHTML = svg;
@@ -30,6 +32,7 @@ export function createHuis(game) {
     s.classList.add(cls);
     s.style.left = `${left}%`;
     s.style.top = `${top}%`;
+    s.style.translate = '-50% -100%';
     return s;
   }
 
@@ -54,7 +57,7 @@ export function createHuis(game) {
     for (let burst = 0; burst < 3; burst++) {
       setTimeout(() => {
         const cx = rect.width * (0.25 + Math.random() * 0.5);
-        const cy = rect.height * (0.15 + Math.random() * 0.25);
+        const cy = rect.height * (0.12 + Math.random() * 0.25);
         for (let i = 0; i < 10; i++) {
           const p = el('span', 'firework');
           const a = (i / 10) * Math.PI * 2;
@@ -77,9 +80,13 @@ export function createHuis(game) {
     scene.innerHTML = '';
     actions.innerHTML = '';
     const colorHex = (game.config.colors.find((c) => c.id === state.color) || game.config.colors[0]).hex;
+    // yard background
+    const yard = el('div', 'yard');
+    yard.innerHTML = yardSVG();
+    yard.firstElementChild.classList.add('yard');
+    scene.appendChild(yard.firstElementChild);
     // house
-    const house = svgEl(houseSVG(state.equipped.paint || 'none'), 'house', 10, 14);
-    scene.appendChild(house);
+    scene.appendChild(svgEl(houseSVG(state.equipped.paint || 'none'), 'house', 22, 66));
     // garden items
     let slot = 0;
     for (const f of game.config.fun) {
@@ -90,7 +97,6 @@ export function createHuis(game) {
       g.dataset.item = f.id;
       g.style.left = `${x}%`;
       g.style.top = `${y}%`;
-      g.style.transform = 'translate(-50%, -100%)';
       scene.appendChild(g);
     }
     // trampoline
@@ -109,7 +115,6 @@ export function createHuis(game) {
       p++;
       const pet = svgEl(petSVG(f.id), 'pet', x, y);
       pet.dataset.item = f.id;
-      pet.style.transform = 'translate(-50%, -100%)';
       if (state.petHungry) {
         pet.classList.add('sleep');
         const z = el('div', 'zzz', '💤');
@@ -124,8 +129,7 @@ export function createHuis(game) {
       scene.appendChild(pet);
     }
     // avatar
-    avatarEl = svgEl(avatarSVG({ color: colorHex, hat: state.equipped.hat, skin: state.equipped.skin }), 'avatar', 46, 50);
-    avatarEl.style.transform = 'translate(-50%, -100%)';
+    avatarEl = svgEl(avatarSVG({ color: colorHex, hat: state.equipped.hat, skin: state.equipped.skin }), 'avatar', 47, 80);
     avatarEl.dataset.hat = state.equipped.hat || '';
     avatarEl.dataset.skin = state.equipped.skin || '';
     avatarEl.addEventListener('pointerdown', jump);
