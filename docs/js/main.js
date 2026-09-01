@@ -74,10 +74,14 @@ const game = {
 
 // ---------- state ----------
 
+const pendingMilestones = [];
 function afterUpdate() {
   const ms = E.checkMilestones(state, CONFIG);
   state = ms.state;
-  for (const id of ms.unlocked) game.popups.milestone(id);
+  for (const id of ms.unlocked) {
+    if (screen === 'start') pendingMilestones.push(id); // celebrate once the town is on screen
+    else game.popups.milestone(id);
+  }
   render();
 }
 
@@ -231,6 +235,10 @@ function show(name) {
     const p = pendingOffline;
     pendingOffline = null;
     setTimeout(() => game.popups.offline(p.earned, p.elapsedMs), 600);
+  }
+  if (name === 'stad' && pendingMilestones.length) {
+    const ids = pendingMilestones.splice(0);
+    setTimeout(() => ids.forEach((id) => game.popups.milestone(id)), 900);
   }
 }
 

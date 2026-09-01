@@ -14,6 +14,7 @@ export function createMentor(game) {
   let hideTimer = null;
   let talkTimer = null;
   let lastText = '';
+  let shownAt = 0;
 
   function talk(ms) {
     face.classList.add('talk');
@@ -22,6 +23,7 @@ export function createMentor(game) {
   }
 
   function show(text) {
+    shownAt = game.now();
     lastText = text;
     textEl.textContent = text;
     bubble.classList.remove('hidden');
@@ -64,6 +66,11 @@ export function createMentor(game) {
     return sayText(game.t(key, { naam: game.displayName(), ...vars }), opts);
   }
 
+  // a tap anywhere else dismisses the bubble once it has been readable for a moment
+  document.addEventListener('pointerdown', (e) => {
+    if (bubble.classList.contains('hidden') || bubble.contains(e.target)) return;
+    if (game.now() - shownAt > 1500) hide();
+  }, true);
   replay.addEventListener('click', () => {
     game.audio.play('tap');
     if (lastText) {
