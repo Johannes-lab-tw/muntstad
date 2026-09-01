@@ -12,5 +12,8 @@
     "simulate": "node scripts/simulate.js",
     "icons": "node scripts/make-icons.js"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
 }
