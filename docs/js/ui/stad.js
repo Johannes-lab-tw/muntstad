@@ -109,7 +109,7 @@ export function createStad(game) {
     show() {
       visible = true;
       lastInteraction = game.now();
-      game.scene.resize();
+      game.scene.mount(canvas);
       game.scene.setState(game.state);
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(loop);

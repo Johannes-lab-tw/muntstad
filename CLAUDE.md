@@ -6,7 +6,7 @@ At the start of every session and after any context compaction: re-read SPEC.md 
 1. Autonomy: no questions, no waiting for input. Decide, log the decision in PROGRESS.md, continue. Do not stop before Phase 7 is complete.
 2. Kid safety: no external links, no chat, no text input (only the optional name on START and the PAPA screen), no pressure timers, no random purchases, no dark patterns, no real money. Progress is lost only via the parent-gated, double-confirmed RESET.
 3. Dutch only in the game: every visible and spoken string is Dutch, short, jij-vorm. Button labels are single capitalised words (KOOP, WERK, WINKEL, HUIS, STAD, PAPA).
-4. Zero runtime dependencies: vanilla HTML/CSS/JS ES modules. No framework, bundler, CDN, web fonts or external images. Dev dependency: @playwright/test only.
+4. No frameworks, bundlers, CDNs, web fonts or external images: vanilla HTML/CSS/JS ES modules. The one vendored library is Three.js (`docs/vendor/`, precached, since 2026-09-02). Dev dependency: @playwright/test only.
 5. Original art: inspired by tycoon and Brookhaven-style games; never Roblox trademarks, names, models or assets.
 6. Everything works offline after the first load (service worker), on iPad Safari and as a home-screen app; landscape first, portrait shows "Draai je iPad".
 7. Ship a finished v1 over an unfinished v2. Cut stretch items and list them under "Volgende versie" in RAPPORT.md.

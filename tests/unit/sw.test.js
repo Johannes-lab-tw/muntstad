@@ -62,9 +62,9 @@ test('manifest is standalone, landscape, relative, with 192 and 512 PNG icons', 
   for (const f of ['icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png']) assert.ok(fs.statSync(path.join(docs, f)).size > 1000, f);
 });
 
-test('the site stays small: total docs/ under 1 MB, no runtime dependencies', () => {
+test('the site stays small: total docs/ under 1.5 MB (Three.js is vendored), no runtime dependencies', () => {
   const total = walk(docs).reduce((n, f) => n + fs.statSync(path.join(docs, f)).size, 0);
-  assert.ok(total < 1024 * 1024, `docs/ is ${total} bytes`);
+  assert.ok(total < 1.5 * 1024 * 1024, `docs/ is ${total} bytes`);
   const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   assert.equal(pkg.dependencies, undefined);
   assert.deepEqual(Object.keys(pkg.devDependencies), ['@playwright/test']);

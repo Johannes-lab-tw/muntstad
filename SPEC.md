@@ -174,7 +174,9 @@ screenshots/                ← e2e screenshot gallery (committed; small PNGs)
 - Save to `localStorage` under a versioned key every 5 s and on `pagehide`/`visibilitychange`. Corrupted or older-version saves migrate or reset gracefully with a log line — never a blank screen.
 - `config.js` exports one object; `economy.js` takes state + config and returns new state (pure), so tests and the simulator share the exact production logic.
 
-**Performance budget:** 60 fps on an iPad from ~2019 (iPad gen 7 class); ≤ 30 live particles; no growing DOM; total site ≤ 1 MB; first load ≤ 1 s on a local server.
+**Performance budget:** 60 fps on an iPad from ~2019 (iPad gen 7 class); ≤ 30 live particles; no growing DOM; total site ≤ 1,5 MB (raised from 1 MB on 2026-09-02 for the vendored Three.js, 751 KB minified; gzipped over the wire it is ~200 KB); first load ≤ 1 s on a local server.
+
+**Rendering (since v3, 2026-09-02):** the town, yard and wash bay are real 3D with Three.js, vendored as `docs/vendor/three.module.min.js` + `three.core.min.js` and precached by the service worker. No CDN, no bundler, no other library. The look is a smooth rounded-plastic toy world (Brookhaven / tycoon style), not voxel cubes.
 
 ---
 

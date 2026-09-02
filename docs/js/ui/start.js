@@ -1,7 +1,6 @@
 // start.js — first run: pick a colour + optional name (skipping is the big button). Returning: "VERDER SPELEN".
 // The town itself lives and breathes behind the panel (a second scene instance renders into the background).
-import { avatarSprite } from '../art/sprites.js';
-import { createScene } from '../scene.js';
+import { avatarSprite } from '../3d/thumbs.js';
 import { setProfile, setFlag } from '../economy.js';
 
 export function createStart(game) {
@@ -12,7 +11,6 @@ export function createStart(game) {
   const btn = document.getElementById('btn-start');
   const bg = document.getElementById('start-canvas');
   let color = game.config.colors[0].id;
-  let bgScene = null;
   let raf = 0;
   let visible = false;
   let last = 0;
@@ -45,7 +43,7 @@ export function createStart(game) {
       color = c.id;
       for (const x of colorRow.children) x.classList.toggle('selected', x === b);
       drawAvatar();
-      if (bgScene) bgScene.setState({ ...game.state, color });
+      game.scene.setState({ ...game.state, color });
     });
     colorRow.appendChild(b);
   }
@@ -66,24 +64,12 @@ export function createStart(game) {
     // the background town runs at ~30 fps: plenty for a backdrop, gentle on the battery
     if (now - last > 30) {
       last = now;
-      bgScene.render(now);
+      game.scene.render(now);
     }
     raf = requestAnimationFrame(loop);
   }
 
-  function ensureScene() {
-    if (bgScene) return;
-    const quiet = {
-      config: game.config,
-      audio: { play() {} },
-      isUnlocked: (id) => game.isUnlocked(id),
-      walletPoint: () => ({ x: 80, y: 60 }),
-      bumpWallet() {},
-    };
-    bgScene = createScene(bg, quiet);
-  }
-
-  window.addEventListener('resize', () => { if (visible && bgScene) bgScene.resize(); });
+  window.addEventListener('resize', () => { if (visible) game.scene.resize(); });
 
   return {
     show() {
@@ -97,9 +83,8 @@ export function createStart(game) {
       for (const x of colorRow.children) x.classList.toggle('selected', x.dataset.color === color);
       nameInput.value = s.name || '';
       drawAvatar();
-      ensureScene();
-      bgScene.setState(s);
-      bgScene.resize();
+      game.scene.setState({ ...s, color });
+      game.scene.mount(bg);
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(loop);
     },
@@ -110,7 +95,7 @@ export function createStart(game) {
       nameInput.blur();
     },
     render(s) {
-      if (visible && bgScene) bgScene.setState({ ...s, color });
+      if (visible) game.scene.setState({ ...s, color });
     },
   };
 }

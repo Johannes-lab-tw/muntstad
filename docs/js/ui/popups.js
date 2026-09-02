@@ -1,6 +1,6 @@
 // popups.js — offline earnings (count-up + TOP!), milestone celebrations (fanfare, confetti, sticker), building card.
 import { formatCoins, makerById, makerLevel, makerIncome, upgradePrice } from '../economy.js';
-import { makerSprite } from '../art/sprites.js';
+import { makerSprite } from '../3d/thumbs.js';
 
 export function createPopups(game) {
   const overlay = document.getElementById('overlay');

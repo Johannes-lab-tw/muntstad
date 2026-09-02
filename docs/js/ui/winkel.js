@@ -2,7 +2,7 @@
 // Every card shows the item as blocky 3D art (canvas sprite). Unaffordable cards stay visible (dimmed,
 // "nog 12" + progress bar); affordable cards glow; owned items show ✓ and AAN/UIT.
 import { formatCoins, makerLevel, makerIncome, upgradePrice, isFunActive, nextMakerTarget } from '../economy.js';
-import { itemSprite, makerSprite } from '../art/sprites.js';
+import { itemSprite, makerSprite } from '../3d/thumbs.js';
 
 const PER_PAGE = 8;
 

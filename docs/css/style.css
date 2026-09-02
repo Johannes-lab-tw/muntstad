@@ -269,7 +269,7 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 }
 
 /* ---------- START ---------- */
-.screen-start { align-items: center; justify-content: flex-end; padding-bottom: 5vh; background: var(--sky-deep); }
+.screen-start { align-items: center; justify-content: flex-end; padding-bottom: 5vh; background: linear-gradient(180deg, #a6e4ff 0%, #5fc4ff 38%, #1f8ee0 70%, #1479cf 100%); }
 .start-panel.returning { grid-template-columns: 1fr; width: min(640px, 80vw); }
 .start-panel.returning .start-left { flex-direction: row; gap: 28px; }
 .start-panel.returning .start-title { margin: 0; }
@@ -342,8 +342,10 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .start-panel .btn-xl { grid-column: 1 / -1; justify-self: center; min-width: 340px; }
 
 /* ---------- STAD ---------- */
-.screen-stad { background: var(--sky-deep); }
+.screen-stad { background: linear-gradient(180deg, #a6e4ff 0%, #5fc4ff 38%, #1f8ee0 70%, #1479cf 100%); }
 .town { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.gl-host { position: absolute; inset: 0; overflow: hidden; }
+.gl-host canvas.gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .bottombar {
   position: absolute;
   left: 0;
@@ -623,10 +625,12 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 #shop-stad { margin-left: auto; }
 
 /* ---------- HUIS ---------- */
-.screen-huis { background: var(--sky-deep); }
+.screen-huis { background: linear-gradient(180deg, #a6e4ff 0%, #5fc4ff 38%, #1f8ee0 70%, #1479cf 100%); }
 .huis-scene { position: absolute; inset: 0; overflow: hidden; }
 .huis-scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.huis-scene .hit { position: absolute; translate: -50% -100%; background: transparent; }
+.huis-scene .hits { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.huis-scene .hit { position: absolute; translate: -50% -100%; background: transparent; pointer-events: auto; }
+.huis-scene .firework { z-index: 3; }
 .huis-scene .zzz { position: absolute; font-size: 30px; translate: -50% -100%; animation: zzz 1.6s ease-in-out infinite; pointer-events: none; }
 @keyframes zzz { 0% { transform: translateY(0); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-30px); opacity: 0; } }
 .sticker-wall {

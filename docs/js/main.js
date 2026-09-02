@@ -6,7 +6,8 @@ import * as S from './save.js';
 import { T, t } from './i18n.js';
 import { createAudio } from './audio.js';
 import { createSpeech } from './speech.js';
-import { createScene } from './scene.js';
+import { createEngine } from './3d/engine.js';
+import { createScene } from './3d/scene-stad.js';
 import { createMentor } from './ui/mentor.js';
 import { createPopups } from './ui/popups.js';
 import { createFx } from './ui/fx.js';
@@ -16,7 +17,7 @@ import { createWerk } from './ui/werk.js';
 import { createWinkel } from './ui/winkel.js';
 import { createHuis } from './ui/huis.js';
 import { createPapa } from './ui/papa.js';
-import { navSprite } from './art/sprites.js';
+import { navSprite, setThumbEngine } from './3d/thumbs.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -300,7 +301,10 @@ function boot() {
   game.mentor = createMentor(game);
   game.popups = createPopups(game);
   game.fx = createFx(game);
-  game.scene = createScene($('town'), game);
+  // real 3D (Three.js): one renderer for the town, the yard and the thumbnails
+  game.engine = createEngine();
+  setThumbEngine(game.engine);
+  game.scene = createScene($('town'), game, game.engine);
   screens.start = createStart(game);
   screens.stad = createStad(game);
   screens.werk = createWerk(game);
@@ -348,7 +352,7 @@ function boot() {
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch((e) => console.info('[muntstad] service worker not registered:', e.message));
   }
-  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 2, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; } };
+  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 3, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; } };
 }
 
 boot();
