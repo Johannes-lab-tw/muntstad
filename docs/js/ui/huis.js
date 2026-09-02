@@ -225,8 +225,9 @@ export function createHuis(game) {
       const [X, Y] = project(x, y, zz);
       node.style.left = `${X}px`;
       node.style.top = `${Y + u * 0.1}px`;
-      node.style.width = `${w * u}px`;
-      node.style.height = `${h * u}px`;
+      // never smaller than a finger (SPEC §4: ≥ 64 px), however small the yard is on screen
+      node.style.width = `${Math.max(72, w * u)}px`;
+      node.style.height = `${Math.max(72, h * u)}px`;
     };
     place(hitEls.avatar, ax, ay, 1.5, 1.6, z);
     place(hitEls.house, HOUSE_AT[0], HOUSE_AT[1], 3.4, 2.6);

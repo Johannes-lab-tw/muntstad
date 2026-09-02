@@ -24,7 +24,11 @@ export default defineConfig({
     baseURL: BASE,
     trace: 'retain-on-failure',
     actionTimeout: 15000,
+    // v3 renders with WebGL: let headless Chromium use the GPU where it can (falls back to SwiftShader otherwise)
+    launchOptions: { args: ['--ignore-gpu-blocklist', '--use-angle=d3d11', '--enable-gpu-rasterization'] },
   },
+  // one worker by default: a software-rendered WebGL page per worker is heavy on the CPU
+  workers: process.env.PW_WORKERS ? Number(process.env.PW_WORKERS) : 1,
   webServer: process.env.BASE_URL ? undefined : {
     command: `node scripts/serve.js --port ${PORT}`,
     url: BASE,
