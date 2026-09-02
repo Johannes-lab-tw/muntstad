@@ -134,10 +134,10 @@ export function drawAvatar(iso, ctx, x, y, opts = {}) {
   let swing = 0, armUp = 0, bob = 0, z = extraZ, spin = 0;
   if (pose === 'walk') { swing = Math.sin(t / 110 + phase); bob = Math.abs(swing) * 0.03; }
   else if (pose === 'idle') { bob = Math.sin(t / 900 + phase) * 0.015; }
-  else if (pose === 'jump') { z += extraZ; armUp = 1; }
+  else if (pose === 'jump') { armUp = 1; }
   else if (pose === 'dance') { swing = Math.sin(t / 140) * 0.8; armUp = Math.abs(Math.sin(t / 140)); bob = Math.abs(Math.sin(t / 140)) * 0.12; }
   else if (pose === 'wave') { armUp = 0.5 + Math.sin(t / 160) * 0.5; }
-  else if (pose === 'salto') { spin = ((t / 1000) % 1) * Math.PI * 2; }
+  else if (pose === 'salto') { spin = (Math.min(1, Math.max(0, t / 1000)) % 1) * Math.PI * 2; } // t = ms since the salto started
   const blink = pose !== 'salto' && ((t + phase * 1000) % 3200) < 130;
 
   if (vehicle === 'auto') {

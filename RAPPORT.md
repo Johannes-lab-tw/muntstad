@@ -34,6 +34,7 @@ Je vroeg twee dingen: beoordeel wat de eerste run heeft gemaakt, en til de vormg
 - Geluid na een telefoontje of Siri (iOS zet het geluid op "onderbroken") wordt bij de volgende tik hervat; de spraak laat op Safari geen zin meer vallen na een onderbreking.
 - Service worker haalt bij een nieuwe versie nooit oude bestanden uit de browsercache, en controleert op een nieuwe versie elke keer dat de app naar voren komt.
 - Tekst op het canvas (prijsborden, dorpsbord) is nu minstens 20 px, zoals de SPEC eist.
+- Tweede reviewronde op de nieuwe look (kind-tester, design-critic, bug-hunter, prestatiemeting, spec-check, elk punt tegengecontroleerd; 42 bevestigde punten): de wasstraat tekende op een echte iPad (2× pixeldichtheid) twee keer te groot, dat is verholpen; elk canvas werd 3,5 % te klein gemeten tijdens de schermanimatie, verholpen; Muntje's ballon staat weer boven hem in plaats van over de knoppen; de weg-lus is kleiner zodat kavels en gebouwen nooit over de stoep liggen; de flat staat vooraan zodat hij nooit onder de bovenbalk groeit; gebouwen, bomen, borden en verkeer worden als plaatje gecached en de wolken/golven schakelen zichzelf uit als een iPad geen 60 beelden per seconde haalt; verder: dieren lopen niet meer dwars door het kind, sprong- en saltohoogte kloppen, halsband van de hond, borden op dichte kavels tonen de prijs, gebouwkaart zegt 'nog 12' als het niet kan, BETER-knop draagt de prijs, uitgeschakelde spullen zien er grijs uit op de kaart, modderspatten kleiner en verder uit elkaar (en ze blijven staan tijdens een veeg, zoals iOS wil), zon weg (het licht komt van linksboven), vuurwerk-plaatje in blokstijl, stickers 66 px en 12 px uit elkaar, START toont het dorp boven het paneel.
 - Tests: de kind-UX-audit controleert nu ook 12 px afstand tussen knoppen, ≥ 80 px hoge hoofdknoppen, ≥ 24 px knopletters, ≥ 36 px muntstand en de tikvlakken op HUIS en WERK. Nieuwe tests voor de ouderpoort (korte tik opent niet, RESET twee keer bevestigen, Bewaar-code laden en weigeren), voor twee stickers tegelijk (popups na elkaar) en voor de "echt offline"-test die niet meer stilletjes overslaat.
 
 ### 0.3 Bewust anders dan de SPEC, en waarom
@@ -84,7 +85,7 @@ Eén les, zonder uitleg-tekst: **geld dat je aan het werk zet, maakt meer geld, 
 
 ## 4. Aan de knoppen draaien
 
-Alle getallen staan in `docs/js/config.js`. Verander een getal, sla op, zet in `docs/sw.js` het versienummer één hoger (`muntstad-v4` → `muntstad-v5`), commit en push. Veilige marges:
+Alle getallen staan in `docs/js/config.js`. Verander een getal, sla op, zet in `docs/sw.js` het versienummer één hoger (`muntstad-v5` → `muntstad-v6`), commit en push. Veilige marges:
 
 | Knop | Nu | Wat het doet | Veilig tussen |
 |---|---|---|---|
@@ -139,7 +140,7 @@ Verhouding LEUK-munten 3,68× (eis ≥ 3×), leuke spullen 2,5× (eis ≥ 1,5×)
 3. **Beginscherm:** na "Zet op beginscherm" start hij zonder Safari-balk. Houd de iPad liggend.
 4. **Offline:** zet wifi uit en open de app: hij moet gewoon starten.
 5. **Weg geweest:** leg de iPad 10 minuten weg met minstens één geldmaker; bij terugkomst komt "Terwijl je weg was…".
-6. **Tempo:** het dorp en de wasstraat moeten soepel bewegen (auto's, munten, wolken). Hapert het op een oude iPad, zeg het; dan zet ik het aantal bewegende dingen lager.
+6. **Tempo:** het dorp en de wasstraat moeten soepel bewegen (auto's, munten, wolken). Het dorp meet zichzelf: haalt een iPad geen 60 beelden per seconde, dan zet hij de golven en wolkschaduwen uit. In Chromium met 4× vertraagde processor (grofweg een iPad uit 2019): STAD 29, HUIS 55, WERK 60 en WINKEL 60 beelden per seconde; op de iPad zelf is het canvas versneld door de grafische chip, dus daar verwacht ik meer. Hapert het toch, zeg het.
 
 ## 7. Wat (nog) niet kan, en Volgende versie
 

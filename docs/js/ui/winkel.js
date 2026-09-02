@@ -163,6 +163,7 @@ export function createWinkel(game) {
     if (level === 0) {
       const unlocked = game.isUnlocked(m.id);
       c.card.classList.toggle('locked', !unlocked);
+      c.price.classList.remove('wrap');
       c.sub.textContent = `${formatCoins(m.income[0])} ${game.t('ui.perMinuut')}`;
       if (!unlocked) {
         c.price.textContent = `🔒 ${formatCoins(m.price)} `;
@@ -189,9 +190,10 @@ export function createWinkel(game) {
       return;
     }
     c.card.classList.remove('locked');
-    c.sub.textContent = `${'⭐'.repeat(level)} · ${formatCoins(makerIncome(m, level))} ${game.t('ui.perMinuut')}`;
+    c.sub.textContent = '⭐'.repeat(level);
+    c.price.classList.add('wrap');
     if (level >= game.config.maxLevel) {
-      c.price.textContent = game.t('ui.max');
+      c.price.textContent = `${formatCoins(makerIncome(m, level))} ${game.t('ui.perMinuut')}`;
       c.progress.hidden = true;
       c.btn.hidden = true;
       c.card.classList.remove('dim', 'can');
@@ -203,11 +205,15 @@ export function createWinkel(game) {
     c.btn.hidden = false;
     c.card.classList.toggle('dim', missing > 0);
     c.card.classList.toggle('can', missing === 0);
-    setPrice(c.price, missing > 0 ? `${game.t('ui.nog')} ${formatCoins(missing)} ` : `${formatCoins(price)} `);
-    c.sub.textContent = `${'⭐'.repeat(level)} ${formatCoins(makerIncome(m, level))} → ${formatCoins(m.income[level])}`;
+    // stars on one line, the income on the next, the upgrade price on the button (like the building card)
+    if (missing > 0) { c.price.classList.remove('wrap'); setPrice(c.price, `${game.t('ui.nog')} ${formatCoins(missing)} `); }
+    else c.price.textContent = `${formatCoins(makerIncome(m, level))} ${game.t('ui.perMinuut')}`;
     c.progress.hidden = missing === 0;
     c.bar.style.width = `${Math.min(100, (wallet / price) * 100)}%`;
     setBtn(c, game.t('ui.upgrade'), 'btn-success' + (missing > 0 ? ' dim' : ''), missing === 0);
+    const pr = el('span', 'btn-price', `${formatCoins(price)} `);
+    pr.appendChild(coin());
+    c.btn.appendChild(pr);
     c.action = () => {
       const r = game.buy('upgrade', m.id);
       if (r.ok) bump(c.card);
@@ -222,6 +228,7 @@ export function createWinkel(game) {
     c.check.hidden = !owned;
     c.card.classList.toggle('owned', owned);
     c.card.classList.remove('locked');
+    if (!owned) c.card.classList.remove('off');
     c.sub.textContent = '';
     if (owned) {
       c.card.classList.remove('dim', 'can');
@@ -231,6 +238,7 @@ export function createWinkel(game) {
         // the button shows the state like a switch (AAN = you wear/show it); a tap flips it
         const active = isFunActive(state, game.config, f.id);
         c.price.textContent = '✓';
+        c.card.classList.toggle('off', !active);
         setBtn(c, active ? game.t('ui.aan') : game.t('ui.uit'), active ? 'btn-success' : 'btn-grey', false);
         c.action = () => {
           game.audio.play('pop');

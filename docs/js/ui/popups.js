@@ -151,9 +151,19 @@ export function createPopups(game) {
       box.appendChild(el('h2', 'popup-title', maker.name));
       if (level === 0) {
         if (game.isUnlocked(id)) {
+          const missing = Math.max(0, maker.price - Math.floor(state.wallet));
           box.appendChild(el('p', 'bcard-income', `${formatCoins(maker.income[0])} ${game.t('ui.perMinuut')}`));
-          box.appendChild(withCoin(el('p', 'popup-text'), `${formatCoins(maker.price)} `));
-          const b = button(`${game.t('ui.koop')} ${formatCoins(maker.price)}`, 'btn-primary btn-xl', () => {
+          // same language as the shop card: "nog 12" with a progress bar when the coins are not there yet
+          box.appendChild(withCoin(el('p', 'popup-text'), missing > 0 ? `${game.t('ui.nog')} ${formatCoins(missing)} ` : `${formatCoins(maker.price)} `));
+          if (missing > 0) {
+            const progress = el('div', 'progress');
+            progress.style.width = '280px';
+            const bar = el('i');
+            bar.style.width = `${Math.min(100, (Math.floor(state.wallet) / maker.price) * 100)}%`;
+            progress.appendChild(bar);
+            box.appendChild(progress);
+          }
+          const b = button(`${game.t('ui.koop')} ${formatCoins(maker.price)}`, `btn-primary btn-xl${missing > 0 ? ' dim' : ''}`, () => {
             const r = game.buy('maker', id);
             if (r.ok) close();
             else { box.classList.add('shake'); setTimeout(() => box.classList.remove('shake'), 500); }

@@ -32,13 +32,13 @@ export const PETS = {
     // head
     const hz = bz + bob + bodyH - 0.1;
     const hx = x + 0.2, hy = y - 0.3;
+    iso.block(hx - 0.02, hy - 0.02, hz - 0.02, 0.54, 0.56, 0.08, '#ff5f5f'); // collar (under the head)
     iso.block(hx, hy, hz, 0.5, 0.52, 0.48, c);
     iso.block(hx - 0.02, hy - 0.06, hz + 0.3, 0.14, 0.12, 0.3, dark); // ears
     iso.block(hx + 0.38, hy + 0.46, hz + 0.3, 0.14, 0.12, 0.3, dark);
     if (side === 'x') { iso.face(hx, hy, hz, 0.5, 0.52, 'x', 0.18, 0.05, 0.16, 0.14, INK); }
     else { iso.face(hx, hy, hz, 0.5, 0.52, 'y', 0.18, 0.05, 0.16, 0.14, INK); }
     eyes(iso, side, hx, hy, hz, 0.5, 0.52, 0.72, sleeping);
-    iso.block(hx - 0.02, hy - 0.02, hz - 0.02, 0.54, 0.56, 0.08, '#ff5f5f'); // collar
   },
   kat(iso, ctx, x, y, { t = 0, facing = 'se', sleeping = false, phase = 0 }) {
     const c = '#b9c0cc', dark = '#7b8494';

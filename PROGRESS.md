@@ -22,7 +22,7 @@ Opdracht van Johannes: beoordeel wat er staat (werking, functionaliteit, wat is 
 - [x] R2.5 — verificatie: unit 51 groen; e2e 60 groen (Chromium × 3 iPads, incl. bredere kind-UX-audit, ouderpoort, twee stickers tegelijk); screenshots op drie formaten zelf beoordeeld; review-ronde 2 (kind-tester, design-critic, bug-hunter, perf, spec-check + tegencontrole) loopt/verwerkt onder R2.8
 - [x] R2.6 — bevindingen uit R2.1 verwerkt (zie RAPPORT.md §0.2)
 - [x] R2.7 — deploy (sw cache v4), RAPPORT.md/README.md/ART-DIRECTION.md bijgewerkt, screenshots-galerij vernieuwd (13 per formaat), live rooktest groen
-- [ ] R2.8 — bevindingen van de v2-review verwerkt, tests groen, deploy
+- [x] R2.8 — v2-review (5 reviewers + tegencontrole, gestopt vóór de dure samenvatting op verzoek van Johannes; 42 bevestigde + 10 ongetoetste punten zelf beoordeeld) verwerkt: WERK-canvas dpr-2-bug, canvasmaat tijdens schermanimatie, ballonpositie, wegloop/kavels, flat vooraan, sprite-cache voor gebouwen/props/borden/verkeer + adaptieve lite-modus, en ~25 kleinere punten; unit 51 groen, e2e 60 groen; sw cache v5; deploy
 
 ## Toolbox (checked 2026-09-02)
 - node v24.20.0 — was NOT installed; installed as a portable build in C:\Users\jgsno\.local\node (SHA256 verified against nodejs.org) and added to the user PATH. New terminals see it; this session uses the absolute path.
@@ -54,7 +54,9 @@ Opdracht van Johannes: beoordeel wat er staat (werking, functionaliteit, wat is 
 - 2026-09-02 De modderspatten in WERK blijven DOM-elementen (`.dirt`), gepositioneerd op de vlakken van de canvas-auto, zodat tik/veeg en de e2e-helper ongewijzigd werken.
 - 2026-09-02 HUIS is canvas; onzichtbare `.hit`-vlakken (`.avatar[data-hat]`, `.pet[data-item]`, `.trampoline`, `.house`) liggen over de figuren voor tikken en tests.
 - 2026-09-02 De e2e-audit tikt het kavel van de limonadekraam via `window.__muntstad.plotPoint('limonade')` in plaats van vaste percentages (de lay-out is nu isometrisch).
+- 2026-09-02 Gebouwen, huis, bomen/struiken/lantaarns, TE KOOP-borden en NPC-auto's worden per (soort, level/kleur, unit, dpr) één keer in een offscreen canvas getekend en daarna als plaatje geblit; alleen rook, druppels, vlaggen en zwevende munten worden live getekend (`part: 'anim'`). Winkelvolgorde gemengd per pagina; Bewaar-codes van vóór 2 september 2026 vervallen daardoor (er waren er nog geen).
 - 2026-09-02 Buttons hebben witte, omlijnde letters (text-shadow in 8 richtingen); het toetsenblok van de ouderpoort houdt donkere cijfers op wit voor leesbaarheid.
 
 ## Known issues
-- none yet
+- STAD haalt in headless Chromium met 4× CPU-throttle ~29 fps (software-rendering; blits van sprites zijn daar duur). Op de iPad is canvas GPU-versneld; de scene schakelt bovendien zelf golven/wolkschaduwen uit onder 42 fps. Echte iPad-meting nog te doen (§6 RAPPORT).
+- Tokenverbruik: Johannes vroeg om goedkopere agents; de v2-reviewworkflow is daarom gestopt vóór de samenvatting en de rest is zonder agents gedaan. Volgende reviews: finders op Sonnet, toetsers op Sonnet/laag effort, geen synthese-agent (zelf samenvatten uit journal.jsonl).

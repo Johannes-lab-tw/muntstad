@@ -15,8 +15,8 @@ const HOUSE_AT = [2.7, 1.5];
 const AVATAR_HOME = [5.6, 4.5];
 const TRAMPOLINE_AT = [7.6, 5.2];
 // garden slots (world), kept clear of the house, the path and the trampoline
-const GARDEN_SLOTS = [[1.0, 4.4], [1.4, 6.1], [3.3, 6.3], [7.1, 1.1], [8.6, 6.2], [8.7, 2.3], [5.9, 1.2], [1.0, 2.8], [8.6, 4.1], [2.7, 4.0], [7.0, 3.1], [3.4, 3.2]];
-const PET_SLOTS = [[3.4, 5.2], [6.6, 6.2], [2.2, 5.3], [7.8, 2.8], [5.0, 2.6]];
+const GARDEN_SLOTS = [[1.0, 4.4], [1.4, 6.1], [3.3, 6.3], [7.1, 1.1], [8.6, 6.2], [8.7, 2.3], [5.9, 1.2], [1.0, 2.8], [8.6, 4.1], [2.6, 3.9], [7.0, 3.1], [2.0, 5.3]];
+const PET_SLOTS = [[3.4, 5.2], [6.6, 6.2], [4.6, 6.1], [7.8, 2.8], [5.0, 2.6]];
 
 export function createHuis(game) {
   const scene = document.getElementById('huis-scene');
@@ -37,7 +37,7 @@ export function createHuis(game) {
   let visible = false;
   let raf = 0;
   let state = null;
-  const avatar = { pose: 'idle', until: 0, z: 0 };
+  const avatar = { pose: 'idle', until: 0, since: 0, z: 0 };
   const pets = new Map(); // id → { x, y, tx, ty, facing, phase, nextMove }
   const hitEls = {};
 
@@ -54,9 +54,9 @@ export function createHuis(game) {
   // ---------- layout ----------
 
   function resize() {
-    const rect = scene.getBoundingClientRect();
-    W = Math.max(320, Math.round(rect.width));
-    H = Math.max(240, Math.round(rect.height));
+    // clientWidth/Height ignore the screen's slide-in transform (getBoundingClientRect would measure it 3.5 % small)
+    W = Math.max(320, scene.clientWidth || window.innerWidth);
+    H = Math.max(240, scene.clientHeight || window.innerHeight);
     dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
@@ -92,16 +92,14 @@ export function createHuis(game) {
     sky.addColorStop(1, '#0f5aa8');
     c.fillStyle = sky;
     c.fillRect(0, 0, W, H);
-    // sun + clouds
-    c.beginPath(); c.arc(W * 0.78, H * 0.12, u * 0.7, 0, Math.PI * 2); c.fillStyle = '#ffe066'; c.fill();
-    c.lineWidth = 4; c.strokeStyle = rgba('#e08a00', 0.6); c.stroke();
+    // clouds (no sun: the light comes from the upper left, off screen)
     for (const [cx, cy, s] of [[W * 0.18, H * 0.16, 0.9], [W * 0.52, H * 0.1, 0.65]]) {
       c.fillStyle = 'rgba(255,255,255,0.95)';
-      c.beginPath();
-      c.ellipse(cx, cy, 60 * s, 20 * s, 0, 0, Math.PI * 2);
-      c.ellipse(cx + 38 * s, cy - 12 * s, 40 * s, 24 * s, 0, 0, Math.PI * 2);
-      c.ellipse(cx - 40 * s, cy - 6 * s, 34 * s, 18 * s, 0, 0, Math.PI * 2);
-      c.fill();
+      for (const [dx, dy, rx, ry] of [[0, 0, 60, 20], [38, -12, 40, 24], [-40, -6, 34, 18]]) {
+        c.beginPath();
+        c.ellipse(cx + dx * s, cy + dy * s, rx * s, ry * s, 0, 0, Math.PI * 2);
+        c.fill();
+      }
     }
     // water ripples behind the yard
     c.strokeStyle = 'rgba(255,255,255,0.25)';
@@ -159,9 +157,17 @@ export function createHuis(game) {
     for (const p of pets.values()) {
       if (state.petHungry) continue;
       if (now > p.nextMove) {
-        const [x, y] = PET_SLOTS[Math.floor(Math.random() * PET_SLOTS.length)];
-        p.tx = x + (Math.random() - 0.5) * 0.8;
-        p.ty = y + (Math.random() - 0.5) * 0.8;
+        // pick a spot whose straight path does not run through the child (closest approach ≥ 1 unit)
+        let target = null;
+        for (let tries = 0; tries < 6 && !target; tries++) {
+          const [x, y] = PET_SLOTS[Math.floor(Math.random() * PET_SLOTS.length)];
+          const tx = x + (Math.random() - 0.5) * 0.8, ty = y + (Math.random() - 0.5) * 0.8;
+          const dx = tx - p.x, dy = ty - p.y, len2 = dx * dx + dy * dy || 1;
+          const f = Math.max(0, Math.min(1, ((AVATAR_HOME[0] - p.x) * dx + (AVATAR_HOME[1] - p.y) * dy) / len2));
+          const cx = p.x + dx * f, cy = p.y + dy * f;
+          if (Math.hypot(cx - AVATAR_HOME[0], cy - AVATAR_HOME[1]) >= 1.0) target = [tx, ty];
+        }
+        if (target) { p.tx = target[0]; p.ty = target[1]; }
         p.nextMove = now + 4000 + Math.random() * 5000;
       }
       const dx = p.tx - p.x, dy = p.ty - p.y;
@@ -185,7 +191,7 @@ export function createHuis(game) {
     movePets(now, dt);
     ctx.drawImage(staticCanvas, 0, 0, W, H);
     const ents = [];
-    ents.push({ depth: HOUSE_AT[0] + HOUSE_AT[1], draw: () => drawHouse(iso, ctx, HOUSE_AT[0], HOUSE_AT[1], state.equipped.paint || 'none', now) });
+    ents.push({ depth: HOUSE_AT[0] + HOUSE_AT[1], draw: () => drawHouse(iso, ctx, HOUSE_AT[0], HOUSE_AT[1], state.equipped.paint || 'none', now, { patch: false }) });
     let slot = 0;
     for (const f of game.config.fun) {
       if (f.kind !== 'garden' || !state.fun[f.id] || !isFunActive(state, game.config, f.id)) continue;
@@ -210,7 +216,8 @@ export function createHuis(game) {
     if (avatar.pose === 'jump') z += Math.max(0, Math.sin(((avatar.until - now) / 800) * Math.PI)) * 2.2;
     if (now > avatar.until && avatar.pose !== 'idle') avatar.pose = 'idle';
     const colorHex = (game.config.colors.find((c) => c.id === state.color) || game.config.colors[0]).hex;
-    ents.push({ depth: ax + ay + 0.01, draw: () => drawAvatar(iso, ctx, ax, ay, { color: colorHex, hat: state.equipped.hat, skin: state.equipped.skin, facing: 'se', pose: avatar.pose, t: now, z }) });
+    const poseT = avatar.pose === 'salto' ? now - avatar.since : now;
+    ents.push({ depth: ax + ay + 0.01, draw: () => drawAvatar(iso, ctx, ax, ay, { color: colorHex, hat: state.equipped.hat, skin: state.equipped.skin, facing: 'se', pose: avatar.pose, t: poseT, z }) });
     ents.sort((a, b) => a.depth - b.depth);
     for (const e of ents) e.draw();
     positionHits(ax, ay, z);
@@ -313,7 +320,7 @@ export function createHuis(game) {
     if (s.fun.trampoline) actions.appendChild(actionButton(`${game.t('fun.spring')}`, 'btn-secondary', jump));
     if (s.fun.vuurwerk) actions.appendChild(actionButton(`${game.t('fun.vuurwerk')}`, 'btn-primary', fireworks));
     if (s.fun.dansje) actions.appendChild(actionButton(`${game.t('fun.dansje')}`, 'btn-success', () => { game.audio.play('buy'); avatar.pose = 'dance'; avatar.until = performance.now() + 2500; }));
-    if (s.fun.salto) actions.appendChild(actionButton(`${game.t('fun.salto')}`, 'btn-purple', () => { game.audio.play('whoosh'); avatar.pose = 'salto'; avatar.until = performance.now() + 1000; }));
+    if (s.fun.salto) actions.appendChild(actionButton(`${game.t('fun.salto')}`, 'btn-purple', () => { game.audio.play('whoosh'); avatar.pose = 'salto'; avatar.since = performance.now(); avatar.until = performance.now() + 1000; }));
     stickerGrid.innerHTML = '';
     for (const m of game.config.milestones) {
       const got = s.milestones.includes(m.id);

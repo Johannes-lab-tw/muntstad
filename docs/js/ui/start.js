@@ -92,6 +92,7 @@ export function createStart(game) {
       const returning = !!s.flags.started;
       color = s.color;
       newBox.hidden = returning;
+      btn.closest('.start-panel').classList.toggle('returning', returning);
       btn.textContent = returning ? game.t('ui.verderSpelen') : game.t('ui.speelStart');
       for (const x of colorRow.children) x.classList.toggle('selected', x.dataset.color === color);
       nameInput.value = s.name || '';

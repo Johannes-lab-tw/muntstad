@@ -1,7 +1,7 @@
 // art/sprites.js — renders the blocky art to small images (data URLs) for shop cards, signs, the START avatar
 // preview and HUD icons. Every sprite is drawn once per key and cached.
 import { createIso } from '../iso.js';
-import { BUILDERS, house } from './buildings.js';
+import { BUILDERS, house, makerHeight } from './buildings.js';
 import { drawAvatar, drawHead, drawCar, drawScooter } from './avatar.js';
 import { drawProp } from './props.js';
 import { drawPet } from './pets.js';
@@ -31,8 +31,10 @@ export function spriteURL(key, draw, opts) {
 }
 
 export function makerSprite(id, size = 160, level = 1) {
-  const unit = size / 6.4;
-  return spriteURL(`maker:${id}:${level}:${size}`, (iso, ctx) => BUILDERS[id](iso, ctx, 0, 0, level, 400), { size, unit, oy: size - unit * 1.75 - size * 0.06 });
+  // the plot is 3 units wide (6 units across in iso) and the building may be tall: scale so the whole thing fits
+  const h = makerHeight(id, level);
+  const unit = size / Math.max(6.4, 1.6 + h + 1.5);
+  return spriteURL(`maker:${id}:${level}:${size}`, (iso, ctx) => BUILDERS[id](iso, ctx, 0, 0, level, 400), { size, unit, oy: size - unit * 1.6 - size * 0.04 });
 }
 
 export function houseSprite(paint = 'none', size = 160) {
@@ -70,26 +72,21 @@ export function petSprite(id, size = 160) {
 }
 
 export function fireworkSprite(size = 160) {
+  // a blocky burst: a rocket tube on the ground and a ring of coloured cubes in the air, in the same voxel style
+  const unit = size / 3.2;
   return spriteURL(`firework:${size}`, (iso, ctx) => {
     const cols = ['#ff5f5f', '#ffc21c', '#45d65c', '#45b6ff', '#b76cff', '#ff6fae'];
-    for (let b = 0; b < 2; b++) {
-      const cx = size * (b ? 0.66 : 0.38), cy = size * (b ? 0.36 : 0.5), r = size * (b ? 0.2 : 0.3);
-      for (let i = 0; i < 12; i++) {
-        const a = (i / 12) * Math.PI * 2;
-        ctx.strokeStyle = cols[(i + b) % cols.length];
-        ctx.lineWidth = 4;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(cx + Math.cos(a) * r * 0.35, cy + Math.sin(a) * r * 0.35);
-        ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 4, 0, Math.PI * 2);
-        ctx.fillStyle = cols[(i + b) % cols.length];
-        ctx.fill();
-      }
+    iso.blob(0, 0, 0.3, 0.2);
+    iso.block(-0.12, -0.12, 0, 0.24, 0.24, 0.6, '#ff5f5f');
+    iso.pyramid(-0.14, -0.14, 0.6, 0.28, 0.28, 0.25, '#ffc21c');
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      const r = 0.55 + (i % 2) * 0.25;
+      const cx = Math.cos(a) * r, cy = Math.sin(a) * r * 0.5;
+      iso.block(cx - 0.1, cy - 0.1, 1.5 + Math.sin(a) * 0.5, 0.2, 0.2, 0.2, cols[i % cols.length], { edge: false });
     }
-  }, { size });
+    for (let i = 0; i < 5; i++) iso.block(-0.06 + (i % 2) * 0.05, -0.06, 0.9 + i * 0.12, 0.1, 0.1, 0.06, '#ffe94d', { edge: false });
+  }, { size, unit, oy: size * 0.9 });
 }
 
 /** Sprite for any catalogue item (maker or fun) by config entry. */

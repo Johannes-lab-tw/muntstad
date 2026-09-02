@@ -229,12 +229,7 @@ function walletPoint() {
 }
 
 let bumpTimer = 0;
-let bumpUntil = 0;
 function bumpWallet() {
-  // a bump is a CSS animation: never restart it while it runs (coin storms would only cost layout)
-  const now = performance.now();
-  if (now < bumpUntil) return;
-  bumpUntil = now + 360;
   const w = $('wallet');
   w.classList.add('bump');
   clearTimeout(bumpTimer);
@@ -348,7 +343,7 @@ function boot() {
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch((e) => console.info('[muntstad] service worker not registered:', e.message));
   }
-  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 2, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; } };
+  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 2, plotPoint: (id) => game.scene.plotPoint(id) };
 }
 
 boot();

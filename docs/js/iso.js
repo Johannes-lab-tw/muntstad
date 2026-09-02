@@ -97,9 +97,23 @@ export function createIso(ctx, opts = {}) {
       const right = o.right || shade(color, LIGHT.right);
       const edge = edgeOf(color, o);
       if (o.alpha != null) ctx.globalAlpha = o.alpha;
-      poly([[x, y + d, z], [x + w, y + d, z], [x + w, y + d, z + h], [x, y + d, z + h]], left, edge);
-      poly([[x + w, y, z], [x + w, y + d, z], [x + w, y + d, z + h], [x + w, y, z + h]], right, edge);
-      poly([[x, y, z + h], [x + w, y, z + h], [x + w, y + d, z + h], [x, y + d, z + h]], top, edge);
+      poly([[x, y + d, z], [x + w, y + d, z], [x + w, y + d, z + h], [x, y + d, z + h]], left, null);
+      poly([[x + w, y, z], [x + w, y + d, z], [x + w, y + d, z + h], [x + w, y, z + h]], right, null);
+      poly([[x, y, z + h], [x + w, y, z + h], [x + w, y + d, z + h], [x, y + d, z + h]], top, null);
+      if (edge) {
+        // one stroke for the whole block: the silhouette hexagon plus the three inner edges that meet at the front corner
+        ctx.beginPath();
+        const pts = [[x, y + d, z], [x + w, y + d, z], [x + w, y, z], [x + w, y, z + h], [x, y, z + h], [x, y + d, z + h]];
+        pts.forEach(([px, py, pz], i) => { const [X, Y] = P(px, py, pz); if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); });
+        ctx.closePath();
+        const c0 = P(x + w, y + d, z + h), c1 = P(x + w, y + d, z), c2 = P(x + w, y, z + h), c3 = P(x, y + d, z + h);
+        ctx.moveTo(c1[0], c1[1]); ctx.lineTo(c0[0], c0[1]); ctx.lineTo(c2[0], c2[1]);
+        ctx.moveTo(c0[0], c0[1]); ctx.lineTo(c3[0], c3[1]);
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 1.25;
+        ctx.strokeStyle = edge;
+        ctx.stroke();
+      }
       if (o.alpha != null) ctx.globalAlpha = 1;
     },
 
@@ -190,12 +204,12 @@ export function createIso(ctx, opts = {}) {
     // ---------- compound props ----------
 
     /** Voxel tree: trunk + two stacked canopy cubes. size scales everything. */
-    tree(x, y, size = 1, leaf = '#3fbf5a', trunk = '#8a5a35') {
+    tree(x, y, size = 1, leaf = '#3fbf5a', trunk = '#8a5a35', z = 0) {
       const s = size;
-      iso.shadow(x - 0.45 * s, y - 0.45 * s, 0.9 * s, 0.9 * s, 1.2 * s, 0.7);
-      iso.block(x - 0.16 * s, y - 0.16 * s, 0, 0.32 * s, 0.32 * s, 0.7 * s, trunk);
-      iso.block(x - 0.5 * s, y - 0.5 * s, 0.55 * s, 1 * s, 1 * s, 0.8 * s, leaf);
-      iso.block(x - 0.32 * s, y - 0.32 * s, 1.35 * s, 0.64 * s, 0.64 * s, 0.55 * s, shade(leaf, 0.12));
+      if (z === 0) iso.shadow(x - 0.45 * s, y - 0.45 * s, 0.9 * s, 0.9 * s, 1.2 * s, 0.7);
+      iso.block(x - 0.16 * s, y - 0.16 * s, z, 0.32 * s, 0.32 * s, 0.7 * s, trunk);
+      iso.block(x - 0.5 * s, y - 0.5 * s, z + 0.55 * s, 1 * s, 1 * s, 0.8 * s, leaf);
+      iso.block(x - 0.32 * s, y - 0.32 * s, z + 1.35 * s, 0.64 * s, 0.64 * s, 0.55 * s, shade(leaf, 0.12));
     },
 
     /** Low round-ish bush made of two cubes. */

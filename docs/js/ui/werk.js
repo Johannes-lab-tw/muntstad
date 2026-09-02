@@ -9,10 +9,11 @@ const CAR_COLORS = ['#ff5f5f', '#45b6ff', '#45d65c', '#ffc21c', '#b76cff', '#ff6
 const CAR_TYPES = ['sedan', 'van', 'pickup', 'sedan'];
 // dirt slots on the car in face-local coordinates: side = 'y' (long lit side), 'x' (front), 'top' (hood/roof)
 const SLOTS = [
-  { side: 'y', u: 0.45, v: 0.28 }, { side: 'y', u: 1.3, v: 0.3 }, { side: 'y', u: 2.15, v: 0.26 },
-  { side: 'x', u: 0.4, v: 0.3 }, { side: 'x', u: 0.95, v: 0.32 },
-  { side: 'top', u: 2.2, v: 0.65 }, { side: 'top', u: 0.55, v: 0.6 },
+  { side: 'y', u: 0.35, v: 0.28 }, { side: 'y', u: 1.4, v: 0.3 }, { side: 'y', u: 2.45, v: 0.26 },
+  { side: 'x', u: 0.3, v: 0.3 }, { side: 'x', u: 1.0, v: 0.32 },
+  { side: 'top', u: 2.3, v: 0.65 }, { side: 'top', u: 0.4, v: 0.6 },
 ];
+const FOAM_MAX = 22; // SPEC §6: at most 30 live particles, and confetti may join in
 
 /** Big blocky car for the wash bay, long axis along x, centred at (x, y). */
 export function drawWashCar(iso, ctx, x, y, color, type = 'sedan', t = 0, bounce = 0) {
@@ -88,9 +89,9 @@ export function createWerk(game) {
   // ---------- scene ----------
 
   function resize() {
-    const rect = stage.getBoundingClientRect();
-    W = Math.max(320, Math.round(rect.width));
-    H = Math.max(240, Math.round(rect.height));
+    // clientWidth/Height ignore the screen's slide-in transform (getBoundingClientRect would measure it 3.5 % small)
+    W = Math.max(320, stage.clientWidth || window.innerWidth);
+    H = Math.max(240, stage.clientHeight || window.innerHeight);
     dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
@@ -102,6 +103,7 @@ export function createWerk(game) {
     iso.set(unit, W / 2 + unit * 0.4, H * 0.66);
     siso.set(unit, W / 2 + unit * 0.4, H * 0.66);
     drawStatic();
+    repositionDirt();
   }
 
   function drawStatic() {
@@ -115,14 +117,6 @@ export function createWerk(game) {
     sky.addColorStop(1, '#0f5aa8');
     c.fillStyle = sky;
     c.fillRect(0, 0, W, H);
-    // sun
-    c.beginPath();
-    c.arc(W * 0.82, H * 0.14, u * 0.7, 0, Math.PI * 2);
-    c.fillStyle = '#ffe066';
-    c.fill();
-    c.lineWidth = 4;
-    c.strokeStyle = rgba('#e08a00', 0.6);
-    c.stroke();
     // floor: concrete slab with cliff edge, tiles, drain
     const fx = -4.6, fy = -3.6, fw = 9.2, fd = 6.4;
     for (let i = Math.round(u * 0.5); i >= 1; i--) {
@@ -240,19 +234,32 @@ export function createWerk(game) {
     return iso.P(geo.x0 + slot.u, geo.y0 + slot.v, geo.z + 0.62);
   }
 
+  const CAR_GEO = { x0: -1.4, y0: -0.65, z: 0.22, w: 2.8, d: 1.3 };
+
   function placeDirt(n) {
     clearSpots();
-    const geo = { x0: -1.4, y0: -0.65, z: 0.22, w: 2.8, d: 1.3 };
     const chosen = SLOTS.slice().sort(() => Math.random() - 0.5).slice(0, n);
     for (const slot of chosen) {
-      const [px, py] = slotPoint(slot, geo);
+      const [px, py] = slotPoint(slot, CAR_GEO);
       const d = document.createElement('div');
       d.className = 'dirt';
       d.style.left = `${px}px`;
       d.style.top = `${py}px`;
       d.style.setProperty('--rot', `${randomInt(-25, 25)}deg`);
+      d.dataset.slot = String(SLOTS.indexOf(slot));
       d.appendChild(document.createElement('i'));
       car.appendChild(d);
+    }
+  }
+
+  /** After a resize the car is projected anew: move the splats along. */
+  function repositionDirt() {
+    for (const d of car.querySelectorAll('.dirt')) {
+      const slot = SLOTS[Number(d.dataset.slot)];
+      if (!slot) continue;
+      const [px, py] = slotPoint(slot, CAR_GEO);
+      d.style.left = `${px}px`;
+      d.style.top = `${py}px`;
     }
   }
 
@@ -294,19 +301,20 @@ export function createWerk(game) {
       later(() => b.remove(), 800);
     }
     const srect = stage.getBoundingClientRect();
-    for (let i = 0; i < 8; i++) {
-      if (foam.length > 40) break;
+    for (let i = 0; i < 6; i++) {
+      if (foam.length >= FOAM_MAX) break;
       foam.push({ x: x - srect.left, y: y - srect.top, vx: (Math.random() - 0.5) * 2, vy: -Math.random(), r: 5 + Math.random() * 7, t0: performance.now(), dur: 500 + Math.random() * 300 });
     }
   }
 
   function clean(spot, x, y) {
     if (!ready || spot.classList.contains('gone')) return;
+    // the splat stays in the DOM (invisible, no pointer events) until the next car: removing it mid-swipe
+    // would end the touch sequence on iOS
     spot.classList.add('gone');
     dirtLeft--;
     game.audio.play('bubble');
     bubbles(x, y);
-    later(() => spot.remove(), 300);
     if (dirtLeft <= 0) carDone();
   }
 
@@ -366,8 +374,8 @@ export function createWerk(game) {
   /** A tap that misses (or comes while the car is still driving in) still answers with a splash. */
   function splash(x, y) {
     const srect = stage.getBoundingClientRect();
-    for (let i = 0; i < 5; i++) {
-      if (foam.length > 40) break;
+    for (let i = 0; i < 4; i++) {
+      if (foam.length >= FOAM_MAX) break;
       foam.push({ x: x - srect.left, y: y - srect.top, vx: (Math.random() - 0.5) * 2.5, vy: -Math.random(), r: 4 + Math.random() * 5, t0: performance.now(), dur: 350 + Math.random() * 250 });
     }
   }
