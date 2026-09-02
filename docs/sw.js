@@ -25,7 +25,6 @@ const PRECACHE = [
   './vendor/three.module.min.js',
   './vendor/three.core.min.js',
   './js/art.js',
-  './js/iso.js',
   './js/ui/mentor.js',
   './js/ui/popups.js',
   './js/ui/fx.js',
