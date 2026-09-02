@@ -29,15 +29,15 @@ Besluit Johannes: route 1 (Three.js), doel vormgeving keer tien. Plan en meetlat
 
 - [x] R3.0a — check + inventarisatie tekenlaag (contracten: createScene-API, plotPoint, .hit, .dirt, sprites-exports) → PLAN-V3.md §0
 - [x] R3.0b — lokale criticus ingericht: `qwen3.8:27b` in Ollama, script `C:\TW1\lokaal-zoeken\lokaal.py` (screenshot → 5 punten, 30 s, nul tokens); LM Studio verwijderd
-- [ ] V3.0 — spec-regels bijstellen (docs/ ≤ 1,5 MB, vendor-regel), Three.js r185 vendoren in docs/vendor/, PRECACHE, engine.js met lege scène
-- [ ] V3.1 — STAD-wereld (eiland, water, licht, schaduw, wolken, camera), A/B toon vs standard
-- [ ] V3.2 — gebouwen 5×5 + huis + borden + verkeer, Raycaster-hitTest, plotPoint; oude scene.js/iso.js weg
-- [ ] V3.3 — avatar, hoeden, skins, voertuigen, huisdieren
-- [ ] V3.4 — WERK in 3D (.dirt blijft DOM-hitvlak)
-- [ ] V3.5 — HUIS in 3D (.hit-overlays via projectie)
-- [ ] V3.6 — START + thumbs.js (vervangt art/sprites.js) + winkelkaarten nieuw
-- [ ] V3.7 — juice (munten-boog, stuiter, deeltjes) + dag-en-nacht
-- [ ] V3.8 — verificatie, RAPPORT §0 ronde 3, ART-DIRECTION v3, sw cache v6, deploy, iPad-test Johannes
+- [x] V3.0 — spec-regels bijgesteld (docs/ ≤ 1,5 MB, vendor-regel in SPEC §6 + CLAUDE.md regel 4), Three.js r185 gevendord, PRECACHE, engine.js (één renderer, canvas verhuist per scherm, adaptieve kwaliteit)
+- [x] V3.1 — STAD-wereld: kusseneiland, zee met golven en schuim, weg met stoep, park, heggen, bloembedden, lantaarns, palmen, eilandjes, wolken met schaduw, boten, meeuwen; camera gefit op HUD-marges
+- [x] V3.2 — gebouwen 5×5 + huis + kleine TE KOOP-borden + 3 NPC-auto's, Raycaster-hitTest, plotPoint; scene.js/iso.js/art/* weg
+- [x] V3.3 — avatar met echte ledematen (loop/spring/dans/salto/zwaai), 9 hoeden, 5 skins, scooter/auto; huisdieren met staart en kop
+- [x] V3.4 — WERK in 3D: hal met draaiende borstels, 3D-auto met wielen, modder als 3D-klodders + DOM-tikvlak, 3D-schuim
+- [x] V3.5 — HUIS in 3D: tuin-eiland, hek, heg, pad, tuinitems, huisdieren, trampoline, .hit-overlays via projectie
+- [x] V3.6 — START op de gedeelde scène; thumbs.js rendert winkelkaarten, popups, START-avatar en HUD-iconen uit de 3D-modellen
+- [x] V3.7 — juice: munten vliegen in 3D naar de portemonnee, stuiter bij kopen/BETER, gouden ring + pijl bij 'kan kopen', wapperende vlaggen, rook, druppels; dag-en-nacht bewust doorgeschoven (RAPPORT §7)
+- [ ] V3.8 — verificatie (unit 51 groen; e2e loopt), RAPPORT §0 ronde 3 ✔, ART-DIRECTION v3 ✔, README ✔, sw cache v6, deploy, iPad-test Johannes
 
 ## Toolbox (checked 2026-09-02)
 - node v24.20.0 — was NOT installed; installed as a portable build in C:\Users\jgsno\.local\node (SHA256 verified against nodejs.org) and added to the user PATH. New terminals see it; this session uses the absolute path.

@@ -2,7 +2,19 @@
 
 **Live:** https://johannes-lab-tw.github.io/muntstad/
 
-## 0. Wat er in de tweede ronde is gebeurd (2 september 2026)
+## 0. Derde ronde: echt 3D (2 september 2026)
+
+Je koos voor route 1: geen opgepoetste tekenlaag, maar echte 3D. Het referentiebeeld dat je gaf: Roblox zoals in Brookhaven, hotel-tycoons en Steal a Brainrot, dus gladde afgeronde plastic vormen, felle kleuren, echt licht, geen Minecraft-blokjes. Dat is nu gebouwd.
+
+**Wat er is veranderd.** De hele tekenlaag is vervangen door Three.js (één bibliotheek, meegeleverd in de site zelf, geen internet nodig). STAD, WERK en HUIS zijn echte 3D-scènes met een zon die schaduwen werpt, wolken die over het eiland schuiven, water met golven en schuim, boten, meeuwen, palmen, heggen en lantaarns die branden. Gebouwen, huis, avatar, hoeden, pakjes, voertuigen, tuinspullen en huisdieren zijn opnieuw gemaakt als afgeronde 3D-modellen; de avatar heeft echte armen en benen die zwaaien bij het lopen. De winkelkaarten, de gebouwkaart en de knop-iconen worden uit diezelfde 3D-modellen gerenderd, dus alles is één familie. De wasstraat is een 3D-hal met draaiende borstels; de modder zit als 3D-klodders op de auto en spat weg in 3D-schuim.
+
+**Wat hetzelfde bleef.** De economie, het sparen, de Bewaar-code, de ouderpoort, Muntje, de geluiden, de knoppen en alle tests. De spelregels die de site klein hielden zijn iets verruimd: de site mag nu 1,5 MB zijn (was 1 MB) omdat Three.js zelf 751 KB is; over de lijn is dat gecomprimeerd zo'n 200 KB.
+
+**Op een echte iPad.** Alles is getest in Chromium op drie iPad-formaten; op de iPad zelf moet jij kijken (§6). Als een oudere iPad het zwaar heeft, schakelt het spel zelf de schaduwen en de golven een stand lager en de scherpte iets terug, zodat het soepel blijft.
+
+**Hoe dit is gebouwd.** Claude deed het ontwerp en de code; een lokaal model op jouw desktop (qwen3.8:27b via Ollama) beoordeelde elke ronde de screenshots en gaf verbeterpunten, zonder tokens. Zie PLAN-V3.md voor de stappen en de meetlat.
+
+## 0-oud. Wat er in de tweede ronde is gebeurd (2 september 2026)
 
 Je vroeg twee dingen: beoordeel wat de eerste run heeft gemaakt, en til de vormgeving van "tien jaar oud" naar het niveau van een moderne blokkerige tycoon-game. Kort:
 

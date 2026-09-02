@@ -4,24 +4,26 @@ Live: **https://johannes-lab-tw.github.io/muntstad/** (GitHub Pages, branch `mai
 
 A small iPad web game (PWA) for a 6-year-old that teaches one thing through play: money you put to work makes more money, and that money buys fun things. Dutch only, offline-capable, no accounts, no ads, no network calls at runtime.
 
-- **WERK** — wash cars in a blocky 3D wash bay for coins (linear, bounded).
+- **WERK** — wash cars in a real 3D wash bay for coins (linear, bounded).
 - **WINKEL** — buy coin-makers (Limonadekraam → Flatgebouw) that earn while you play or while the iPad is off, and fun things (hats, pets, scooter, car, garden, fireworks…).
 - **HUIS** — the yard: pets that wander, toys, the sticker wall.
 - **PAPA** — parent screen behind a 3-second hold + a sum: stats, conversation starters, voice/sound/music toggles, Bewaar-code (export/import), reset.
 
 ## Stack
 
-Vanilla HTML/CSS/JS (ES modules), no framework, no bundler, no runtime dependencies, no images or web fonts. Everything you see is drawn at runtime: the town, the yard and the wash bay are 2:1 dimetric ("iso") canvas scenes built from lit blocks (`docs/js/iso.js`), and the same art renders the shop cards, signs and HUD icons as sprites. DOM for the UI, Web Audio for every sound, `speechSynthesis` with a Dutch voice for the mentor. The only dev dependency is `@playwright/test`.
+Vanilla HTML/CSS/JS (ES modules), no framework, no bundler, no images or web fonts. The one vendored library is Three.js (`docs/vendor/`, r185): the town, the yard and the wash bay are real 3D scenes with a shadow-casting sun, built at runtime from rounded plastic primitives (`docs/js/3d/build.js`), and the same models render the shop cards, popups and HUD icons as thumbnails. One WebGL renderer serves every screen and steps its quality down on slow iPads. DOM for the UI, Web Audio for every sound, `speechSynthesis` with a Dutch voice for the mentor. The only dev dependency is `@playwright/test`.
 
 ```
 docs/               the deployed site (open with any static server)
   js/config.js      every tunable number (prices, incomes, caps, timings, shop order)
   js/economy.js     pure, deterministic economy shared by the game, the tests and the simulator
   js/save.js        versioned localStorage save, migration, Bewaar-code
-  js/iso.js         2:1 dimetric projection + block/roof/shadow primitives for canvas 2D
-  js/art/           blocky art: buildings (5 makers × 5 levels + house), avatar (hats, skins, poses, vehicles),
-                    props (garden items, trampoline), pets, sprites (render any item to an image)
-  js/scene.js       the island town (STAD)
+  vendor/           Three.js (module + core, minified)
+  js/3d/engine.js   the shared WebGL renderer, lights, fitted camera, adaptive quality
+  js/3d/build.js    rounded-plastic geometry builder (one merged mesh per object), text planes, materials
+  js/3d/world.js    the island: cushion ground, sea, road, park, scenery, clouds, boats, gulls
+  js/3d/buildings.js  5 makers × 5 levels, house, sale boards; avatar.js, props.js, pets.js: the characters and items
+  js/3d/scene-stad.js the town scene (STAD + START background); thumbs.js renders any item to an image
   js/ui/*.js        screens and popups (werk = wash bay, huis = yard, winkel = shop, start, papa, mentor, fx)
   sw.js             cache-first service worker (bump CACHE_VERSION on deploy)
 tests/unit          node:test (economy, save, speech, config, sw, balance simulation)
