@@ -24,6 +24,21 @@ Opdracht van Johannes: beoordeel wat er staat (werking, functionaliteit, wat is 
 - [x] R2.7 — deploy (sw cache v4), RAPPORT.md/README.md/ART-DIRECTION.md bijgewerkt, screenshots-galerij vernieuwd (13 per formaat), live rooktest groen
 - [x] R2.8 — v2-review (5 reviewers + tegencontrole, gestopt vóór de dure samenvatting op verzoek van Johannes; 42 bevestigde + 10 ongetoetste punten zelf beoordeeld) verwerkt: WERK-canvas dpr-2-bug, canvasmaat tijdens schermanimatie, ballonpositie, wegloop/kavels, flat vooraan, sprite-cache voor gebouwen/props/borden/verkeer + adaptieve lite-modus, en ~25 kleinere punten; unit 51 groen, e2e 60 groen; sw cache v5; deploy
 
+## Run 3 (gestart 2026-09-02) — echt 3D met Three.js
+Besluit Johannes: route 1 (Three.js), doel vormgeving keer tien. Plan en meetlat: PLAN-V3.md (lees dat vóór elke stap van deze ronde).
+
+- [x] R3.0a — check + inventarisatie tekenlaag (contracten: createScene-API, plotPoint, .hit, .dirt, sprites-exports) → PLAN-V3.md §0
+- [x] R3.0b — lokale criticus ingericht: `qwen3.8:27b` in Ollama, script `C:\TW1\lokaal-zoeken\lokaal.py` (screenshot → 5 punten, 30 s, nul tokens); LM Studio verwijderd
+- [ ] V3.0 — spec-regels bijstellen (docs/ ≤ 1,5 MB, vendor-regel), Three.js r185 vendoren in docs/vendor/, PRECACHE, engine.js met lege scène
+- [ ] V3.1 — STAD-wereld (eiland, water, licht, schaduw, wolken, camera), A/B toon vs standard
+- [ ] V3.2 — gebouwen 5×5 + huis + borden + verkeer, Raycaster-hitTest, plotPoint; oude scene.js/iso.js weg
+- [ ] V3.3 — avatar, hoeden, skins, voertuigen, huisdieren
+- [ ] V3.4 — WERK in 3D (.dirt blijft DOM-hitvlak)
+- [ ] V3.5 — HUIS in 3D (.hit-overlays via projectie)
+- [ ] V3.6 — START + thumbs.js (vervangt art/sprites.js) + winkelkaarten nieuw
+- [ ] V3.7 — juice (munten-boog, stuiter, deeltjes) + dag-en-nacht
+- [ ] V3.8 — verificatie, RAPPORT §0 ronde 3, ART-DIRECTION v3, sw cache v6, deploy, iPad-test Johannes
+
 ## Toolbox (checked 2026-09-02)
 - node v24.20.0 — was NOT installed; installed as a portable build in C:\Users\jgsno\.local\node (SHA256 verified against nodejs.org) and added to the user PATH. New terminals see it; this session uses the absolute path.
 - npm 11.19.0
@@ -47,6 +62,10 @@ Opdracht van Johannes: beoordeel wat er staat (werking, functionaliteit, wat is 
 - 2026-09-02 Thousands separator is U+202F (narrow no-break space) so "2 000" never wraps.
 - 2026-09-02 The return popup also shows once (with 0 coins) for a child without any coin-maker, explaining what a coin-maker would have done; after that only when coins were earned.
 - 2026-09-02 Simulator has variants (policy affordable/best, burst pacing, petFirst, work rates 10/20); all pass the lesson assertions.
+
+### Run 3
+- 2026-09-02 Route 1 gekozen: echte 3D met Three.js (gevendord, één renderer voor alle schermen). Budget docs/ gaat van 1 MB naar 1,5 MB omdat Three.js r185 minified 751 KB is; CDN blijft verboden. Zie PLAN-V3.md §0.
+- 2026-09-02 Reviews in ronde 3: lokale criticus (qwen3.8:27b) op screenshots in plaats van Opus-agents; Claude beslist.
 
 ### Run 2
 - 2026-09-02 Vormgeving: 2:1 dimetrische projectie ("iso") op canvas 2D gekozen boven SVG/DOM: één lichtrichting (linksboven), drie belichte vlakken per blok, grondschaduwen; alles is eigen art via `iso.js`-primitieven, geen afbeeldingen, geen webfonts. Roblox-merken/modellen worden niet gebruikt; de look is "blokkerig speelgoeddorp".
