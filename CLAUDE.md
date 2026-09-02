@@ -32,6 +32,6 @@ At the start of every session and after any context compaction: re-read SPEC.md 
 - PLAN-V3.md is het stappenplan voor de 3D-tekenlaag; lees het na SPEC.md en PROGRESS.md.
 - Rule 4 wordt in V3.0 aangepast: Three.js is de enige gevendorde tekenbibliotheek (docs/vendor/, in PRECACHE); geen CDN, geen bundler, devDependency blijft alleen @playwright/test.
 - Na elke visuele wijziging: screenshots met `node scripts/dev-shot.mjs --seed rich` en dan de lokale criticus (nul tokens, ~30 s per plaatje):
-  `python C:\TW1\lokaal-zoeken\lokaal.py "Je bent art director van een moderne 3D-tycoongame voor kinderen. Noem de 5 grootste redenen waarom dit scherm nog niet als een moderne game oogt, concreet en kort, in het Nederlands." screenshots\chromium-ipad-gen7-stad.png`
+  `python C:\TW1\lokaal-zoeken\lokaal.py "Je bent art director van een moderne 3D-tycoongame voor kinderen. Noem de 5 grootste redenen waarom dit scherm nog niet als een moderne game oogt, concreet en kort, in het Nederlands." screenshots\chromium-ipad-gen7\02-stad.png`
   Claude leest de punten en beslist; het lokale model ontwerpt niet.
 - Bulkwerk (varianten van gebouwen/props/hoeden op basis van één voorbeeld, testboilerplate) mag ook via lokaal.py met bestanden als invoer; Claude keurt.
