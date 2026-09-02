@@ -19,9 +19,10 @@ Opdracht van Johannes: beoordeel wat er staat (werking, functionaliteit, wat is 
 - [x] R2.2 — art direction + prototype: 2:1 dimetrisch blokkendorp op canvas (`docs/js/iso.js`), drie belichte vlakken per blok, grondschaduwen, klif + branding, iso-weg, NPC-verkeer, wolkschaduwen; UI-kit met omlijnde letters, glossy 3D-knoppen, CSS-munt (`docs/css/style.css`)
 - [x] R2.3 — alle art als blok-3D: 5 geldmakers × 5 levels (`art/buildings.js`), huis met verf, avatar met loop/idle/spring/dans/salto + 9 hoeden + 5 skins + scooter/auto (`art/avatar.js`), 12 tuinitems + trampoline (`art/props.js`), 3 huisdieren (`art/pets.js`), sprite-renderer voor winkelkaarten, borden, HUD-iconen en START (`art/sprites.js`)
 - [x] R2.4 — schermen omgebouwd: STAD (`scene.js`), WERK als 3D-wasstraat met modderspatten (`ui/werk.js`), WINKEL met sprites en gloeiende KOOP bij genoeg munten (`ui/winkel.js`), HUIS als iso-tuin met rondlopende huisdieren en trampoline (`ui/huis.js`), START met levend dorp op de achtergrond (`ui/start.js`), popups/fx met sprites en CSS-munten, nieuw app-icoon
-- [ ] R2.5 — verificatie: unit 51 groen; e2e Chromium × 3 iPads; screenshots opnieuw beoordeeld; kid-tester + design-critic ronde op de nieuwe screenshots; bevindingen verwerkt
-- [ ] R2.6 — bevindingen uit R2.1 verwerkt (bugs, spec-gaten, tests)
-- [ ] R2.7 — deploy (sw cache v3), RAPPORT.md/README.md bijgewerkt, screenshots-galerij vernieuwd, push
+- [x] R2.5 — verificatie: unit 51 groen; e2e 60 groen (Chromium × 3 iPads, incl. bredere kind-UX-audit, ouderpoort, twee stickers tegelijk); screenshots op drie formaten zelf beoordeeld; review-ronde 2 (kind-tester, design-critic, bug-hunter, perf, spec-check + tegencontrole) loopt/verwerkt onder R2.8
+- [x] R2.6 — bevindingen uit R2.1 verwerkt (zie RAPPORT.md §0.2)
+- [x] R2.7 — deploy (sw cache v4), RAPPORT.md/README.md/ART-DIRECTION.md bijgewerkt, screenshots-galerij vernieuwd (13 per formaat), live rooktest groen
+- [ ] R2.8 — bevindingen van de v2-review verwerkt, tests groen, deploy
 
 ## Toolbox (checked 2026-09-02)
 - node v24.20.0 — was NOT installed; installed as a portable build in C:\Users\jgsno\.local\node (SHA256 verified against nodejs.org) and added to the user PATH. New terminals see it; this session uses the absolute path.

@@ -253,15 +253,17 @@ function show(name) {
   if (next.show) next.show();
   render();
   game.emit('screen', name);
-  if (name === 'stad' && pendingOffline) {
+  if (name === 'stad' && (pendingOffline || pendingMilestones.length)) {
+    // the "while you were away" popup comes first (the strongest aha), stickers queue up behind it;
+    // the welcome line (≈ 2.5 s spoken) gets room before the first popup takes over
     const p = pendingOffline;
     pendingOffline = null;
-    // give the welcome line (≈ 2.5 s spoken) room before the popup takes over
-    setTimeout(() => game.popups.offline(p.earned, p.elapsedMs, p.rawElapsedMs), 2600);
-  }
-  if (name === 'stad' && pendingMilestones.length) {
     const ids = pendingMilestones.splice(0);
-    setTimeout(() => ids.forEach((id) => game.popups.milestone(id)), 900);
+    const delay = p ? 2600 : 900;
+    setTimeout(() => {
+      if (p) game.popups.offline(p.earned, p.elapsedMs, p.rawElapsedMs);
+      ids.forEach((id) => game.popups.milestone(id));
+    }, delay);
   }
 }
 

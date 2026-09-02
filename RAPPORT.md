@@ -84,7 +84,7 @@ Eén les, zonder uitleg-tekst: **geld dat je aan het werk zet, maakt meer geld, 
 
 ## 4. Aan de knoppen draaien
 
-Alle getallen staan in `docs/js/config.js`. Verander een getal, sla op, zet in `docs/sw.js` het versienummer één hoger (`muntstad-v3` → `muntstad-v4`), commit en push. Veilige marges:
+Alle getallen staan in `docs/js/config.js`. Verander een getal, sla op, zet in `docs/sw.js` het versienummer één hoger (`muntstad-v4` → `muntstad-v5`), commit en push. Veilige marges:
 
 | Knop | Nu | Wat het doet | Veilig tussen |
 |---|---|---|---|

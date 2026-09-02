@@ -26,8 +26,11 @@ async function audit(page, screenName) {
       return true;
     }
     const label = (b) => (b.id ? `#${b.id}` : b.textContent.trim().slice(0, 20)) || b.className;
-    const buttons = [...document.querySelectorAll('button, [role="button"]')].filter(visible);
-    const taps = [...document.querySelectorAll('.hit, .dirt:not(.gone)')].filter(visible);
+    // with a popup open only the popup can be tapped: everything under the overlay is out of reach
+    const overlay = document.getElementById('overlay');
+    const scope = overlay && !overlay.hidden ? overlay : document;
+    const buttons = [...scope.querySelectorAll('button, [role="button"]')].filter(visible);
+    const taps = [...scope.querySelectorAll('.hit, .dirt:not(.gone)')].filter(visible);
     const small = [];
     const rects = [];
     for (const b of [...buttons, ...taps]) {
@@ -46,7 +49,8 @@ async function audit(page, screenName) {
         else {
           // gap between the two rectangles: both axes closer than 12 px means a fat finger can hit both
           const gx = -ix, gy = -iy;
-          if (gx < 12 && gy < 12) tooClose.push(`${rects[i].label} ↔ ${rects[j].label} (${Math.round(Math.max(gx, gy))} px)`);
+          // half a pixel of tolerance for sub-pixel layout rounding
+          if (gx < 11.5 && gy < 11.5) tooClose.push(`${rects[i].label} ↔ ${rects[j].label} (${Math.round(Math.max(gx, gy))} px)`);
         }
       }
     }
@@ -57,7 +61,8 @@ async function audit(page, screenName) {
       const r = b.getBoundingClientRect();
       if (b.matches('.btn-nav, .btn-xl') && r.height < 80) shortPrimary.push(`${label(b)} ${Math.round(r.height)}px`);
       const fs = parseFloat(getComputedStyle(b).fontSize);
-      if (b.id !== 'nav-papa' && fs < 24) smallLabel.push(`${label(b)} ${fs}px`);
+      // only buttons with a text label; the colour swatches on START carry no text
+      if (b.id !== 'nav-papa' && b.textContent.trim() && fs < 24) smallLabel.push(`${label(b)} ${fs}px`);
     }
     const wallet = document.getElementById('wallet-amount');
     const walletSize = wallet && visible(wallet) ? parseFloat(getComputedStyle(wallet).fontSize) : 99;
@@ -140,6 +145,7 @@ test('touch targets, text sizes and Dutch-only on every screen', async ({ page }
   await closePopups(page);
 
   await openPapa(page);
+  await page.waitForTimeout(400); // the screen slides in with a 300 ms scale animation: measure it at rest
   check(await audit(page, 'papa'));
 });
 
@@ -152,6 +158,7 @@ test('gate screen audit', async ({ page }) => {
   await page.waitForTimeout(3400);
   await page.mouse.up();
   await expect(page.locator('#screen-gate')).toHaveClass(/active/);
+  await page.waitForTimeout(400);
   check(await audit(page, 'gate'));
 });
 

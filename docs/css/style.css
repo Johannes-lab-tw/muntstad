@@ -321,7 +321,7 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
   cursor: pointer;
   transition: transform 0.15s var(--pop);
 }
-.color-btn.selected { outline: 5px solid #fff; outline-offset: -9px; transform: scale(1.14); }
+.color-btn.selected { outline: 5px solid #fff; outline-offset: -9px; box-shadow: 0 5px 0 var(--ink), 0 0 0 4px var(--gold), 0 8px 8px rgba(10, 20, 60, 0.25); }
 .name-input, .code-in {
   height: 72px;
   width: 100%;
@@ -523,7 +523,7 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(2, 1fr);
   gap: 14px;
-  padding: 14px 20px 6px 20px;
+  padding: 14px 20px 14px 20px;
   position: relative;
 }
 .shop-grid.makers {
@@ -714,7 +714,7 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .stats dt { margin: 0; font-weight: 600; color: #3f475f; }
 .stats dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
 .starters { margin: 0; padding-left: 26px; font-size: 21px; font-weight: 600; color: #3f475f; display: flex; flex-direction: column; gap: 8px; }
-.toggles { display: flex; flex-direction: column; gap: 12px; }
+.toggles { display: flex; flex-direction: column; gap: 14px; }
 .toggles .btn { justify-content: space-between; width: 100%; }
 .code-out {
   width: 100%;
@@ -827,9 +827,10 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
   color: var(--gold-d);
 }
 .popup-icon { font-size: 96px; line-height: 1; }
-.popup-icon img, img.popup-icon { width: 150px; height: 150px; object-fit: contain; }
+.popup-icon img, img.popup-icon { width: 140px; height: 140px; object-fit: contain; }
 .popup-text { margin: 0; font-size: 24px; font-weight: 600; color: #3f475f; }
 .popup .btn-xl { min-width: 280px; }
+.popup > .btn + .btn { margin-top: 6px; } /* two stacked buttons stay ≥ 12 px apart (SPEC §4) */
 .popup .row { justify-content: center; }
 .bcard-stars { font-size: 30px; color: var(--gold); text-shadow: 0 2px 0 var(--ink); }
 .bcard-income { font-size: 28px; display: inline-flex; align-items: center; gap: 8px; }
