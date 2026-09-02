@@ -294,7 +294,9 @@ export function isFunActive(state, config, id) {
 function milestoneReached(state, config, m) {
   switch (m.kind) {
     case 'makers': return ownedMakerCount(state, config) >= m.value;
-    case 'passive-beats-work': return state.bestWorkRate > 0 && passivePerMinute(state, config) > state.bestWorkRate;
+    // "your money works harder than you" needs a real work record first (at least the "tired" number of cars),
+    // otherwise a child who barely worked would get the sticker together with the first coin-maker
+    case 'passive-beats-work': return state.bestWorkRate > 0 && state.carsWashed >= config.work.tiredAfterCars && passivePerMinute(state, config) > state.bestWorkRate;
     case 'earned': return totalEarned(state) >= m.value;
     case 'all-makers': return ownedMakerCount(state, config) === config.makers.length;
     case 'level': return config.makers.some((mk) => makerLevel(state, mk.id) >= m.value);
@@ -304,10 +306,12 @@ function milestoneReached(state, config, m) {
 
 /** Returns { state, unlocked: [milestone ids newly reached] }. */
 export function checkMilestones(state, config) {
-  const unlocked = [];
+  let unlocked = [];
   for (const m of config.milestones) {
     if (!state.milestones.includes(m.id) && milestoneReached(state, config, m)) unlocked.push(m.id);
   }
+  // the first coin-maker gets its own moment: "passive beats work" waits for the next check
+  if (unlocked.includes('eerste-geldmaker') && unlocked.includes('geld-werkt')) unlocked = unlocked.filter((id) => id !== 'geld-werkt');
   if (unlocked.length === 0) return { state, unlocked };
   return { state: { ...state, milestones: state.milestones.concat(unlocked) }, unlocked };
 }

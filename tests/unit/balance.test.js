@@ -51,7 +51,7 @@ test('both readings of "shortest payback" pass: save for the best unlocked optio
   lessonHolds(runBoth({ minutes: 20, workRate: 15, policy: 'affordable' }), 'policy=affordable');
 });
 
-test('bursty work (8 cars at the 4 s floor, then a pause, same 15/min average) still teaches the lesson', () => {
+test('bursty work (12 cars at the 4 s floor, then a pause, same 15/min average) still teaches the lesson', () => {
   // a burst reads as a higher work rate than even pacing, so the overtake may need the Wasstraat (≈ 6 min)
   lessonHolds(runBoth({ minutes: 20, workRate: 15, pacing: 'burst' }), 'pacing=burst', { overtakeMax: 6.5 });
 });

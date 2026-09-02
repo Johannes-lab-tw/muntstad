@@ -57,6 +57,7 @@ export function createSpeech(config, synth = globalThis.speechSynthesis, Utteran
       if (!synth || !Utterance || !enabled || !text) return false;
       if (!voice) refresh();
       if (!voice) return false;
+      const busy = !!(synth.speaking || synth.pending);
       cancel();
       try {
         const u = new Utterance(String(text));
@@ -64,7 +65,9 @@ export function createSpeech(config, synth = globalThis.speechSynthesis, Utteran
         u.lang = voice.lang;
         u.rate = config.mentor.speechRate;
         u.pitch = 1.05;
-        synth.speak(u);
+        // Safari drops an utterance queued in the same tick as a cancel() that interrupted speech; a short breath fixes that
+        if (busy) setTimeout(() => { try { if (enabled) synth.speak(u); } catch (e) { /* ignore */ } }, 60);
+        else synth.speak(u);
         return true;
       } catch (e) {
         return false;

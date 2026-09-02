@@ -122,9 +122,9 @@ export async function openPapa(page) {
 }
 
 /** Save a CSS-pixel screenshot into screenshots/<project>/<name>.png */
-export async function shot(page, testInfo, name) {
+export async function shot(page, testInfo, name, { keepBubble = false } = {}) {
   const dir = path.join(process.cwd(), 'screenshots', testInfo.project.name);
   fs.mkdirSync(dir, { recursive: true });
-  await page.locator('#bubble').evaluate((el) => el.classList.add('hidden')).catch(() => {});
+  if (!keepBubble) await page.locator('#bubble').evaluate((el) => el.classList.add('hidden')).catch(() => {});
   await page.screenshot({ path: path.join(dir, `${name}.png`), scale: 'css', animations: 'disabled' });
 }

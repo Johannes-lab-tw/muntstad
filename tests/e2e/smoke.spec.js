@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { watchErrors, startGame, seedSave, openPapa, shot, closePopups } from './helpers.js';
+import { watchErrors, startGame, seedSave, openPapa, shot, closePopups, state } from './helpers.js';
 
 test('every screen loads without console errors, with a screenshot of each', async ({ page }, testInfo) => {
   const errors = watchErrors(page);
@@ -10,7 +10,9 @@ test('every screen loads without console errors, with a screenshot of each', asy
 
   await page.locator('#btn-start').click();
   await expect(page.locator('#screen-stad')).toHaveClass(/active/);
-  await page.waitForTimeout(800);
+  await expect(page.locator('#bubble-text')).toContainText('Muntje');
+  await shot(page, testInfo, '13-muntje-praat', { keepBubble: true });
+  await page.waitForTimeout(500);
   await shot(page, testInfo, '02-stad');
 
   await page.locator('#nav-werk').click();
@@ -78,5 +80,25 @@ test('portrait shows the rotate hint without crashing', async ({ page }, testInf
   await page.setViewportSize({ width: 1080, height: 810 });
   await expect(page.locator('#rotate')).toBeHidden();
   await expect(page.locator('#btn-start')).toBeVisible();
+  expect(errors()).toEqual([]);
+});
+
+test('two milestones at once are celebrated one after the other', async ({ page }) => {
+  const errors = watchErrors(page);
+  // a level-5 Limonadekraam and 1 200 coins earned, but only the first sticker on the wall: two stickers are due at once
+  await seedSave(page, (s) => { s.makers.limonade = 5; s.earnedWork = 1200; s.milestones = ['eerste-geldmaker']; return s; });
+  await startGame(page);
+  const popup = page.locator('#popup[data-popup="milestone"]');
+  await expect(popup).toBeVisible({ timeout: 10000 });
+  await expect(popup).toContainText('1 000');
+  await page.locator('#popup button').click();
+  await expect(popup).toBeVisible({ timeout: 10000 });
+  await expect(popup).toContainText('level 5');
+  await page.locator('#popup button').click();
+  await expect(page.locator('#overlay')).toBeHidden();
+  const s = await state(page);
+  expect(s.milestones).toEqual(expect.arrayContaining(['eerste-geldmaker', 'duizend', 'level-5']));
+  await page.locator('#nav-huis').click();
+  await expect(page.locator('.sticker.got[data-milestone="level-5"]')).toBeVisible();
   expect(errors()).toEqual([]);
 });

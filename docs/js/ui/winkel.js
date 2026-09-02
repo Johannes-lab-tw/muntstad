@@ -1,6 +1,8 @@
-// winkel.js — the shop: GELDMAKERS 🏭 and LEUK 🎉 tabs always visible, paged cards with big arrows.
-// Unaffordable cards stay visible (dimmed, "nog 12 🪙" + progress bar); owned items show ✓ and AAN/UIT.
+// winkel.js — the shop: GELDMAKERS and LEUK tabs always visible, paged cards with big arrows.
+// Every card shows the item as blocky 3D art (canvas sprite). Unaffordable cards stay visible (dimmed,
+// "nog 12" + progress bar); affordable cards glow; owned items show ✓ and AAN/UIT.
 import { formatCoins, makerLevel, makerIncome, upgradePrice, isFunActive, nextMakerTarget } from '../economy.js';
+import { itemSprite, makerSprite } from '../art/sprites.js';
 
 const PER_PAGE = 8;
 
@@ -25,6 +27,11 @@ export function createWinkel(game) {
   tabFun.addEventListener('click', () => setTab('fun'));
   prev.addEventListener('click', () => turn(-1));
   next.addEventListener('click', () => turn(1));
+
+  function avatarColor() {
+    const s = game.state;
+    return (game.config.colors.find((c) => c.id === s.color) || game.config.colors[0]).hex;
+  }
 
   function setTab(t) {
     game.audio.play('tap');
@@ -61,6 +68,17 @@ export function createWinkel(game) {
     return e;
   }
 
+  function coin() {
+    return el('span', 'coin3 sm');
+  }
+
+  /** Price node: "nog 12 ●" or "20 ●" — text stays selectable by tests, the coin is CSS. */
+  function setPrice(node, text) {
+    node.innerHTML = '';
+    node.appendChild(document.createTextNode(text));
+    node.appendChild(coin());
+  }
+
   function shake(card) {
     card.classList.remove('shake');
     void card.offsetWidth;
@@ -85,7 +103,10 @@ export function createWinkel(game) {
       card.dataset.id = item.id;
       card.dataset.kind = tab === 'makers' ? 'maker' : item.kind;
       const check = el('div', 'card-check', '✓');
-      const icon = el('div', 'card-icon', item.icon);
+      const icon = el('img', 'card-icon');
+      icon.alt = '';
+      icon.draggable = false;
+      icon.src = tab === 'makers' ? makerSprite(item.id, 160, 1) : itemSprite(item, { color: avatarColor() });
       const name = el('div', 'card-name', item.name);
       const sub = el('div', 'card-sub', '');
       const price = el('div', 'card-price', '');
@@ -96,11 +117,11 @@ export function createWinkel(game) {
       btn.type = 'button';
       card.append(check, icon, name, sub, price, progress, btn);
       grid.appendChild(card);
-      const c = { item, card, sub, price, progress, bar, btn, check, action: null };
+      const c = { item, card, icon, sub, price, progress, bar, btn, check, action: null, level: -1 };
       btn.addEventListener('click', () => {
         if (typeof c.action === 'function') c.action();
       });
-      card.addEventListener('pointerdown', (e) => {
+      card.addEventListener('pointerdown', () => {
         // a locked card has no button: every tap on it explains what to do (shake + spoken hint)
         if (card.classList.contains('locked')) {
           game.audio.play('thud');
@@ -124,10 +145,19 @@ export function createWinkel(game) {
     render(game.state);
   }
 
+  function setBtn(c, label, cls, glow) {
+    c.btn.textContent = label;
+    c.btn.className = `btn ${cls}${glow ? ' glow' : ''}`;
+  }
+
   function renderMaker(c, state) {
     const m = c.item;
     const level = makerLevel(state, m.id);
     const wallet = Math.floor(state.wallet);
+    if (level !== c.level) {
+      c.level = level;
+      c.icon.src = makerSprite(m.id, 160, Math.max(1, level));
+    }
     c.check.hidden = level === 0;
     c.card.classList.toggle('owned', level > 0);
     if (level === 0) {
@@ -135,21 +165,22 @@ export function createWinkel(game) {
       c.card.classList.toggle('locked', !unlocked);
       c.sub.textContent = `${formatCoins(m.income[0])} ${game.t('ui.perMinuut')}`;
       if (!unlocked) {
-        c.price.textContent = `🔒 ${game.t('ui.verdienEerst')} ${formatCoins(m.price)} 🪙`;
+        c.price.textContent = `🔒 ${formatCoins(m.price)} `;
+        c.price.appendChild(coin());
         c.progress.hidden = true;
         c.btn.hidden = true;
-        c.card.classList.remove('dim');
+        c.card.classList.remove('dim', 'can');
         c.action = null;
         return;
       }
       c.btn.hidden = false;
       const missing = Math.max(0, m.price - wallet);
       c.card.classList.toggle('dim', missing > 0);
-      c.price.textContent = missing > 0 ? `${game.t('ui.nog')} ${formatCoins(missing)} 🪙` : `${formatCoins(m.price)} 🪙`;
+      c.card.classList.toggle('can', missing === 0);
+      setPrice(c.price, missing > 0 ? `${game.t('ui.nog')} ${formatCoins(missing)} ` : `${formatCoins(m.price)} `);
       c.progress.hidden = missing === 0;
       c.bar.style.width = `${Math.min(100, (wallet / m.price) * 100)}%`;
-      c.btn.textContent = game.t('ui.koop');
-      c.btn.className = 'btn btn-primary' + (missing > 0 ? ' dim' : '');
+      setBtn(c, game.t('ui.koop'), 'btn-primary' + (missing > 0 ? ' dim' : ''), missing === 0);
       c.action = () => {
         const r = game.buy('maker', m.id);
         if (r.ok) bump(c.card);
@@ -163,7 +194,7 @@ export function createWinkel(game) {
       c.price.textContent = game.t('ui.max');
       c.progress.hidden = true;
       c.btn.hidden = true;
-      c.card.classList.remove('dim');
+      c.card.classList.remove('dim', 'can');
       c.action = null;
       return;
     }
@@ -171,11 +202,12 @@ export function createWinkel(game) {
     const missing = Math.max(0, price - wallet);
     c.btn.hidden = false;
     c.card.classList.toggle('dim', missing > 0);
-    c.price.textContent = missing > 0 ? `${game.t('ui.nog')} ${formatCoins(missing)} 🪙` : `${formatCoins(price)} 🪙 → ${formatCoins(m.income[level])} ${game.t('ui.perMinuut')}`;
+    c.card.classList.toggle('can', missing === 0);
+    setPrice(c.price, missing > 0 ? `${game.t('ui.nog')} ${formatCoins(missing)} ` : `${formatCoins(price)} `);
+    c.sub.textContent = `${'⭐'.repeat(level)} ${formatCoins(makerIncome(m, level))} → ${formatCoins(m.income[level])}`;
     c.progress.hidden = missing === 0;
     c.bar.style.width = `${Math.min(100, (wallet / price) * 100)}%`;
-    c.btn.textContent = game.t('ui.upgrade');
-    c.btn.className = 'btn btn-success' + (missing > 0 ? ' dim' : '');
+    setBtn(c, game.t('ui.upgrade'), 'btn-success' + (missing > 0 ? ' dim' : ''), missing === 0);
     c.action = () => {
       const r = game.buy('upgrade', m.id);
       if (r.ok) bump(c.card);
@@ -192,14 +224,14 @@ export function createWinkel(game) {
     c.card.classList.remove('locked');
     c.sub.textContent = '';
     if (owned) {
-      c.card.classList.remove('dim');
+      c.card.classList.remove('dim', 'can');
       c.progress.hidden = true;
       c.btn.hidden = false;
       if (['hat', 'skin', 'vehicle', 'paint', 'garden', 'pet'].includes(f.kind)) {
+        // the button shows the state like a switch (AAN = you wear/show it); a tap flips it
         const active = isFunActive(state, game.config, f.id);
-        c.price.textContent = active ? '✓ ' + game.t('ui.aan') : game.t('ui.uit');
-        c.btn.textContent = active ? game.t('ui.uit') : game.t('ui.aan');
-        c.btn.className = 'btn ' + (active ? 'btn-secondary' : 'btn-success');
+        c.price.textContent = '✓';
+        setBtn(c, active ? game.t('ui.aan') : game.t('ui.uit'), active ? 'btn-success' : 'btn-grey', false);
         c.action = () => {
           game.audio.play('pop');
           game.toggleFun(f.id);
@@ -207,8 +239,7 @@ export function createWinkel(game) {
         };
       } else {
         c.price.textContent = '✓';
-        c.btn.textContent = `${game.t('ui.speel')} 🏠`;
-        c.btn.className = 'btn btn-success';
+        setBtn(c, `${game.t('ui.speel')} 🏠`, 'btn-success', false);
         c.action = () => {
           game.audio.play('tap');
           game.show('huis');
@@ -219,15 +250,18 @@ export function createWinkel(game) {
     const missing = Math.max(0, f.price - wallet);
     c.btn.hidden = false;
     c.card.classList.toggle('dim', missing > 0);
-    c.price.textContent = missing > 0 ? `${game.t('ui.nog')} ${formatCoins(missing)} 🪙` : `${formatCoins(f.price)} 🪙`;
+    c.card.classList.toggle('can', missing === 0);
+    setPrice(c.price, missing > 0 ? `${game.t('ui.nog')} ${formatCoins(missing)} ` : `${formatCoins(f.price)} `);
     c.progress.hidden = missing === 0;
     c.bar.style.width = `${Math.min(100, (wallet / f.price) * 100)}%`;
-    c.btn.textContent = game.t('ui.koop');
-    c.btn.className = 'btn btn-primary' + (missing > 0 ? ' dim' : '');
+    setBtn(c, game.t('ui.koop'), 'btn-primary' + (missing > 0 ? ' dim' : ''), missing === 0);
     c.action = () => {
       const r = game.buy('fun', f.id);
-      if (r.ok) bump(c.card);
-      else shake(c.card);
+      if (r.ok) {
+        bump(c.card);
+        const rc = c.card.getBoundingClientRect();
+        game.fx.burst(rc.left + rc.width / 2, rc.top + rc.height * 0.4);
+      } else shake(c.card);
     };
   }
 
@@ -238,13 +272,16 @@ export function createWinkel(game) {
       else renderFun(c, state);
     }
     const target = nextMakerTarget(state, game.config);
+    tabHint.innerHTML = '';
     if (target) {
       const missing = Math.max(0, target.maker.price - Math.floor(state.wallet));
-      tabHint.textContent = target.unlocked
-        ? (missing > 0 ? `${target.maker.icon} ${game.t('ui.nog')} ${formatCoins(missing)}` : `${target.maker.icon} ${game.t('ui.koop')}!`)
-        : `${target.maker.icon} 🔒`;
-    } else {
-      tabHint.textContent = '';
+      const img = el('img');
+      img.alt = '';
+      img.src = makerSprite(target.maker.id, 64, 1);
+      tabHint.appendChild(img);
+      tabHint.appendChild(document.createTextNode(target.unlocked
+        ? (missing > 0 ? `${game.t('ui.nog')} ${formatCoins(missing)}` : `${game.t('ui.koop')}!`)
+        : `🔒 ${formatCoins(target.maker.price)}`));
     }
   }
 

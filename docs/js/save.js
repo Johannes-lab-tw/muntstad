@@ -116,7 +116,12 @@ export function deserialize(json, config, now) {
   const version = raw && Number.isInteger(raw.version) ? raw.version : 0;
   const migrated = migrate(raw, config, now);
   if (!migrated) return { state: null, status: 'reset', message: `save version ${version} cannot be migrated` };
-  const state = normalize(migrated, config, now);
+  let state = null;
+  try {
+    state = normalize(migrated, config, now);
+  } catch (e) {
+    state = null;
+  }
   if (!state) return { state: null, status: 'reset', message: 'save has an unknown shape' };
   return { state, status: version < config.saveVersion ? 'migrated' : 'ok', message: '' };
 }
@@ -241,30 +246,37 @@ export function decodeCode(code, config, now) {
     return null;
   }
   if (!Array.isArray(p) || p[0] !== 1) return null;
-  const fresh = createState(config, now);
-  const makers = {};
-  config.makers.forEach((m, i) => { makers[m.id] = Math.min(config.maxLevel, Math.max(0, Number(p[10]?.[i]) || 0)); });
-  const fun = {};
-  for (const i of p[11] || []) if (config.fun[i]) fun[config.fun[i].id] = true;
-  const equipped = { ...fresh.equipped };
-  ['hat', 'skin', 'vehicle', 'paint'].forEach((k, i) => {
-    const idx = p[12]?.[i];
-    const item = config.fun[idx];
-    equipped[k] = item && fun[item.id] && item.kind === k ? item.id : null;
-  });
-  const hidden = {};
-  for (const i of p[13] || []) if (config.fun[i] && fun[config.fun[i].id]) hidden[config.fun[i].id] = true;
-  const milestones = (p[14] || []).map((i) => config.milestones[i]?.id).filter(Boolean);
-  const bits = Number(p[18]) || 0;
-  return normalize({
-    ...fresh,
-    name: typeof p[1] === 'string' ? p[1] : '',
-    color: (config.colors[p[2]] || config.colors[0]).id,
-    wallet: p[3], earnedWork: p[4], earnedPassive: p[5], earnedOffline: p[6],
-    spentFun: p[7], spentMakers: p[8], spentFood: p[9],
-    makers, fun, equipped, hidden, milestones,
-    carsWashed: p[15], bestWorkRate: p[16], playTimeMs: (Number(p[17]) || 0) * 1000,
-    settings: { voice: !!(bits & 1), sound: !!(bits & 2), music: !!(bits & 4) },
-    lastTick: now, createdAt: now,
-  }, config, now);
+  try {
+    const fresh = createState(config, now);
+    const list = (v) => (Array.isArray(v) ? v : []);
+    const makers = {};
+    config.makers.forEach((m, i) => { makers[m.id] = Math.min(config.maxLevel, Math.max(0, Number(list(p[10])[i]) || 0)); });
+    const fun = {};
+    for (const i of list(p[11])) if (config.fun[i]) fun[config.fun[i].id] = true;
+    const equipped = { ...fresh.equipped };
+    ['hat', 'skin', 'vehicle', 'paint'].forEach((k, i) => {
+      const idx = list(p[12])[i];
+      const item = config.fun[idx];
+      equipped[k] = item && fun[item.id] && item.kind === k ? item.id : null;
+    });
+    const hidden = {};
+    for (const i of list(p[13])) if (config.fun[i] && fun[config.fun[i].id]) hidden[config.fun[i].id] = true;
+    const milestones = list(p[14]).map((i) => config.milestones[i]?.id).filter(Boolean);
+    const bits = Number(p[18]) || 0;
+    return normalize({
+      ...fresh,
+      name: typeof p[1] === 'string' ? p[1] : '',
+      color: (config.colors[p[2]] || config.colors[0]).id,
+      wallet: p[3], earnedWork: p[4], earnedPassive: p[5], earnedOffline: p[6],
+      spentFun: p[7], spentMakers: p[8], spentFood: p[9],
+      makers, fun, equipped, hidden, milestones,
+      carsWashed: p[15], bestWorkRate: p[16], playTimeMs: (Number(p[17]) || 0) * 1000,
+      settings: { voice: !!(bits & 1), sound: !!(bits & 2), music: !!(bits & 4) },
+      // a restored code is a returning player: START must say "Verder spelen", not ask for a name again
+      flags: { started: true, workIntro: true },
+      lastTick: now, createdAt: now,
+    }, config, now);
+  } catch (e) {
+    return null;
+  }
 }

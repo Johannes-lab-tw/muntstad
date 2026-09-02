@@ -132,14 +132,21 @@ export function createPapa(game) {
 
   document.getElementById('code-copy').addEventListener('click', async () => {
     game.audio.play('tap');
+    let ok = false;
     try {
+      codeOut.focus();
       codeOut.select();
-      if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(codeOut.value);
-      else document.execCommand('copy');
-      setStatus(game.T.papa.codeCopied, false);
+      codeOut.setSelectionRange(0, codeOut.value.length);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(codeOut.value);
+        ok = true;
+      } else {
+        ok = document.execCommand('copy');
+      }
     } catch (e) {
-      setStatus(game.T.papa.codeCopied, false);
+      ok = false;
     }
+    setStatus(ok ? game.T.papa.codeCopied : game.T.papa.codeCopyFailed, !ok);
   });
 
   document.getElementById('code-load').addEventListener('click', () => {

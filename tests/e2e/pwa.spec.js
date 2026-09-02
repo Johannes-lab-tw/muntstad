@@ -70,10 +70,8 @@ test('real offline: the game still loads after the server is stopped', async ({ 
       })();
       return Promise.race([ok, timeout]);
     });
-    if (ready === 'timeout' || ready === 'incomplete') {
-      testInfo.annotations.push({ type: 'skipped', description: `${browserName}: service worker did not finish precaching (${ready})` });
-      test.skip(true, `service worker did not precache in ${browserName}`);
-    }
+    // the precache must be complete before we cut the server: an incomplete cache is a real failure, not a skip
+    expect(ready, 'service worker precache').toMatch(/^ok:/);
 
     // stop the server, then reload: everything must come from the service worker cache
     server.kill();

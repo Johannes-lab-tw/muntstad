@@ -75,6 +75,11 @@ export function createStad(game) {
   function idleCheck() {
     if (!visible || game.popups.isOpen) return;
     const s = game.state;
+    // brand new player who has not found WERK yet: point at it after a few quiet seconds
+    if (s.carsWashed === 0 && ownedMakerCount(s, game.config) === 0 && !s.flags.tipWerk && game.now() - lastInteraction > 6000) {
+      if (game.mentor.say('lines.tipWerk', {}, { kind: 'tip' })) game.update((x) => setFlag(x, 'tipWerk', true));
+      return;
+    }
     if (game.now() - lastInteraction < 20000) return;
     const target = nextMakerTarget(s, game.config);
     if (target && target.unlocked && target.missing === 0 && !s.flags[`afford-${target.maker.id}`]) {
@@ -120,6 +125,8 @@ export function createStad(game) {
     },
     render(state) {
       game.scene.setState(state);
+      // the WERK button pulses until the first car is washed: the one thing a new player must find
+      document.getElementById('nav-werk').classList.toggle('glow', state.carsWashed === 0);
     },
     get visible() { return visible; },
   };

@@ -17,7 +17,7 @@ export function createFx(game) {
   window.addEventListener('resize', resize);
   resize();
 
-  const COLORS = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#f472b6', '#fde047'];
+  const COLORS = ['#ff5f5f', '#ffc21c', '#45d65c', '#45b6ff', '#b76cff', '#ff6fae', '#ffe94d'];
 
   function frame() {
     ctx.clearRect(0, 0, W, H);
@@ -36,6 +36,8 @@ export function createFx(game) {
       ctx.rotate(p.rot);
       ctx.fillStyle = p.color;
       ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * 0.35);
       ctx.restore();
     }
     if (alive > 0) raf = requestAnimationFrame(frame);
@@ -46,15 +48,15 @@ export function createFx(game) {
     }
   }
 
-  function confetti() {
+  function confetti(origin = null) {
     const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const n = reduced ? 12 : 30;
+    const n = reduced ? 12 : origin ? 18 : 30;
     pieces.length = 0;
     for (let i = 0; i < n; i++) {
       pieces.push({
-        x: W / 2 + (Math.random() - 0.5) * W * 0.6,
-        y: H * 0.35,
-        vx: (Math.random() - 0.5) * 16,
+        x: origin ? origin.x + (Math.random() - 0.5) * 40 : W / 2 + (Math.random() - 0.5) * W * 0.6,
+        y: origin ? origin.y : H * 0.35,
+        vx: (Math.random() - 0.5) * (origin ? 12 : 16),
         vy: -8 - Math.random() * 10,
         vr: (Math.random() - 0.5) * 0.4,
         rot: Math.random() * Math.PI,
@@ -73,17 +75,16 @@ export function createFx(game) {
     const count = Math.min(5, Math.max(1, n));
     for (let i = 0; i < count; i++) {
       const el = document.createElement('span');
-      el.className = 'coin-fly';
-      el.textContent = '🪙';
-      el.style.left = `${x - 17}px`;
-      el.style.top = `${y - 17}px`;
+      el.className = 'coin-fly coin3';
+      el.style.left = `${x - 18}px`;
+      el.style.top = `${y - 18}px`;
       app.appendChild(el);
       const dx = target.x - x, dy = target.y - y;
       const midX = dx * 0.5 + (Math.random() - 0.5) * 120;
       const midY = dy * 0.5 - 120 - Math.random() * 60;
       const anim = el.animate([
         { transform: 'translate(0, 0) scale(1)', opacity: 1 },
-        { transform: `translate(${midX}px, ${midY}px) scale(1.2)`, opacity: 1, offset: 0.5 },
+        { transform: `translate(${midX}px, ${midY}px) scale(1.25)`, opacity: 1, offset: 0.5 },
         { transform: `translate(${dx}px, ${dy}px) scale(0.6)`, opacity: 0.9 },
       ], { duration: 650 + i * 90, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', delay: i * 60, fill: 'forwards' });
       anim.onfinish = () => {
@@ -94,5 +95,23 @@ export function createFx(game) {
     }
   }
 
-  return { confetti, flyCoins, resize };
+  /** A small confetti burst from a screen point (a fun purchase, a sticker tap). */
+  function burst(x, y) {
+    confetti({ x, y });
+  }
+
+  /** Floating text ("+2", "−5") that rises and fades at a screen point. */
+  function floatText(x, y, text, color = null) {
+    const app = document.getElementById('app');
+    const el = document.createElement('span');
+    el.className = 'float-fx';
+    el.textContent = text;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    if (color) el.style.color = color;
+    app.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  }
+
+  return { confetti, burst, floatText, flyCoins, resize };
 }

@@ -1,20 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="110" fill="#38bdf8"/>
-  <rect x="0" y="360" width="512" height="152" fill="#7ed957"/>
-  <rect x="0" y="352" width="512" height="18" fill="#fde68a"/>
-  <rect x="330" y="290" width="120" height="96" rx="10" fill="#fef3c7" stroke="#1f2937" stroke-width="10"/>
-  <polygon points="318,296 390,236 462,296" fill="#dc2626" stroke="#1f2937" stroke-width="10" stroke-linejoin="round"/>
-  <rect x="372" y="330" width="36" height="56" rx="6" fill="#92400e" stroke="#1f2937" stroke-width="8"/>
-  <circle cx="200" cy="230" r="150" fill="#f59e0b" stroke="#1f2937" stroke-width="14"/>
-  <circle cx="200" cy="230" r="112" fill="#fbbf24" stroke="#1f2937" stroke-width="10"/>
-  <circle cx="158" cy="212" r="26" fill="#ffffff" stroke="#1f2937" stroke-width="9"/>
-  <circle cx="242" cy="212" r="26" fill="#ffffff" stroke="#1f2937" stroke-width="9"/>
-  <circle cx="164" cy="216" r="12" fill="#1f2937"/>
-  <circle cx="248" cy="216" r="12" fill="#1f2937"/>
-  <circle cx="169" cy="210" r="4" fill="#ffffff"/>
-  <circle cx="253" cy="210" r="4" fill="#ffffff"/>
-  <path d="M150 268 Q200 320 250 268" fill="#ffffff" stroke="#1f2937" stroke-width="9" stroke-linejoin="round"/>
-  <circle cx="128" cy="262" r="16" fill="#fca5a5" opacity="0.85"/>
-  <circle cx="272" cy="262" r="16" fill="#fca5a5" opacity="0.85"/>
-  <path d="M200 112 L208 132 L230 132 L212 145 L219 166 L200 153 L181 166 L188 145 L170 132 L192 132 Z" fill="#fff7d6"/>
+  <defs>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cc9f7"/><stop offset="1" stop-color="#1479cf"/></linearGradient>
+    <radialGradient id="coin" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#fff3b0"/><stop offset="0.35" stop-color="#ffd93d"/><stop offset="0.75" stop-color="#f0a80f"/><stop offset="1" stop-color="#c97a00"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#sea)"/>
+  <!-- island: cliff, sand, grass (2:1 dimetric) -->
+  <g transform="translate(256 330)">
+    <path d="M-190 0 L0 95 L190 0 L0 -95 Z" transform="translate(0 40)" fill="#8a5a3a"/>
+    <path d="M-190 0 L0 95 L190 0 L0 -95 Z" transform="translate(0 24)" fill="#b97b4b"/>
+    <path d="M-190 0 L0 95 L190 0 L0 -95 Z" fill="#f4d98a" stroke="#1b1f3b" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M-160 0 L0 80 L160 0 L0 -80 Z" fill="#6fd35b"/>
+    <!-- road loop -->
+    <path d="M-104 0 L0 52 L104 0 L0 -52 Z" fill="none" stroke="#dcd7cb" stroke-width="34" stroke-linejoin="round"/>
+    <path d="M-104 0 L0 52 L104 0 L0 -52 Z" fill="none" stroke="#5d6675" stroke-width="22" stroke-linejoin="round"/>
+    <path d="M-104 0 L0 52 L104 0 L0 -52 Z" fill="none" stroke="#f7d24a" stroke-width="3" stroke-dasharray="10 9" stroke-linejoin="round"/>
+    <!-- pond -->
+    <ellipse cx="0" cy="0" rx="26" ry="13" fill="#3fc0f5"/>
+    <!-- house block -->
+    <g transform="translate(-118 -24)">
+      <path d="M-30 0 L0 15 L0 -35 L-30 -50 Z" fill="#f2e2b8"/>
+      <path d="M0 15 L30 0 L30 -50 L0 -35 Z" fill="#c9b892"/>
+      <path d="M-30 -50 L0 -35 L30 -50 L0 -65 Z" fill="#fff2c9"/>
+      <path d="M-34 -48 L0 -31 L34 -48 L0 -80 Z" fill="#e8483f"/>
+      <path d="M-34 -48 L0 -31 L0 -60 Z" fill="#c93a3a"/>
+    </g>
+    <!-- lemonade stand block -->
+    <g transform="translate(112 -26)">
+      <path d="M-28 0 L0 14 L0 -30 L-28 -44 Z" fill="#ffd23f"/>
+      <path d="M0 14 L28 0 L28 -44 L0 -30 Z" fill="#c99a1c"/>
+      <path d="M-28 -44 L0 -30 L28 -44 L0 -58 Z" fill="#ffe27a"/>
+      <path d="M-36 -56 L0 -38 L36 -56 L0 -74 Z" fill="#ff5f5f"/>
+      <path d="M-24 -62 L0 -50 L0 -44 L-24 -56 Z" fill="#fff"/>
+      <path d="M0 -50 L24 -62 L24 -56 L0 -44 Z" fill="#fff"/>
+    </g>
+    <!-- trees -->
+    <g transform="translate(-40 60)"><rect x="-4" y="-12" width="8" height="14" fill="#8a5a35"/><path d="M-16 -12 L0 -4 L16 -12 L0 -20 Z" fill="#5ad46f"/><path d="M-16 -12 L0 -4 L0 14 L-16 6 Z" fill="#3fbf5a"/><path d="M0 -4 L16 -12 L16 6 L0 14 Z" fill="#2f9e4a"/></g>
+    <g transform="translate(60 56)"><rect x="-4" y="-12" width="8" height="14" fill="#8a5a35"/><path d="M-16 -12 L0 -4 L16 -12 L0 -20 Z" fill="#5ad46f"/><path d="M-16 -12 L0 -4 L0 14 L-16 6 Z" fill="#3fbf5a"/><path d="M0 -4 L16 -12 L16 6 L0 14 Z" fill="#2f9e4a"/></g>
+  </g>
+  <!-- Muntje -->
+  <g transform="translate(256 170)">
+    <ellipse cx="0" cy="118" rx="70" ry="12" fill="rgba(10,20,60,0.25)"/>
+    <circle cx="0" cy="12" r="108" fill="#c97a00" stroke="#1b1f3b" stroke-width="10"/>
+    <circle cx="0" cy="0" r="108" fill="url(#coin)" stroke="#1b1f3b" stroke-width="10"/>
+    <circle cx="0" cy="0" r="80" fill="none" stroke="#e59b13" stroke-width="10"/>
+    <path d="M-56 -56 Q-26 -84 14 -80" fill="none" stroke="#fff7d6" stroke-width="14" stroke-linecap="round" opacity="0.85"/>
+    <circle cx="-32" cy="-10" r="21" fill="#fff" stroke="#1b1f3b" stroke-width="7"/>
+    <circle cx="32" cy="-10" r="21" fill="#fff" stroke="#1b1f3b" stroke-width="7"/>
+    <circle cx="-27" cy="-7" r="10" fill="#1b1f3b"/>
+    <circle cx="37" cy="-7" r="10" fill="#1b1f3b"/>
+    <circle cx="-23" cy="-11" r="3.5" fill="#fff"/>
+    <circle cx="41" cy="-11" r="3.5" fill="#fff"/>
+    <path d="M-36 30 Q0 66 36 30" fill="#fff" stroke="#1b1f3b" stroke-width="7" stroke-linejoin="round"/>
+    <circle cx="-56" cy="26" r="12" fill="#ff8fb1" opacity="0.8"/>
+    <circle cx="56" cy="26" r="12" fill="#ff8fb1" opacity="0.8"/>
+  </g>
 </svg>

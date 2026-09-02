@@ -175,9 +175,11 @@ export function createAudio() {
       startMusic();
       return true;
     },
+    /** True once the context exists and actually runs (iOS reports 'interrupted' after a call or Siri). */
+    get running() { return !!ctx && ctx.state === 'running'; },
     play(name) {
       if (!soundOn || !ctx) return;
-      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      if (ctx.state !== 'running') ctx.resume().catch(() => {});
       const fn = SFX[name];
       if (fn) {
         try { fn(); } catch (e) { /* never break the game for a sound */ }
@@ -195,6 +197,6 @@ export function createAudio() {
     },
     get ready() { return !!ctx; },
     pause() { stopMusic(); if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {}); },
-    resume() { if (ctx) { ctx.resume().catch(() => {}); startMusic(); } },
+    resume() { if (ctx) { if (ctx.state !== 'running') ctx.resume().catch(() => {}); startMusic(); } },
   };
 }

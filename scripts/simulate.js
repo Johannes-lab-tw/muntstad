@@ -75,7 +75,7 @@ function funStep(state, config, log, minute, opts) {
 
 /** Times (ms) at which cars get washed. 'even': one car every 60000·coinsPerCar/workRate ms.
  *  'burst': bursts of `burstSize` cars at the minCycleMs floor, then a pause so the average stays workRate. */
-export function carTimes({ minutes, workRate, config, pacing = 'even', burstSize = 8 }) {
+export function carTimes({ minutes, workRate, config, pacing = "even", burstSize = 12 }) {
   const end = minutes * 60000;
   const times = [];
   if (pacing === 'burst') {

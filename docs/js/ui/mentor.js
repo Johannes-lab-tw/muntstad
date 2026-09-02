@@ -68,16 +68,19 @@ export function createMentor(game) {
 
   // a tap anywhere else dismisses the bubble once it has been readable for a moment
   document.addEventListener('pointerdown', (e) => {
-    if (bubble.classList.contains('hidden') || bubble.contains(e.target)) return;
-    if (game.now() - shownAt > 1500) hide();
+    if (bubble.classList.contains('hidden') || bubble.contains(e.target) || face.contains(e.target)) return;
+    if (game.now() - shownAt > 3500) hide();
   }, true);
-  replay.addEventListener('click', () => {
+  function again() {
     game.audio.play('tap');
     if (lastText) {
       show(lastText);
       speak(lastText);
     }
-  });
+  }
+  replay.addEventListener('click', again);
+  // Muntje himself is tappable: he repeats what he said (and wiggles)
+  face.addEventListener('pointerdown', again);
 
   return {
     say,

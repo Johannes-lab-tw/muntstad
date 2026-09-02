@@ -55,31 +55,37 @@ export const CONFIG = Object.freeze({
 
   // LEUK catalogue: fixed prices, all visible from the start, no randomness.
   // kind: hat | skin | vehicle | paint (one equipped per kind) · garden | pet (toggle on/off) · show | dance | toy (actions on HUIS)
+  // The order is the shop order (8 per page): every page mixes kinds so a pet, a show and a toy are never
+  // buried on the last page. The Bewaar-code stores indices into this list: reorder only with a code-version bump.
   fun: [
+    // page 1: a taste of everything
     { id: 'pet',        name: 'Pet',            icon: '🧢', price: 15,  kind: 'hat' },
+    { id: 'kat',        name: 'Kat',            icon: '🐱', price: 80,  kind: 'pet' },
+    { id: 'hond',       name: 'Hond',           icon: '🐶', price: 100, kind: 'pet' },
+    { id: 'tovenaar',   name: 'Tovenaar',       icon: '🧙', price: 50,  kind: 'hat' },
+    { id: 'bloemen',    name: 'Bloemen',        icon: '🌷', price: 30,  kind: 'garden' },
+    { id: 'vuurwerk',   name: 'Vuurwerk',       icon: '🎆', price: 30,  kind: 'show' },
+    { id: 'dansje',     name: 'Dansje',         icon: '🕺', price: 50,  kind: 'dance' },
+    { id: 'scooter',    name: 'Scooter',        icon: '🛴', price: 150, kind: 'vehicle' },
+    // page 2: hats and the dino
     { id: 'strohoed',   name: 'Strohoed',       icon: '👒', price: 20,  kind: 'hat' },
     { id: 'helm',       name: 'Helm',           icon: '⛑️', price: 25,  kind: 'hat' },
     { id: 'hogehoed',   name: 'Hoge hoed',      icon: '🎩', price: 30,  kind: 'hat' },
     { id: 'feestmuts',  name: 'Feestmuts',      icon: '🥳', price: 35,  kind: 'hat' },
     { id: 'piraat',     name: 'Piraat',         icon: '☠️', price: 40,  kind: 'hat' },
     { id: 'cowboy',     name: 'Cowboy',         icon: '🤠', price: 45,  kind: 'hat' },
-    { id: 'tovenaar',   name: 'Tovenaar',       icon: '🧙', price: 50,  kind: 'hat' },
     { id: 'kroon',      name: 'Kroon',          icon: '👑', price: 60,  kind: 'hat' },
-
+    { id: 'dino',       name: 'Dino',           icon: '🦖', price: 200, kind: 'pet' },
+    // page 3: skins and house paint
     { id: 'zombie',     name: 'Zombie',         icon: '🧟', price: 40,  kind: 'skin' },
     { id: 'kikker',     name: 'Kikker',         icon: '🐸', price: 50,  kind: 'skin' },
     { id: 'astronaut',  name: 'Astronaut',      icon: '🚀', price: 60,  kind: 'skin' },
     { id: 'ninja',      name: 'Ninja',          icon: '🥷', price: 70,  kind: 'skin' },
     { id: 'superheld',  name: 'Superheld',      icon: '🦸', price: 80,  kind: 'skin' },
-
-    { id: 'scooter',    name: 'Scooter',        icon: '🛴', price: 150, kind: 'vehicle' },
-    { id: 'auto',       name: 'Auto',           icon: '🚗', price: 500, kind: 'vehicle' },
-
     { id: 'verf-rood',  name: 'Rood huis',      icon: '🟥', price: 100, kind: 'paint' },
     { id: 'verf-blauw', name: 'Blauw huis',     icon: '🟦', price: 100, kind: 'paint' },
     { id: 'verf-geel',  name: 'Geel huis',      icon: '🟨', price: 100, kind: 'paint' },
-
-    { id: 'bloemen',    name: 'Bloemen',        icon: '🌷', price: 30,  kind: 'garden' },
+    // page 4: the garden
     { id: 'vlag',       name: 'Vlag',           icon: '🚩', price: 35,  kind: 'garden' },
     { id: 'zandbak',    name: 'Zandbak',        icon: '🏖️', price: 40,  kind: 'garden' },
     { id: 'bankje',     name: 'Bankje',         icon: '🪑', price: 40,  kind: 'garden' },
@@ -88,18 +94,13 @@ export const CONFIG = Object.freeze({
     { id: 'lantaarn',   name: 'Lantaarn',       icon: '🏮', price: 55,  kind: 'garden' },
     { id: 'brievenbus', name: 'Brievenbus',     icon: '📮', price: 60,  kind: 'garden' },
     { id: 'sneeuwpop',  name: 'Sneeuwpop',      icon: '⛄', price: 70,  kind: 'garden' },
+    // page 5: the big things
     { id: 'vijver',     name: 'Vijver',         icon: '🐟', price: 80,  kind: 'garden' },
     { id: 'tent',       name: 'Tent',           icon: '🎪', price: 100, kind: 'garden' },
     { id: 'fontein',    name: 'Fontein',        icon: '⛲', price: 120, kind: 'garden' },
-
-    { id: 'kat',        name: 'Kat',            icon: '🐱', price: 80,  kind: 'pet' },
-    { id: 'hond',       name: 'Hond',           icon: '🐶', price: 100, kind: 'pet' },
-    { id: 'dino',       name: 'Dino',           icon: '🦖', price: 200, kind: 'pet' },
-
-    { id: 'vuurwerk',   name: 'Vuurwerk',       icon: '🎆', price: 30,  kind: 'show' },
-    { id: 'dansje',     name: 'Dansje',         icon: '🕺', price: 50,  kind: 'dance' },
     { id: 'salto',      name: 'Salto',          icon: '🤸', price: 60,  kind: 'dance' },
     { id: 'trampoline', name: 'Trampoline',     icon: '🦘', price: 300, kind: 'toy' },
+    { id: 'auto',       name: 'Auto',           icon: '🚗', price: 500, kind: 'vehicle' },
   ],
 
   // Milestones: fanfare + confetti + a sticker on the HUIS sticker wall. Rewards, not catalogue items.

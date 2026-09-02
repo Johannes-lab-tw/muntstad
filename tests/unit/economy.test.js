@@ -206,12 +206,18 @@ test('milestones fire once, in order of achievement', () => {
   assert.deepEqual(r.unlocked, ['eerste-geldmaker']);
   s = r.state;
   assert.deepEqual(E.checkMilestones(s, CONFIG).unlocked, []);
-  // passive beats work needs a work rate
-  s = { ...s, bestWorkRate: 15 };
+  // passive beats work needs a work rate and a real work record (≥ tiredAfterCars cars)
+  s = { ...s, bestWorkRate: 15, carsWashed: CONFIG.work.tiredAfterCars };
   assert.deepEqual(E.checkMilestones(s, CONFIG).unlocked, []); // 12 < 15
   s = withMaker(s, 'limonade', 2); // 18 > 15
+  assert.deepEqual(E.checkMilestones({ ...s, carsWashed: 3 }, CONFIG).unlocked, [], 'too little work: no sticker yet');
   r = E.checkMilestones(s, CONFIG);
   assert.deepEqual(r.unlocked, ['geld-werkt']);
+  // a slow worker who buys the first maker: the maker sticker comes alone, "geld werkt" follows on the next check
+  const slow = { ...E.createState(CONFIG, 0), bestWorkRate: 8, carsWashed: 12 };
+  const both = E.checkMilestones(withMaker(slow, 'limonade', 1), CONFIG);
+  assert.deepEqual(both.unlocked, ['eerste-geldmaker']);
+  assert.deepEqual(E.checkMilestones(both.state, CONFIG).unlocked, ['geld-werkt']);
   s = { ...r.state, earnedWork: 600, earnedPassive: 400 };
   assert.deepEqual(E.checkMilestones(s, CONFIG).unlocked, ['duizend']);
   s = withMaker(s, 'limonade', 5);

@@ -16,6 +16,7 @@ import { createWerk } from './ui/werk.js';
 import { createWinkel } from './ui/winkel.js';
 import { createHuis } from './ui/huis.js';
 import { createPapa } from './ui/papa.js';
+import { navSprite } from './art/sprites.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -166,6 +167,7 @@ function toggleFun(id) {
 
 function tick() {
   const now = Date.now();
+  const wasHungry = state.petHungry;
   const r = E.advance(state, CONFIG, now);
   state = r.state;
   if (r.offline) {
@@ -176,22 +178,34 @@ function tick() {
       show = true;
     }
     if (show) {
-      if (screen === 'start') pendingOffline = { earned: (pendingOffline ? pendingOffline.earned : 0) + r.earned, elapsedMs: r.elapsedMs };
-      else game.popups.offline(r.earned, r.elapsedMs);
+      if (screen === 'start') pendingOffline = { earned: (pendingOffline ? pendingOffline.earned : 0) + r.earned, elapsedMs: r.elapsedMs, rawElapsedMs: r.rawElapsedMs };
+      else game.popups.offline(r.earned, r.elapsedMs, r.rawElapsedMs);
     }
   }
-  if (r.foodPaid > 0) onFoodPaid();
+  if (r.foodPaid > 0) onFoodPaid(r.foodPaid);
+  if (!wasHungry && state.petHungry) onPetHungry();
   afterUpdate();
 }
 
 let foodSaid = 0;
-function onFoodPaid() {
+function onFoodPaid(amount) {
+  // the cost is always visible: "−5" ticks away at the wallet; Muntje explains it now and then
+  if (TOPBAR_SCREENS.has(screen)) {
+    const p = walletPoint();
+    game.fx.floatText(p.x + 40, p.y + 30, `−${E.formatCoins(amount)}`, '#c93a3a');
+  }
   foodSaid++;
   if (foodSaid > 2 && foodSaid % 5 !== 0) return;
   const best = CONFIG.makers.slice().reverse().find((m) => E.makerLevel(state, m.id) > 0);
   const pet = CONFIG.fun.find((f) => f.kind === 'pet' && state.fun[f.id]);
-  if (!best || !pet) return;
-  game.mentor.say('lines.foodPaid', { ding: best.name.toLowerCase(), dier: pet.name.toLowerCase() }, { kind: 'tip' });
+  if (!pet) return;
+  if (best) game.mentor.say('lines.foodPaid', { ding: best.name.toLowerCase(), dier: pet.name.toLowerCase() }, { kind: 'tip' });
+  else game.mentor.say('lines.foodTick', { n: E.formatCoins(amount), dier: pet.name.toLowerCase() }, { kind: 'tip' });
+}
+
+function onPetHungry() {
+  const pet = CONFIG.fun.find((f) => f.kind === 'pet' && state.fun[f.id]);
+  if (pet) game.mentor.say('lines.petSleeping', { dier: pet.name.toLowerCase() }, { kind: 'reaction' });
 }
 
 // ---------- rendering ----------
@@ -242,7 +256,8 @@ function show(name) {
   if (name === 'stad' && pendingOffline) {
     const p = pendingOffline;
     pendingOffline = null;
-    setTimeout(() => game.popups.offline(p.earned, p.elapsedMs), 600);
+    // give the welcome line (≈ 2.5 s spoken) room before the popup takes over
+    setTimeout(() => game.popups.offline(p.earned, p.elapsedMs, p.rawElapsedMs), 2600);
   }
   if (name === 'stad' && pendingMilestones.length) {
     const ids = pendingMilestones.splice(0);
@@ -253,10 +268,11 @@ function show(name) {
 // ---------- media (iOS needs a user gesture for audio and speech) ----------
 
 function unlockMedia() {
-  if (mediaUnlocked) return;
-  mediaUnlocked = true;
+  // called on every gesture: cheap, and it also revives a context that iOS put in 'interrupted' after a call or Siri
   audio.unlock();
   speech.unlock();
+  if (mediaUnlocked) return;
+  mediaUnlocked = true;
   applySettings();
 }
 
@@ -287,15 +303,19 @@ function boot() {
   screens.papa = papa;
   screens.gate = papa.gate;
 
+  // blocky icons for the HUD and navigation (rendered once from the same art as the town)
+  const icons = { 'ico-werk': 'werk', 'ico-winkel': 'winkel', 'ico-winkel-2': 'winkel', 'ico-huis': 'huis', 'ico-stad-1': 'stad', 'ico-stad-2': 'stad', 'ico-stad-3': 'stad', 'ico-stad-4': 'stad', 'ico-makers': 'makers', 'ico-fun': 'fun', 'income-icon': 'income', 'ico-car': 'car' };
+  for (const [id, kind] of Object.entries(icons)) { const img = document.getElementById(id); if (img) img.src = navSprite(kind); }
+
   // zoom / callout prevention (iOS ignores user-scalable=no)
   for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
   document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
   document.addEventListener('contextmenu', (e) => { if (!e.target.closest('input, textarea')) e.preventDefault(); });
   document.addEventListener('touchmove', (e) => { if (!e.target.closest('.papa-scroll')) e.preventDefault(); }, { passive: false });
 
-  // first gesture unlocks audio + speech
-  document.addEventListener('pointerdown', unlockMedia, { once: true, capture: true });
-  document.addEventListener('touchend', unlockMedia, { once: true, capture: true });
+  // the first gesture unlocks audio + speech; later gestures keep retrying until the context really runs
+  document.addEventListener('pointerdown', () => { if (!mediaUnlocked || !audio.running) unlockMedia(); }, { capture: true });
+  document.addEventListener('touchend', () => { if (!mediaUnlocked || !audio.running) unlockMedia(); }, { capture: true });
 
   // economy: catch up first (offline earnings), then tick every second
   tick();
@@ -316,9 +336,12 @@ function boot() {
   show('start');
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch((e) => console.info('[muntstad] service worker not registered:', e.message));
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      // check for a new version every time the app comes back to the front, so the next start has it
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+    }).catch((e) => console.info('[muntstad] service worker not registered:', e.message));
   }
-  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 1 };
+  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 2, plotPoint: (id) => game.scene.plotPoint(id) };
 }
 
 boot();

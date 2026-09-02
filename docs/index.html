@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Muntstad">
-  <meta name="theme-color" content="#38bdf8">
+  <meta name="theme-color" content="#1479cf">
   <meta name="format-detection" content="telephone=no">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
@@ -23,15 +23,15 @@
     <!-- Top bar: coins + income per minute (STAD, WERK, WINKEL, HUIS) -->
     <header id="topbar" class="topbar" hidden>
       <div class="wallet" id="wallet">
-        <span class="wallet-icon" id="wallet-icon" aria-hidden="true">🪙</span>
+        <span class="coin3" id="wallet-icon" aria-hidden="true"></span>
         <span class="wallet-amount" id="wallet-amount">0</span>
       </div>
-      <div class="income" id="income"><span id="income-amount">+0</span> per minuut</div>
+      <div class="income" id="income"><img id="income-icon" alt="" draggable="false"><span id="income-amount">+0</span> per minuut</div>
     </header>
 
     <!-- START -->
     <section class="screen screen-start active" data-screen="start" id="screen-start">
-      <div class="start-sky"></div>
+      <div class="start-sky"><canvas id="start-canvas" aria-hidden="true"></canvas></div>
       <div class="start-panel panel">
         <div class="start-left">
           <h1 class="start-title">Muntstad</h1>
@@ -43,7 +43,7 @@
           <label class="start-label" for="name-input">Je naam (mag ook leeg)</label>
           <input id="name-input" class="name-input" type="text" maxlength="12" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="kapitein">
         </div>
-        <button class="btn btn-primary btn-xl" id="btn-start" type="button">SPEEL ▶</button>
+        <button class="btn btn-success btn-xl" id="btn-start" type="button">SPEEL ▶</button>
       </div>
     </section>
 
@@ -51,21 +51,21 @@
     <section class="screen screen-stad" data-screen="stad" id="screen-stad">
       <canvas id="town" class="town" aria-label="Muntstad"></canvas>
       <nav class="bottombar" id="bottombar">
-        <button class="btn btn-nav btn-werk" id="nav-werk" type="button"><span class="btn-icon">🧽</span>WERK</button>
-        <button class="btn btn-nav btn-winkel" id="nav-winkel" type="button"><span class="btn-icon">🛒</span>WINKEL</button>
-        <button class="btn btn-nav btn-huis" id="nav-huis" type="button"><span class="btn-icon">🏠</span>HUIS</button>
+        <button class="btn btn-nav btn-werk" id="nav-werk" type="button"><img class="btn-icon" id="ico-werk" alt="" draggable="false">WERK</button>
+        <button class="btn btn-nav btn-winkel" id="nav-winkel" type="button"><img class="btn-icon" id="ico-winkel" alt="" draggable="false">WINKEL</button>
+        <button class="btn btn-nav btn-huis" id="nav-huis" type="button"><img class="btn-icon" id="ico-huis" alt="" draggable="false">HUIS</button>
         <button class="btn btn-papa" id="nav-papa" type="button" aria-label="PAPA"><span class="papa-ring" id="papa-ring"></span><span class="papa-label">PAPA</span></button>
       </nav>
     </section>
 
     <!-- WERK -->
     <section class="screen screen-werk" data-screen="werk" id="screen-werk">
-      <div class="werk-bg"></div>
       <div class="werk-stage" id="werk-stage">
+        <canvas id="werk-canvas" aria-hidden="true"></canvas>
         <div class="werk-car" id="werk-car"></div>
       </div>
       <div class="werk-hud">
-        <div class="werk-count panel-mini" id="werk-count">🚗 0</div>
+        <div class="werk-count panel-mini" id="werk-count"><img id="ico-car" alt="" draggable="false"><span>0</span></div>
         <button class="btn btn-primary btn-xl" id="btn-klaar" type="button">KLAAR ✔</button>
       </div>
     </section>
@@ -73,15 +73,15 @@
     <!-- WINKEL -->
     <section class="screen screen-winkel" data-screen="winkel" id="screen-winkel">
       <div class="tabs">
-        <button class="btn btn-tab active" id="tab-makers" type="button"><span class="btn-icon">🏭</span>GELDMAKERS<span class="tab-hint" id="tab-makers-hint"></span></button>
-        <button class="btn btn-tab" id="tab-fun" type="button"><span class="btn-icon">🎉</span>LEUK</button>
+        <button class="btn btn-tab active" id="tab-makers" type="button"><img class="btn-icon" id="ico-makers" alt="" draggable="false">GELDMAKERS<span class="tab-hint" id="tab-makers-hint"></span></button>
+        <button class="btn btn-tab" id="tab-fun" type="button"><img class="btn-icon" id="ico-fun" alt="" draggable="false">LEUK</button>
       </div>
       <div class="shop-grid" id="shop-grid"></div>
       <div class="shop-footer">
         <button class="btn btn-arrow" id="shop-prev" type="button" aria-label="Vorige">◀</button>
         <div class="shop-dots" id="shop-dots"></div>
         <button class="btn btn-arrow" id="shop-next" type="button" aria-label="Volgende">▶</button>
-        <button class="btn btn-secondary btn-lg" id="shop-stad" type="button"><span class="btn-icon">🏘️</span>STAD</button>
+        <button class="btn btn-secondary btn-lg" id="shop-stad" type="button"><img class="btn-icon" id="ico-stad-1" alt="" draggable="false">STAD</button>
       </div>
     </section>
 
@@ -94,8 +94,8 @@
       </aside>
       <div class="huis-actions" id="huis-actions"></div>
       <div class="huis-footer">
-        <button class="btn btn-secondary btn-lg" id="huis-winkel" type="button"><span class="btn-icon">🛒</span>WINKEL</button>
-        <button class="btn btn-secondary btn-lg" id="huis-stad" type="button"><span class="btn-icon">🏘️</span>STAD</button>
+        <button class="btn btn-primary btn-lg" id="huis-winkel" type="button"><img class="btn-icon" id="ico-winkel-2" alt="" draggable="false">WINKEL</button>
+        <button class="btn btn-secondary btn-lg" id="huis-stad" type="button"><img class="btn-icon" id="ico-stad-2" alt="" draggable="false">STAD</button>
       </div>
     </section>
 
@@ -106,7 +106,7 @@
         <p class="gate-sum" id="gate-sum">37 + 48</p>
         <p class="gate-answer" id="gate-answer">?</p>
         <div class="keypad" id="keypad"></div>
-        <button class="btn btn-secondary btn-lg gate-back" id="gate-stad" type="button"><span class="btn-icon">🏘️</span>STAD</button>
+        <button class="btn btn-secondary btn-lg gate-back" id="gate-stad" type="button"><img class="btn-icon" id="ico-stad-3" alt="" draggable="false">STAD</button>
       </div>
     </section>
 
@@ -115,7 +115,7 @@
       <div class="papa-scroll">
         <div class="papa-head">
           <h2 class="papa-title">Voor papa en mama</h2>
-          <button class="btn btn-primary btn-lg" id="papa-stad" type="button"><span class="btn-icon">🏘️</span>STAD</button>
+          <button class="btn btn-primary btn-lg" id="papa-stad" type="button"><img class="btn-icon" id="ico-stad-4" alt="" draggable="false">STAD</button>
         </div>
         <div class="papa-columns">
           <div class="panel papa-panel">
@@ -173,7 +173,7 @@
 
     <!-- Portrait hint -->
     <div class="rotate" id="rotate" aria-hidden="true">
-      <div class="rotate-icon">📱</div>
+      <div class="rotate-icon"><img src="./icons/icon-192.png" alt=""></div>
       <div class="rotate-text">Draai je iPad</div>
     </div>
   </div>
