@@ -37,7 +37,7 @@ Besluit Johannes: route 1 (Three.js), doel vormgeving keer tien. Plan en meetlat
 - [x] V3.5 — HUIS in 3D: tuin-eiland, hek, heg, pad, tuinitems, huisdieren, trampoline, .hit-overlays via projectie
 - [x] V3.6 — START op de gedeelde scène; thumbs.js rendert winkelkaarten, popups, START-avatar en HUD-iconen uit de 3D-modellen
 - [x] V3.7 — juice: munten vliegen in 3D naar de portemonnee, stuiter bij kopen/BETER, gouden ring + pijl bij 'kan kopen', wapperende vlaggen, rook, druppels; dag-en-nacht bewust doorgeschoven (RAPPORT §7)
-- [ ] V3.8 — verificatie (unit 51 groen; e2e loopt), RAPPORT §0 ronde 3 ✔, ART-DIRECTION v3 ✔, README ✔, sw cache v6, deploy, iPad-test Johannes
+- [x] V3.8 — verificatie: unit 51 groen, e2e 60 groen (Chromium × 3 iPads, één worker), RAPPORT §0 ronde 3, ART-DIRECTION v3, README, sw cache v6, gedeployed 03-09-2026 00:30 (live sw = v6, vendor/three 200). Open: iPad-test door Johannes; dag-en-nacht en tree-shaken Three.js-build doorgeschoven
 
 ## Toolbox (checked 2026-09-02)
 - node v24.20.0 — was NOT installed; installed as a portable build in C:\Users\jgsno\.local\node (SHA256 verified against nodejs.org) and added to the user PATH. New terminals see it; this session uses the absolute path.
@@ -77,5 +77,7 @@ Besluit Johannes: route 1 (Three.js), doel vormgeving keer tien. Plan en meetlat
 - 2026-09-02 Buttons hebben witte, omlijnde letters (text-shadow in 8 richtingen); het toetsenblok van de ouderpoort houdt donkere cijfers op wit voor leesbaarheid.
 
 ## Known issues
+- v3: Playwright's headless Chromium rendert WebGL op de CPU (SwiftShader). Standaard één worker (`PW_WORKERS=2` voor meer); nooit twee e2e-runs tegelijk starten (02-09: 15 headless chromes, CPU 99%). De GPU-vlaggen in playwright.config.js helpen als Chromium ze accepteert.
+- v3: op een echte iPad is de prestatie nog niet gemeten; de adaptieve kwaliteit (engine.js) zet schaduwresolutie, pixelratio en golven zelf lager onder 38 fps.
 - STAD haalt in headless Chromium met 4× CPU-throttle ~29 fps (software-rendering; blits van sprites zijn daar duur). Op de iPad is canvas GPU-versneld; de scene schakelt bovendien zelf golven/wolkschaduwen uit onder 42 fps. Echte iPad-meting nog te doen (§6 RAPPORT).
 - Tokenverbruik: Johannes vroeg om goedkopere agents; de v2-reviewworkflow is daarom gestopt vóór de samenvatting en de rest is zonder agents gedaan. Volgende reviews: finders op Sonnet, toetsers op Sonnet/laag effort, geen synthese-agent (zelf samenvatten uit journal.jsonl).
