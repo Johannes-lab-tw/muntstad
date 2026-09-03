@@ -13,6 +13,7 @@ import { createPopups } from './ui/popups.js';
 import { createFx } from './ui/fx.js';
 import { createStart } from './ui/start.js';
 import { createStad } from './ui/stad.js';
+import { createAvontuur } from './ui/avontuur.js';
 import { createWerk } from './ui/werk.js';
 import { createWinkel } from './ui/winkel.js';
 import { createHuis } from './ui/huis.js';
@@ -244,7 +245,7 @@ function bumpWallet() {
 
 // ---------- screens ----------
 
-const TOPBAR_SCREENS = new Set(['stad', 'werk', 'winkel', 'huis']);
+const TOPBAR_SCREENS = new Set(['stad', 'avontuur', 'werk', 'winkel', 'huis']);
 
 function show(name) {
   if (!screens[name]) return;
@@ -307,6 +308,7 @@ function boot() {
   game.scene = createScene($('town'), game, game.engine);
   screens.start = createStart(game);
   screens.stad = createStad(game);
+  screens.avontuur = createAvontuur(game);
   screens.werk = createWerk(game);
   screens.winkel = createWinkel(game);
   screens.huis = createHuis(game);
@@ -315,7 +317,7 @@ function boot() {
   screens.gate = papa.gate;
 
   // blocky icons for the HUD and navigation (rendered once from the same art as the town)
-  const icons = { 'ico-werk': 'werk', 'ico-winkel': 'winkel', 'ico-winkel-2': 'winkel', 'ico-huis': 'huis', 'ico-stad-1': 'stad', 'ico-stad-2': 'stad', 'ico-stad-3': 'stad', 'ico-stad-4': 'stad', 'ico-makers': 'makers', 'ico-fun': 'fun', 'income-icon': 'income', 'ico-car': 'car' };
+  const icons = { 'ico-werk': 'werk', 'ico-winkel': 'winkel', 'ico-winkel-2': 'winkel', 'ico-huis': 'huis', 'ico-stad-1': 'stad', 'ico-stad-2': 'stad', 'ico-stad-3': 'stad', 'ico-stad-4': 'stad', 'ico-stad-5': 'stad', 'ico-makers': 'makers', 'ico-fun': 'fun', 'income-icon': 'income', 'ico-car': 'car' };
   for (const [id, kind] of Object.entries(icons)) { const img = document.getElementById(id); if (img) img.src = navSprite(kind); }
 
   // zoom / callout prevention (iOS ignores user-scalable=no)
@@ -352,7 +354,7 @@ function boot() {
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch((e) => console.info('[muntstad] service worker not registered:', e.message));
   }
-  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 3, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; } };
+  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 4, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook };
 }
 
 boot();

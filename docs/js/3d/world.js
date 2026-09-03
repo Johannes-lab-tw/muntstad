@@ -381,3 +381,18 @@ export function createWorld(config) {
 
   return { group, update, lamps };
 }
+
+// ---------- collision circles for the adventure (3d/player.js) ----------
+const PALMS = [[13.9, 1.4, 0.3], [15.0, 2.9, 0.26]];
+/** Round obstacles {x, z, r} the player and the dog bump into: trees, bushes, lamps, palms, the pond, every plot (hedged) and the house. */
+export function obstacles(config) {
+  const out = [];
+  for (const [x, z, s] of TREES) out.push({ x, z, r: 0.28 * s + 0.1 });
+  for (const [x, z, s] of BUSHES) out.push({ x, z, r: 0.5 * s });
+  for (const [x, z] of LAMPS) out.push({ x, z, r: 0.2 });
+  for (const [x, z, r] of PALMS) out.push({ x, z, r });
+  out.push({ x: PARK[0], z: PARK[1], r: 1.8 });
+  for (const m of config.makers) { const [x, z] = PLOTS[m.id]; out.push({ x, z, r: 1.9 }); }
+  out.push({ x: HOUSE[0], z: HOUSE[1], r: 1.95 });
+  return out;
+}

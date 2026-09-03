@@ -19,7 +19,8 @@ export const PLAYER = Object.freeze({
 export const FOLLOWER = Object.freeze({
   radius: 0.3,
   speed: 3.4,          // a bit faster than the player's walk, slower than the run
-  keep: 1.35,          // preferred distance behind the player
+  keep: 0.9,           // preferred distance behind the player
+  side: 1.15,          // ... and to the player's right
   start: 1.9,          // starts moving when farther away than this
   turn: 9,
 });
@@ -139,8 +140,10 @@ export function stepPlayer(p, input, dt, env) {
 /** The dog: trots towards a point behind the player when it fell behind, turns to face where it goes. */
 export function stepFollower(f, player, dt, env = {}) {
   const F = FOLLOWER;
-  const bx = player.x - Math.sin(player.heading) * F.keep;
-  const bz = player.z - Math.cos(player.heading) * F.keep;
+  // the spot the dog aims for: behind and to the right of the player, so it never sits between camera and player
+  const sh = Math.sin(player.heading), ch = Math.cos(player.heading);
+  const bx = player.x - sh * F.keep + ch * F.side;
+  const bz = player.z - ch * F.keep - sh * F.side;
   const dx = bx - f.x, dz = bz - f.z;
   const d = Math.hypot(dx, dz);
   const far = Math.hypot(player.x - f.x, player.z - f.z);

@@ -1,6 +1,6 @@
 // sw.js — cache-first app shell. Bump CACHE_VERSION on every deploy.
 // Every file in docs/ is precached so the game loads offline and as a home-screen app.
-const CACHE_VERSION = 'muntstad-v6';
+const CACHE_VERSION = 'muntstad-v7';
 const PRECACHE = [
   './',
   './index.html',
@@ -19,6 +19,9 @@ const PRECACHE = [
   './js/3d/buildings.js',
   './js/3d/avatar.js',
   './js/3d/scene-stad.js',
+  './js/3d/scene-avontuur.js',
+  './js/3d/player.js',
+  './js/3d/controls.js',
   './js/3d/props.js',
   './js/3d/pets.js',
   './js/3d/thumbs.js',
@@ -30,6 +33,7 @@ const PRECACHE = [
   './js/ui/fx.js',
   './js/ui/start.js',
   './js/ui/stad.js',
+  './js/ui/avontuur.js',
   './js/ui/werk.js',
   './js/ui/winkel.js',
   './js/ui/huis.js',

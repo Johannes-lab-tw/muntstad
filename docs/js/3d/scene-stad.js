@@ -31,6 +31,8 @@ export function createScene(container, game, engine) {
   let state = null;
   let W = 0, H = 0;
   let host = container;
+  let activeCamera = camera;   // the camera the coins fly towards (AVONTUUR renders this scene through its own)
+  let depthRef = center;
   const path = roadPath();
   const raycaster = new T.Raycaster();
   const ndc = new T.Vector2();
@@ -139,11 +141,11 @@ export function createScene(container, game, engine) {
   function walletTarget(now) {
     if (now - walletCache.at > 500) {
       const p = game.walletPoint();
-      const r = host.getBoundingClientRect();
+      const r = (engine.container || host).getBoundingClientRect();
       const nx = ((p.x - r.left) / Math.max(1, r.width)) * 2 - 1;
       const ny = -((p.y - r.top) / Math.max(1, r.height)) * 2 + 1;
-      v3.copy(center).project(camera);
-      walletCache.v.set(nx, ny, v3.z - 0.02).unproject(camera);
+      v3.copy(depthRef).project(activeCamera);
+      walletCache.v.set(nx, ny, v3.z - 0.02).unproject(activeCamera);
       walletCache.at = now;
     }
     return walletCache.v;
@@ -209,12 +211,17 @@ export function createScene(container, game, engine) {
   }
   function setState(s) { state = s; }
 
-  let lastTime = 0;
-  function render(now) {
-    if (!state || !W) return;
-    const dt = Math.min(0.1, lastTime ? (now - lastTime) / 1000 : 0.016);
-    if (lastTime) engine.trackFrame(now - lastTime, now);
-    lastTime = now;
+  /**
+   * One simulation step without drawing: buildings, coins, clouds, traffic and (unless opts.roadAvatar === false) the
+   * avatar walking the road loop. AVONTUUR calls this with its own camera and renders the same scene itself.
+   */
+  function simulate(now, dt, opts = {}) {
+    if (!state) return;
+    const nextCam = opts.camera || camera;
+    if (nextCam !== activeCamera) walletCache.at = -1e9;
+    activeCamera = nextCam;
+    depthRef = opts.depthRef || center;
+    const roadAvatar = opts.roadAvatar !== false;
     syncMakers();
     syncAvatar();
     scheduleCoins(dt);
@@ -228,6 +235,8 @@ export function createScene(container, game, engine) {
     }
     if (house.model) house.model.update(now);
     // avatar on the road
+    avatar.group.visible = roadAvatar;
+    avatarHit.visible = roadAvatar;
     const vehicle = state.equipped.vehicle;
     const speed = vehicle === 'auto' ? 5.2 : vehicle === 'scooter' ? 3.1 : 1.55;
     avatarDist = (avatarDist + speed * dt) % path.total;
@@ -235,7 +244,7 @@ export function createScene(container, game, engine) {
     const hop = hopUntil > now ? Math.sin(((hopUntil - now) / 380) * Math.PI) * 0.9 : 0;
     avatar.group.position.set(a.x, 0.09, a.y);
     avatar.group.rotation.y = a.angle;
-    avatar.update(now, hop ? 'jump' : 'walk', { z: 0.09 + hop, dist: avatarDist });
+    if (roadAvatar) avatar.update(now, hop ? 'jump' : 'walk', { z: 0.09 + hop, dist: avatarDist });
     avatarHit.position.set(a.x, 1.0 + hop, a.y);
     for (const t of traffic) {
       t.dist = (t.dist + (t.speed * dt) / path.total) % 1;
@@ -245,7 +254,22 @@ export function createScene(container, game, engine) {
       for (const w of t.car.wheels) w.rotation.x = t.dist * path.total * 6;
     }
     updateCoins(now);
+  }
+
+  let lastTime = 0;
+  function render(now) {
+    if (!state || !W) return;
+    const dt = Math.min(0.1, lastTime ? (now - lastTime) / 1000 : 0.016);
+    if (lastTime) engine.trackFrame(now - lastTime, now);
+    lastTime = now;
+    simulate(now, dt);
     engine.render(scene, camera);
+  }
+
+  /** 'stad' (default) or 'avontuur': resets the coin target cache when the camera changes hands. */
+  function setMode(m) {
+    walletCache.at = -1e9;
+    if (m === 'stad') { activeCamera = camera; depthRef = center; if (avatar) { avatar.group.visible = true; avatarHit.visible = true; } }
   }
 
   /** Returns what was tapped: { type: 'maker', id } | { type: 'house' } | { type: 'avatar' } | null */
@@ -274,5 +298,5 @@ export function createScene(container, game, engine) {
 
   function hop() { hopUntil = performance.now() + 380; }
 
-  return { mount, resize, render, hitTest, spawnCoin, burst, setState, plotPoint, hop, scene, camera, get particleCount() { return coins.length; } };
+  return { mount, resize, render, simulate, setMode, hitTest, spawnCoin, burst, setState, plotPoint, hop, scene, camera, get particleCount() { return coins.length; } };
 }

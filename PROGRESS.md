@@ -43,7 +43,7 @@ Besluit Johannes: route 1 (Three.js), doel vormgeving keer tien. Plan en meetlat
 Besluit Johannes: doorbouwen in de eigen app. Plan, werkwijze (pc vrij, tokens, Ollama) en rondes R1-R6: PLAN-V4.md.
 
 - [x] R0 — PLAN-V4.md; e2e-tests naar GitHub Actions (`.github/workflows/tests.yml`), desktop draait alleen unit + dev-shot
-- [ ] R1 — fundament: camera achter het poppetje, joystick, lopen/rennen/springen, botsen, hond loopt mee, knop AVONTUUR in STAD
+- [x] R1 — fundament (03-09-2026): knop AVONTUUR in STAD; scherm AVONTUUR op dezelfde Three-scène (`3d/scene-avontuur.js` rendert via eigen camera, `scene-stad.simulate()` blijft gebouwen/munten/verkeer doen); camera achter en boven het poppetje, drijft zelf achter de looprichting; joystick op de plek waar de duim landt (linkerhelft), vegen rechts draait de camera, SPRING-knop, pc: WASD/pijlen + Shift + spatie + muis; lopen/rennen/springen en botsen in pure `3d/player.js` (cirkels uit `world.obstacles()`, eilandrand als afgeronde rechthoek); hond (of kat/dino) draaft mee. Unit 56 groen (5 nieuwe), e2e `avontuur.spec.js` (2 tests) draait in GitHub Actions. Meetlat (vijf minuten rondlopen zonder “en nu?”) is aan Johannes en zijn zoon.
 - [ ] R2 — het eiland: terrein, bos met instancing, strand, meer, grot, kamp met kampvuur, dag-nachtcyclus
 - [ ] R3 — doen: hakken/rapen/vissen, rugzak, verkopen bij het vuur, tools kopen, dagopdrachten
 - [ ] R4 — nacht: vuur vraagt hout, spoken stelen, lantaarn, fakkels, Nachtbeer
@@ -73,6 +73,14 @@ Besluit Johannes: doorbouwen in de eigen app. Plan, werkwijze (pc vrij, tokens, 
 - 2026-09-02 Thousands separator is U+202F (narrow no-break space) so "2 000" never wraps.
 - 2026-09-02 The return popup also shows once (with 0 coins) for a child without any coin-maker, explaining what a coin-maker would have done; after that only when coins were earned.
 - 2026-09-02 Simulator has variants (policy affordable/best, burst pacing, petFirst, work rates 10/20); all pass the lesson assertions.
+
+### Run 4
+- 2026-09-03 AVONTUUR rendert dezelfde Three-scène als STAD (geen tweede wereld in het geheugen): scene-stad kreeg `simulate(now, dt, { camera, depthRef, roadAvatar })` en `setMode()`; de wegwandelende avatar is verborgen zolang je zelf loopt, munten vliegen naar de portemonnee via de actieve camera.
+- 2026-09-03 Besturing: aanraking links = joystick (verschijnt onder de duim, straal 62 px, >92 % = rennen), rechts = camera; muis = altijd camera (WASD loopt). Geen dubbele sprong in de lucht. Camera drijft met 1,4 rad/s achter de looprichting zolang er niet geveegd wordt.
+- 2026-09-03 Botsen: alles is een cirkel (bomen, struiken, lantaarns, palmen, vijver r 1,8, elk kavel r 1,9 vanwege de heggen, huis r 1,95); NPC-auto's rijden nog door je heen (R2/R3). Startpunt: open gras ten zuidwesten van het park, kijkend naar het dorp.
+- 2026-09-03 Lokale criticus op 10-avontuur.png (qwen3.8:27b): vlakke lucht zonder horizon/wolken/mist achter het poppetje, geen sfeer of tijd van dag. Terecht en bewust: lucht, mist en dag-nacht zijn R2 (`3d/daynight.js`). De andere punten (geen schaduw, geen beweging) gelden alleen voor de headless lite-modus.
+- 2026-09-03 Let op: tijdens R1 draaide een tweede sessie in dezelfde map (CI-timeouts); haar commit a2efb31 (22:49) nam de halve nieuwe bestanden van R1 mee. Nooit twee sessies tegelijk in C:Claude_codeGeldspel, of ieder een eigen worktree.
+- 2026-09-03 De kaart-knop heet AVONTUUR ⛵ en staat rechtsboven in STAD (de onderbalk heeft geen ruimte voor een vierde knop op de iPad mini). In AVONTUUR loop je altijd te voet, ook met scooter/auto gekocht.
 
 ### Run 3
 - 2026-09-02 Route 1 gekozen: echte 3D met Three.js (gevendord, één renderer voor alle schermen). Budget docs/ gaat van 1 MB naar 1,5 MB omdat Three.js r185 minified 751 KB is; CDN blijft verboden. Zie PLAN-V3.md §0.

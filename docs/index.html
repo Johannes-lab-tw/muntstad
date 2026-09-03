@@ -50,12 +50,23 @@
     <!-- STAD -->
     <section class="screen screen-stad" data-screen="stad" id="screen-stad">
       <div id="town" class="town gl-host" aria-label="Muntstad" role="img"></div>
+      <button class="btn btn-orange btn-lg btn-avontuur" id="nav-avontuur" type="button">AVONTUUR ⛵</button>
       <nav class="bottombar" id="bottombar">
         <button class="btn btn-nav btn-werk" id="nav-werk" type="button"><img class="btn-icon" id="ico-werk" alt="" draggable="false">WERK</button>
         <button class="btn btn-nav btn-winkel" id="nav-winkel" type="button"><img class="btn-icon" id="ico-winkel" alt="" draggable="false">WINKEL</button>
         <button class="btn btn-nav btn-huis" id="nav-huis" type="button"><img class="btn-icon" id="ico-huis" alt="" draggable="false">HUIS</button>
         <button class="btn btn-papa" id="nav-papa" type="button" aria-label="PAPA"><span class="papa-ring" id="papa-ring"></span><span class="papa-label">PAPA</span></button>
       </nav>
+    </section>
+
+    <!-- AVONTUUR: walk around yourself (PLAN-V4 round 1) -->
+    <section class="screen screen-avontuur" data-screen="avontuur" id="screen-avontuur">
+      <div id="avontuur" class="gl-host" aria-label="Avontuur" role="img"></div>
+      <div class="stick" id="stick" aria-hidden="true"><div class="stick-knob" id="stick-knob"></div></div>
+      <div class="av-buttons">
+        <button class="btn btn-secondary btn-lg" id="av-stad" type="button"><img class="btn-icon" id="ico-stad-5" alt="" draggable="false">STAD</button>
+        <button class="btn btn-success btn-jump" id="av-spring" type="button">SPRING</button>
+      </div>
     </section>
 
     <!-- WERK -->

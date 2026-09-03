@@ -13,7 +13,7 @@ const out = path.resolve(arg('out', 'screenshots/dev'));
 const seedName = arg('seed', 'rich');
 const width = Number(arg('width', 1080)), height = Number(arg('height', 810));
 const dpr = Number(arg('dpr', 1));
-const screens = arg('screens', 'start,stad,werk,winkel,leuk,huis,gebouw,gate,papa').split(',');
+const screens = arg('screens', 'start,stad,avontuur,werk,winkel,leuk,huis,gebouw,gate,papa').split(',');
 const SAVE_KEY = 'muntstad.save.v1';
 
 function seed(name) {
@@ -59,6 +59,7 @@ await page.locator('#btn-start').click();
 await page.waitForTimeout(900);
 await closePopups();
 if (screens.includes('stad')) await shot('02-stad');
+if (screens.includes('avontuur')) { await page.locator('#nav-avontuur').click(); await page.waitForTimeout(1200); await shot('10-avontuur'); await page.locator('#av-stad').click(); await page.waitForTimeout(300); }
 if (screens.includes('werk')) { await page.locator('#nav-werk').click(); await page.waitForTimeout(1400); await shot('03-werk'); await page.locator('#btn-klaar').click(); }
 if (screens.includes('winkel') || screens.includes('leuk')) {
   await page.locator('#nav-winkel').click(); await page.waitForTimeout(400);

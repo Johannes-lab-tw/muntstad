@@ -68,6 +68,7 @@ export const T = {
     welcomeBack: 'Hoi {naam}! Fijn dat je er weer bent.',
     firstWork: 'Tik op de vlekken. Elke schone auto geeft munten!',
     tipWerk: 'Tik op WERK. Daar was je auto’s voor munten!',
+    avontuur: 'Duw met je duim om te lopen. Veeg rechts om rond te kijken!',
     foodTick: 'Hap! {n} munten voor het eten van je {dier}.',
     tired: 'Goed gedaan! Werken geeft munten. Maar je handen worden moe… Wil je iets dat munten maakt terwijl jij speelt?',
     firstMaker: 'Kijk! Je kraam maakt munten. Ook als jij niks doet!',

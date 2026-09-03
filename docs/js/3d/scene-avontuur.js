@@ -10,7 +10,7 @@ import { ISLAND, PARK, obstacles as worldObstacles } from './world.js';
 import { isFunActive } from '../economy.js';
 
 const CAM = { dist: 5.4, pitch: 0.46, minPitch: 0.2, maxPitch: 0.95, lookUp: 1.0, swipe: 0.0075, follow: 1.4 };
-const START = { x: PARK[0], z: 9.6, heading: Math.PI };   // at the park, facing away from the sea
+const START = { x: PARK[0] - 3.4, z: 10.4, heading: Math.PI };   // open grass south-west of the park, facing the town
 
 export function createAvontuurScene(game, engine, stad, controls) {
   const config = game.config;
