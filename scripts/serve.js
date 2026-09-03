@@ -5,7 +5,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2);
 function arg(name, fallback) {
@@ -71,7 +71,7 @@ export function createServer(rootDir = root) {
   });
 }
 
-const isMain = process.argv[1] && import.meta.url === new URL(`file:///${process.argv[1].replace(/\\/g, '/')}`).href;
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href; // works on Windows and Linux (CI)
 if (isMain) {
   const server = createServer(root);
   server.listen(port, host, () => {
