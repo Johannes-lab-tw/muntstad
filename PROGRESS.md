@@ -39,6 +39,17 @@ Besluit Johannes: route 1 (Three.js), doel vormgeving keer tien. Plan en meetlat
 - [x] V3.7 — juice: munten vliegen in 3D naar de portemonnee, stuiter bij kopen/BETER, gouden ring + pijl bij 'kan kopen', wapperende vlaggen, rook, druppels; dag-en-nacht bewust doorgeschoven (RAPPORT §7)
 - [x] V3.8 — verificatie: unit 51 groen, e2e 60 groen (Chromium × 3 iPads, één worker), RAPPORT §0 ronde 3, ART-DIRECTION v3, README, sw cache v6, gedeployed 03-09-2026 00:30 (live sw = v6, vendor/three 200). Open: iPad-test door Johannes; dag-en-nacht en tree-shaken Three.js-build doorgeschoven
 
+## Run 4 (besluit 2026-09-03) — Muntstad Avontuur (richting 99 Nights)
+Besluit Johannes: doorbouwen in de eigen app. Plan, werkwijze (pc vrij, tokens, Ollama) en rondes R1-R6: PLAN-V4.md.
+
+- [x] R0 — PLAN-V4.md; e2e-tests naar GitHub Actions (`.github/workflows/tests.yml`), desktop draait alleen unit + dev-shot
+- [ ] R1 — fundament: camera achter het poppetje, joystick, lopen/rennen/springen, botsen, hond loopt mee, knop AVONTUUR in STAD
+- [ ] R2 — het eiland: terrein, bos met instancing, strand, meer, grot, kamp met kampvuur, dag-nachtcyclus
+- [ ] R3 — doen: hakken/rapen/vissen, rugzak, verkopen bij het vuur, tools kopen, dagopdrachten
+- [ ] R4 — nacht: vuur vraagt hout, spoken stelen, lantaarn, fakkels, Nachtbeer
+- [ ] R5 — samen: relais met kamercode (4 plaatjes), 3 spelers, gastheer bepaalt de wereld
+- [ ] R6 — afwerking: iPad-prestaties, geluid dag/nacht, rapport
+
 ## Toolbox (checked 2026-09-02)
 - node v24.20.0 — was NOT installed; installed as a portable build in C:\Users\jgsno\.local\node (SHA256 verified against nodejs.org) and added to the user PATH. New terminals see it; this session uses the absolute path.
 - npm 11.19.0
