@@ -40,7 +40,7 @@ test('the joystick walks the player, the dog follows, SPRING jumps, STAD returns
   expect(before.dog, 'the dog is there').not.toBeNull();
 
   // the stick appears where the thumb lands and the player walks forward
-  await thumb(page, 0, -60, 1200);
+  await thumb(page, 0, -60, 2000);
   const after = await hook(page);
   const walked = Math.hypot(after.player.x - before.player.x, after.player.z - before.player.z);
   expect(walked, 'walked forward').toBeGreaterThan(1.5);

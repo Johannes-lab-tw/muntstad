@@ -92,7 +92,7 @@ export function createAvontuurScene(game, engine, stad, controls) {
   function setState(s) { state = s; }
 
   const SUBSTEP = 1 / 60;
-  let lastTime = 0, prevNow = 0, simAcc = 0, jumps = 0;
+  let lastTime = 0, prevNow = 0, simAcc = 0, jumps = 0, pendingJump = false;
   function render(now) {
     if (!state || !W) return;
     const dt = Math.min(0.05, lastTime ? (now - lastTime) / 1000 : 0.016);
@@ -106,12 +106,12 @@ export function createAvontuurScene(game, engine, stad, controls) {
     yaw -= input.lookDx * CAM.swipe;
     pitch = Math.min(CAM.maxPitch, Math.max(CAM.minPitch, pitch + input.lookDy * CAM.swipe * 0.6));
     // fixed substeps: walking covers the same distance per real second on a slow (software-rendered) frame rate
-    simAcc += Math.min(0.25, lastTime ? (now - prevNow) / 1000 : 0.016);
-    let jumpInput = input.jump;
+    simAcc += Math.min(1.0, (now - prevNow) / 1000);
+    if (input.jump) pendingJump = true;   // stays queued until a substep consumes it (a frame may yield no full substep)
     while (simAcc >= SUBSTEP) {
       env.yaw = yaw;
-      stepPlayer(player, { x: input.x, y: input.y, run: input.run, jump: jumpInput }, SUBSTEP, env);
-      jumpInput = false;
+      stepPlayer(player, { x: input.x, y: input.y, run: input.run, jump: pendingJump }, SUBSTEP, env);
+      pendingJump = false;
       if (player.jumped) { jumps++; game.audio.play('jump'); }
       // the camera drifts in behind the player while walking, unless a thumb is steering it
       if (!input.looking && player.moving && Math.hypot(input.x, input.y) > 0.3) yaw = turnTowards(yaw, player.heading, CAM.follow, SUBSTEP);
