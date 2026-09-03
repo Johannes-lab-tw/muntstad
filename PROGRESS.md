@@ -80,6 +80,7 @@ Besluit Johannes: doorbouwen in de eigen app. Plan, werkwijze (pc vrij, tokens, 
 - 2026-09-03 Botsen: alles is een cirkel (bomen, struiken, lantaarns, palmen, vijver r 1,8, elk kavel r 1,9 vanwege de heggen, huis r 1,95); NPC-auto's rijden nog door je heen (R2/R3). Startpunt: open gras ten zuidwesten van het park, kijkend naar het dorp.
 - 2026-09-03 Lokale criticus op 10-avontuur.png (qwen3.8:27b): vlakke lucht zonder horizon/wolken/mist achter het poppetje, geen sfeer of tijd van dag. Terecht en bewust: lucht, mist en dag-nacht zijn R2 (`3d/daynight.js`). De andere punten (geen schaduw, geen beweging) gelden alleen voor de headless lite-modus.
 - 2026-09-03 Let op: tijdens R1 draaide een tweede sessie in dezelfde map (CI-timeouts); haar commit a2efb31 (22:49) nam de halve nieuwe bestanden van R1 mee. Nooit twee sessies tegelijk in C:Claude_codeGeldspel, of ieder een eigen worktree.
+- 2026-09-03 CI na R1 (runs 33805036763 t/m 33809128835): de twee avontuur-tests zijn op alle drie iPad-profielen groen sinds a96a42d (nodig waren: vaste substappen 1/60 s omdat de runner ~5 fps haalt; sprong blijft staan tot een substap hem verwerkt; hond-meetlat versoepeld). Nog rood op de trage runners: PAPA-hold van 3 s en de Muntje-tekst in smoke/papa/audits, dat is timing van vóór R1 en het werk van de andere sessie (CI-timeouts).
 - 2026-09-03 De kaart-knop heet AVONTUUR ⛵ en staat rechtsboven in STAD (de onderbalk heeft geen ruimte voor een vierde knop op de iPad mini). In AVONTUUR loop je altijd te voet, ook met scooter/auto gekocht.
 
 ### Run 3
