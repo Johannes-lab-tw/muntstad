@@ -5,7 +5,7 @@ import { watchErrors, startGame, seedSave, closePopups, shot } from './helpers.j
 
 const hook = (page) => page.evaluate(() => {
   const h = window.__muntstad.avontuur;
-  return { player: h.player, dog: h.dog, yaw: h.yaw, island: h.island };
+  return { player: h.player, dog: h.dog, yaw: h.yaw, island: h.island, jumps: h.jumps };
 });
 
 async function openAvontuur(page) {
@@ -49,10 +49,10 @@ test('the joystick walks the player, the dog follows, SPRING jumps, STAD returns
   const dogDist = Math.hypot(after.player.x - after.dog.x, after.player.z - after.dog.z);
   expect(dogDist).toBeLessThan(3.5);
 
-  // SPRING: the player leaves the ground and lands again
+  // SPRING: the player jumps and lands again (a slow runner may render only a few frames of the arc)
   await page.locator('#av-spring').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await hook(page)).player.y, { timeout: 1500 }).toBeGreaterThan(0.3);
-  await expect.poll(async () => (await hook(page)).player.grounded, { timeout: 2000 }).toBe(true);
+  await expect.poll(async () => (await hook(page)).jumps, { timeout: 3000 }).toBe(after.jumps + 1);
+  await expect.poll(async () => (await hook(page)).player.grounded, { timeout: 4000 }).toBe(true);
   await shot(page, testInfo, '10-avontuur');
 
   await page.locator('#av-stad').click();
@@ -72,7 +72,7 @@ test('WASD walks, space jumps, and the player never leaves the island', async ({
   const moved = await hook(page);
   expect(Math.hypot(moved.player.x - start.player.x, moved.player.z - start.player.z)).toBeGreaterThan(1);
   await page.keyboard.press('Space');
-  await expect.poll(async () => (await hook(page)).player.y, { timeout: 1500 }).toBeGreaterThan(0.3);
+  await expect.poll(async () => (await hook(page)).jumps, { timeout: 3000 }).toBe(moved.jumps + 1);
 
   // run in one direction for a long time: the sea is off limits
   await page.evaluate(() => window.__muntstad.avontuur.setInput(0, 1, true));

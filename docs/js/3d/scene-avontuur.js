@@ -91,11 +91,13 @@ export function createAvontuurScene(game, engine, stad, controls) {
   }
   function setState(s) { state = s; }
 
-  let lastTime = 0;
+  const SUBSTEP = 1 / 60;
+  let lastTime = 0, prevNow = 0, simAcc = 0, jumps = 0;
   function render(now) {
     if (!state || !W) return;
     const dt = Math.min(0.05, lastTime ? (now - lastTime) / 1000 : 0.016);
     if (lastTime) engine.trackFrame(now - lastTime, now);
+    prevNow = lastTime || now;
     lastTime = now;
     syncAvatar();
     syncPet();
@@ -103,11 +105,19 @@ export function createAvontuurScene(game, engine, stad, controls) {
     const input = controls.read();
     yaw -= input.lookDx * CAM.swipe;
     pitch = Math.min(CAM.maxPitch, Math.max(CAM.minPitch, pitch + input.lookDy * CAM.swipe * 0.6));
-    env.yaw = yaw;
-    stepPlayer(player, input, dt, env);
-    if (player.jumped) game.audio.play('jump');
-    // the camera drifts in behind the player while walking, unless a thumb is steering it
-    if (!input.looking && player.moving && Math.hypot(input.x, input.y) > 0.3) yaw = turnTowards(yaw, player.heading, CAM.follow, dt);
+    // fixed substeps: walking covers the same distance per real second on a slow (software-rendered) frame rate
+    simAcc += Math.min(0.25, lastTime ? (now - prevNow) / 1000 : 0.016);
+    let jumpInput = input.jump;
+    while (simAcc >= SUBSTEP) {
+      env.yaw = yaw;
+      stepPlayer(player, { x: input.x, y: input.y, run: input.run, jump: jumpInput }, SUBSTEP, env);
+      jumpInput = false;
+      if (player.jumped) { jumps++; game.audio.play('jump'); }
+      // the camera drifts in behind the player while walking, unless a thumb is steering it
+      if (!input.looking && player.moving && Math.hypot(input.x, input.y) > 0.3) yaw = turnTowards(yaw, player.heading, CAM.follow, SUBSTEP);
+      if (pet) stepFollower(dog, player, SUBSTEP, env);
+      simAcc -= SUBSTEP;
+    }
 
     avatar.group.position.set(player.x, 0, player.z);
     avatar.group.rotation.y = player.heading;
@@ -115,7 +125,6 @@ export function createAvontuurScene(game, engine, stad, controls) {
     avatar.update(player.running && player.grounded ? now * 1.45 : now, pose, { z: player.y });
 
     if (pet) {
-      stepFollower(dog, player, dt, env);
       pet.group.position.set(dog.x, 0, dog.z);
       pet.group.rotation.y = dog.heading;
       pet.update(now, { walking: dog.moving, phase: petPhase });
@@ -131,12 +140,14 @@ export function createAvontuurScene(game, engine, stad, controls) {
     yaw = START.heading;
     firstFrame = true;
     lastTime = 0;
+    simAcc = 0;
   }
 
   const hook = {
     get player() { return { x: player.x, y: player.y, z: player.z, heading: player.heading, grounded: player.grounded, moving: player.moving }; },
     get dog() { return pet ? { x: dog.x, z: dog.z, moving: dog.moving } : null; },
     get yaw() { return yaw; },
+    get jumps() { return jumps; },
     island, obstacles,
     setInput(x, y, run = false) { controls.setOverride(x == null ? null : { x, y, run }); },
     jump() { controls.pressJump(); },
