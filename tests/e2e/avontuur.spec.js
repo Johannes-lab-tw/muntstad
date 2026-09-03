@@ -45,9 +45,11 @@ test('the joystick walks the player, the dog follows, SPRING jumps, STAD returns
   const walked = Math.hypot(after.player.x - before.player.x, after.player.z - before.player.z);
   expect(walked, 'walked forward').toBeGreaterThan(1.5);
   await expect(page.locator('#stick')).not.toHaveClass(/on/);
-  // the dog trotted after the player
+  // the dog trotted after the player (it starts once the player is ~2 units away and is slower than a run)
+  const dogMoved = Math.hypot(after.dog.x - before.dog.x, after.dog.z - before.dog.z);
+  expect(dogMoved, 'the dog followed').toBeGreaterThan(0.5);
   const dogDist = Math.hypot(after.player.x - after.dog.x, after.player.z - after.dog.z);
-  expect(dogDist).toBeLessThan(3.5);
+  expect(dogDist).toBeLessThan(6);
 
   // SPRING: the player jumps and lands again (a slow runner may render only a few frames of the arc)
   await page.locator('#av-spring').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
