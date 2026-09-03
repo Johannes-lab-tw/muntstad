@@ -17,10 +17,23 @@ export function createEngine() {
   let W = 0, H = 0;
   let tier = 0;               // 0 = full, 1 = lighter, 2 = lite
   const tierListeners = [];
+  // a software renderer (SwiftShader in headless Chromium / CI) or a tiny CPU starts and stays in lite mode:
+  // no shadows, pixel ratio 1, still water. Real iPads never hit this branch.
+  let forcedLite = false;
+  try {
+    const gl = renderer.getContext();
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
+    if (/swiftshader|llvmpipe|software/i.test(name) || (navigator.hardwareConcurrency || 8) <= 2) forcedLite = true;
+  } catch (e) { /* ignore */ }
 
   function pixelRatio() {
     const base = Math.min(2, window.devicePixelRatio || 1);
     return tier === 2 ? Math.min(base, 1) : tier === 1 ? base * 0.8 : base;
+  }
+  function applyTier() {
+    renderer.shadowMap.enabled = tier < 2;
+    if (tier >= 2) renderer.shadowMap.needsUpdate = true;
   }
 
   function resize() {
@@ -46,15 +59,18 @@ export function createEngine() {
     if (n < 90) return;
     const avg = acc / n;
     acc = 0; n = 0;
+    if (forcedLite) return;
     if (avg > 26 && tier < 2 && now - lastChange > 2000) setTier(tier + 1, now);
     else if (avg < 13 && tier > 0 && now - lastChange > 8000) setTier(tier - 1, now);
   }
   function setTier(t, now = performance.now()) {
     tier = t;
     lastChange = now;
+    applyTier();
     resize();
     for (const fn of tierListeners) fn(tier);
   }
+  if (forcedLite) setTier(2);
 
   function render(scene, camera) {
     renderer.render(scene, camera);
@@ -62,7 +78,7 @@ export function createEngine() {
 
   return {
     renderer, canvas, mount, resize, render, trackFrame,
-    onTier(fn) { tierListeners.push(fn); },
+    onTier(fn) { tierListeners.push(fn); fn(tier); },
     get W() { return W; },
     get H() { return H; },
     get tier() { return tier; },
@@ -93,6 +109,7 @@ export function addLights(scene, center, size = 14, tier = 0) {
   fill.position.set(center.x + 12, 8, center.z - 6);
   scene.add(fill);
   const setTier = (t) => {
+    sun.castShadow = t < 2;
     const s = t === 2 ? 1024 : t === 1 ? 1536 : 2048;
     if (sun.shadow.mapSize.x !== s) {
       sun.shadow.mapSize.set(s, s);

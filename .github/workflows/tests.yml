@@ -20,7 +20,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
-          PW_WORKERS: 3
+          PW_WORKERS: 2
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
