@@ -24,7 +24,8 @@ export function createEngine() {
     const gl = renderer.getContext();
     const info = gl.getExtension('WEBGL_debug_renderer_info');
     const name = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
-    if (/swiftshader|llvmpipe|software/i.test(name) || (navigator.hardwareConcurrency || 8) <= 2) forcedLite = true;
+    const cores = navigator.hardwareConcurrency || 8;
+    if (cores <= 2 || (/swiftshader|llvmpipe|software/i.test(name) && cores <= 4)) forcedLite = true; // CI runners; a fast desktop keeps full quality in dev-shot
   } catch (e) { /* ignore */ }
 
   function pixelRatio() {
