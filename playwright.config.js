@@ -13,8 +13,9 @@ const IPADS = [
 export default defineConfig({
   testDir: 'tests/e2e',
   testIgnore: /live\.spec\.js/,
-  timeout: 180000,
-  expect: { timeout: 15000 },
+  // CI runners render WebGL in software and are several times slower than an iPad: give them room
+  timeout: process.env.CI ? 480000 : 180000,
+  expect: { timeout: process.env.CI ? 40000 : 15000 },
   fullyParallel: true,
   workers: 3,
   retries: 0,
@@ -23,7 +24,7 @@ export default defineConfig({
   use: {
     baseURL: BASE,
     trace: 'retain-on-failure',
-    actionTimeout: 15000,
+    actionTimeout: process.env.CI ? 45000 : 15000,
     // v3 renders with WebGL: let headless Chromium use the GPU where it can (falls back to SwiftShader otherwise)
     launchOptions: { args: ['--ignore-gpu-blocklist', '--use-angle=d3d11', '--enable-gpu-rasterization'] },
   },
