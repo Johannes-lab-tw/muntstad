@@ -1,0 +1,100 @@
+// The Avontuureiland as numbers: the heightmap has sea all round, a flat camp, a lake, a snowy hill and walkable
+// sand paths; the forest never grows on paths, in the camp or in the water; the day cycle is 6 min day + 3 min night.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createHeightmap, CAMP, PIER, LAKE, HILL, CAVE, PATHS, MAP } from '../../docs/js/3d/heightmap.js';
+import { placeForest, KINDS } from '../../docs/js/3d/forest-place.js';
+import { phaseAt, paletteAt, darknessAt, DAY_END, CYCLE } from '../../docs/js/3d/daycycle.js';
+import { createPlayer, stepPlayer, createGrid, MAX_RISE } from '../../docs/js/3d/player.js';
+
+const map = createHeightmap();
+
+test('the island is surrounded by sea and its landmarks are where the plan puts them', () => {
+  for (const [x, z] of [[2, 48], [48, 2], [94, 48], [48, 94], [4, 4]]) assert.equal(map.kindAt(x, z), 'sea', `sea at ${x},${z}`);
+  assert.ok(Math.abs(map.heightAt(CAMP.x, CAMP.z) - 1.3) < 0.2, 'the camp is a flat shelf at ≈ 1.3 m');
+  assert.equal(map.kindAt(CAMP.x, CAMP.z), 'grass');
+  assert.equal(map.kindAt(LAKE.x, LAKE.z), 'lake');
+  assert.ok(map.heightAt(LAKE.x, LAKE.z) < LAKE.level, 'the lake bed lies under its water level');
+  assert.ok(map.heightAt(LAKE.x, LAKE.z) > 0, 'the lake is above the sea');
+  assert.ok(map.heightAt(HILL.x, HILL.z) > HILL.top * 0.8, 'the hill is high');
+  assert.equal(map.kindAt(HILL.x, HILL.z), 'snow');
+  assert.ok(Math.abs(map.heightAt(CAVE.x, CAVE.z) - 2.2) < 0.3, 'the cave mouth is a flat shelf');
+  assert.equal(map.kindAt(PIER.x, PIER.z), 'sea', 'the pier stands in the water');
+  assert.ok(map.onPier(PIER.x, PIER.z - 2) && map.walkable(PIER.x, PIER.z - 2), 'you can stand on the pier');
+  assert.equal(map.groundAt(PIER.x, PIER.z - 2), PIER.deck);
+  assert.ok(!map.walkable(PIER.x + 3, PIER.z - 2), 'next to the pier is water');
+});
+
+test('paths are walkable sand from the pier to the camp, the lake and the cave', () => {
+  for (const path of PATHS) for (const [x, z] of path) {
+    assert.ok(map.walkable(x, z), `walkable at ${x},${z}`);
+    assert.ok(['path', 'beach', 'grass'].includes(map.kindAt(x, z)), `${map.kindAt(x, z)} at ${x},${z}`);
+  }
+  // walking the pier path: every half metre the ground rises less than a step
+  const [[x0, z0], , [x1, z1]] = PATHS[0];
+  let prev = map.groundAt(x0, z0);
+  for (let z = z0; z >= z1; z -= 0.5) { const g = map.groundAt(x0, z); assert.ok(g - prev < MAX_RISE, `rise ${g - prev} at z ${z}`); prev = g; }
+  assert.equal(x0, x1);
+});
+
+test('heightAt is continuous (bilinear) and deterministic', () => {
+  const a = map.heightAt(40.2, 50.7), b = map.heightAt(40.25, 50.7);
+  assert.ok(Math.abs(a - b) < 0.2);
+  assert.equal(createHeightmap().heightAt(40.2, 50.7), a);
+  assert.equal(map.h.length, (MAP.n + 1) * (MAP.n + 1));
+});
+
+test('the forest grows on grass only, never on paths, in the camp, on the pier or in the water', () => {
+  const f = placeForest(map);
+  const total = KINDS.reduce((n, k) => n + f[k].length, 0);
+  assert.ok(total > 1200 && total < 8000, `${total} things`);
+  assert.ok(f.tree1.length + f.tree2.length > 300, `${f.tree1.length + f.tree2.length} trees`);
+  for (const k of ['tree1', 'tree2', 'bush1', 'bush2', 'grass', 'flower']) for (const it of f[k]) {
+    assert.equal(map.kindAt(it.x, it.z), 'grass', `${k} on ${map.kindAt(it.x, it.z)}`);
+  }
+  for (const k of ['tree1', 'tree2']) for (const it of f[k]) {
+    assert.ok(Math.hypot(it.x - CAMP.x, it.z - CAMP.z) > CAMP.r + 1.5, 'tree in the camp');
+    assert.ok(!(Math.abs(it.x - PIER.x) < 3 && it.z > PIER.z - PIER.len - 3), 'tree at the pier');
+  }
+  assert.deepEqual(placeForest(map).tree1[0], f.tree1[0], 'deterministic');
+});
+
+test('day and night: 6 min day, 3 min night, dark palette at night', () => {
+  assert.equal(CYCLE.dayMs + CYCLE.nightMs, 9 * 60 * 1000);
+  assert.ok(Math.abs(DAY_END - 2 / 3) < 1e-9);
+  assert.equal(phaseAt(0), 0);
+  assert.ok(Math.abs(phaseAt(4.5 * 60 * 1000) - 0.5) < 1e-9);
+  assert.equal(darknessAt(0.3), 0);
+  assert.equal(darknessAt(0.85), 1);
+  const noon = paletteAt(0.4), night = paletteAt(0.85);
+  assert.ok(noon.sunI > 2 && night.sunI < 0.5);
+  assert.ok(noon.sunElev > 0.5 && night.sunElev < 0);
+  assert.ok(night.darkness === 1 && noon.darkness === 0);
+  assert.match(night.sky, /^#[0-9a-f]{6}$/);
+});
+
+test('walking on the island: the sea and the snow stop you, cliffs are too steep, trees are found through the grid', () => {
+  const env = { yaw: Math.PI, near: createGrid([{ x: CAMP.x, z: CAMP.z - 3, r: 0.5 }]), walkable: map.walkable, groundAt: map.groundAt };
+  // from the pier onto the island: the ground under the feet follows the terrain
+  const p = createPlayer(PIER.x, PIER.z - 2, Math.PI);
+  p.ground = map.groundAt(p.x, p.z);
+  for (let t = 0; t < 12; t += 1 / 60) stepPlayer(p, { x: 0, y: 1 }, 1 / 60, env);
+  assert.ok(p.z < PIER.z - PIER.len - 4, `walked onto the island: z ${p.z}`);
+  assert.ok(Math.abs(p.ground - map.groundAt(p.x, p.z)) < 1e-9);
+  assert.ok(map.walkable(p.x, p.z));
+  // into the sea from the beach: blocked at the water's edge
+  const q = createPlayer(48, 78, 0);
+  q.ground = map.groundAt(q.x, q.z);
+  for (let t = 0; t < 6; t += 1 / 60) stepPlayer(q, { x: 0, y: -1 }, 1 / 60, env);   // south, towards the sea (yaw π ⇒ -y = +z)
+  assert.ok(map.walkable(q.x, q.z), `still on land at ${q.x.toFixed(1)},${q.z.toFixed(1)} (${map.kindAt(q.x, q.z)})`);
+  // the snow top is off limits
+  const s = createPlayer(HILL.x, HILL.z + 10, 0);
+  s.ground = map.groundAt(s.x, s.z);
+  for (let t = 0; t < 30; t += 1 / 60) stepPlayer(s, { x: 0, y: 1 }, 1 / 60, { ...env, yaw: Math.PI });
+  assert.notEqual(map.kindAt(s.x, s.z), 'snow');
+  // the tree in the grid blocks
+  const w = createPlayer(CAMP.x, CAMP.z, Math.PI);
+  w.ground = map.groundAt(w.x, w.z);
+  for (let t = 0; t < 3; t += 1 / 60) stepPlayer(w, { x: 0, y: 1 }, 1 / 60, env);
+  assert.ok(Math.hypot(w.x - CAMP.x, w.z - (CAMP.z - 3)) >= 0.5 + 0.36 - 1e-6);
+});

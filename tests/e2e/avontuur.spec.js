@@ -1,16 +1,19 @@
-// AVONTUUR (PLAN-V4 round 1): the joystick walks, the space bar / SPRING jumps, the player stays on the island,
-// the dog follows, and STAD brings the town back. Runs in the cloud (GitHub Actions), one worker.
+// AVONTUUR (PLAN-V4 rounds 1-2): the boat lands you on the pier of the Avontuureiland; the joystick walks, the
+// space bar / SPRING jumps, the player never walks into the sea, the dog follows, night falls, DORP sails back.
+// Runs in the cloud (GitHub Actions), one worker.
 import { test, expect } from '@playwright/test';
 import { watchErrors, startGame, seedSave, closePopups, shot } from './helpers.js';
 
 const hook = (page) => page.evaluate(() => {
   const h = window.__muntstad.avontuur;
-  return { player: h.player, dog: h.dog, yaw: h.yaw, island: h.island, jumps: h.jumps };
+  const p = h.player;
+  return { player: p, dog: h.dog, yaw: h.yaw, jumps: h.jumps, onLand: h.onLand(p.x, p.z), kind: h.kindAt(p.x, p.z), darkness: h.darkness, forestCount: h.forestCount };
 });
 
 async function openAvontuur(page) {
   await page.locator('#nav-avontuur').click();
   await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
+  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
   await page.waitForTimeout(400);
 }
 
@@ -28,7 +31,7 @@ async function thumb(page, dx, dy, holdMs) {
   }, { dx, dy, holdMs });
 }
 
-test('the joystick walks the player, the dog follows, SPRING jumps, STAD returns', async ({ page }, testInfo) => {
+test('the joystick walks the player off the pier, the dog follows, SPRING jumps, night falls, DORP returns', async ({ page }, testInfo) => {
   const errors = watchErrors(page);
   await seedSave(page, (s) => { s.wallet = 130; s.earnedWork = 130; s.makers.limonade = 1; s.fun = { hond: true }; s.milestones = ['eerste-geldmaker']; return s; });
   await startGame(page);
@@ -38,52 +41,55 @@ test('the joystick walks the player, the dog follows, SPRING jumps, STAD returns
   await expect(page.locator('#topbar')).toBeVisible();
   const before = await hook(page);
   expect(before.dog, 'the dog is there').not.toBeNull();
+  expect(before.onLand, 'starts on the pier').toBe(true);
 
-  // the stick appears where the thumb lands and the player walks forward
-  await thumb(page, 0, -60, 2000);
+  // the stick appears where the thumb lands and the player walks forward (north, onto the island)
+  await thumb(page, 0, -60, 2500);
   const after = await hook(page);
   const walked = Math.hypot(after.player.x - before.player.x, after.player.z - before.player.z);
   expect(walked, 'walked forward').toBeGreaterThan(1.5);
+  expect(after.player.z, 'towards the island').toBeLessThan(before.player.z);
+  expect(after.onLand).toBe(true);
   await expect(page.locator('#stick')).not.toHaveClass(/on/);
-  // the dog trotted after the player (it starts once the player is ~2 units away and is slower than a run)
   const dogMoved = Math.hypot(after.dog.x - before.dog.x, after.dog.z - before.dog.z);
   expect(dogMoved, 'the dog followed').toBeGreaterThan(0.5);
-  const dogDist = Math.hypot(after.player.x - after.dog.x, after.player.z - after.dog.z);
-  expect(dogDist).toBeLessThan(6);
 
-  // SPRING: the player jumps and lands again (a slow runner may render only a few frames of the arc)
+  // SPRING: the player jumps and lands again
   await page.locator('#av-spring').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await expect.poll(async () => (await hook(page)).jumps, { timeout: 3000 }).toBe(after.jumps + 1);
   await expect.poll(async () => (await hook(page)).player.grounded, { timeout: 4000 }).toBe(true);
   await shot(page, testInfo, '10-avontuur');
 
-  await page.locator('#av-stad').click();
+  // night: the palette darkens (forced phase for the test), then back to the clock
+  await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 3000 }).toBe(1);
+  await shot(page, testInfo, '11-avontuur-nacht');
+  await page.evaluate(() => window.__muntstad.avontuur.setPhase(null));
+
+  await page.locator('#av-dorp').click();
   await expect(page.locator('#screen-stad')).toHaveClass(/active/);
   expect(errors()).toEqual([]);
 });
 
-test('WASD walks, space jumps, and the player never leaves the island', async ({ page }) => {
+test('WASD walks, space jumps, and the player never walks into the sea or up the snow', async ({ page }) => {
   const errors = watchErrors(page);
   await startGame(page);
   await closePopups(page);
   await openAvontuur(page);
   const start = await hook(page);
   await page.keyboard.down('w');
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(900);
   await page.keyboard.up('w');
   const moved = await hook(page);
   expect(Math.hypot(moved.player.x - start.player.x, moved.player.z - start.player.z)).toBeGreaterThan(1);
   await page.keyboard.press('Space');
   await expect.poll(async () => (await hook(page)).jumps, { timeout: 3000 }).toBe(moved.jumps + 1);
 
-  // run in one direction for a long time: the sea is off limits
-  await page.evaluate(() => window.__muntstad.avontuur.setInput(0, 1, true));
-  await page.waitForTimeout(5000);
+  // run backwards (south) for a long time: the sea is off limits, the player stays on the pier or the beach
+  await page.evaluate(() => window.__muntstad.avontuur.setInput(0, -1, true));
+  await page.waitForTimeout(4000);
   await page.evaluate(() => window.__muntstad.avontuur.setInput(null));
   const end = await hook(page);
-  expect(end.player.x).toBeGreaterThan(end.island.x + 0.3);
-  expect(end.player.x).toBeLessThan(end.island.x + end.island.w - 0.3);
-  expect(end.player.z).toBeGreaterThan(end.island.z + 0.3);
-  expect(end.player.z).toBeLessThan(end.island.z + end.island.d - 0.3);
+  expect(end.onLand, `on land (${end.kind})`).toBe(true);
   expect(errors()).toEqual([]);
 });

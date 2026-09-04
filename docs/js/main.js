@@ -317,7 +317,7 @@ function boot() {
   screens.gate = papa.gate;
 
   // blocky icons for the HUD and navigation (rendered once from the same art as the town)
-  const icons = { 'ico-werk': 'werk', 'ico-winkel': 'winkel', 'ico-winkel-2': 'winkel', 'ico-huis': 'huis', 'ico-stad-1': 'stad', 'ico-stad-2': 'stad', 'ico-stad-3': 'stad', 'ico-stad-4': 'stad', 'ico-stad-5': 'stad', 'ico-makers': 'makers', 'ico-fun': 'fun', 'income-icon': 'income', 'ico-car': 'car' };
+  const icons = { 'ico-werk': 'werk', 'ico-winkel': 'winkel', 'ico-winkel-2': 'winkel', 'ico-huis': 'huis', 'ico-stad-1': 'stad', 'ico-stad-2': 'stad', 'ico-stad-3': 'stad', 'ico-stad-4': 'stad', 'ico-makers': 'makers', 'ico-fun': 'fun', 'income-icon': 'income', 'ico-car': 'car' };
   for (const [id, kind] of Object.entries(icons)) { const img = document.getElementById(id); if (img) img.src = navSprite(kind); }
 
   // zoom / callout prevention (iOS ignores user-scalable=no)

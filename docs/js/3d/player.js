@@ -26,11 +26,12 @@ export const FOLLOWER = Object.freeze({
 });
 
 export function createPlayer(x = 0, z = 0, heading = 0) {
-  return { x, z, y: 0, vy: 0, heading, vx: 0, vz: 0, speed: 0, grounded: true, moving: false, running: false, landed: false, jumped: false };
+  // y is the height above the ground; ground is the terrain height under the feet (0 on the flat village island)
+  return { x, z, y: 0, vy: 0, ground: 0, heading, vx: 0, vz: 0, speed: 0, grounded: true, moving: false, running: false, landed: false, jumped: false };
 }
 
 export function createFollower(x = 0, z = 0, heading = 0) {
-  return { x, z, heading, moving: false };
+  return { x, z, ground: 0, heading, moving: false };
 }
 
 /** Signed distance from (x, z) to the border of a rounded rectangle {x, z, w, d, r} (negative = inside). */
@@ -74,6 +75,46 @@ export function pushOut(px, pz, radius, obstacles) {
     }
   }
   return [x, z];
+}
+
+/**
+ * Terrain rules (env.walkable, env.groundAt): water and snow are off limits, and a step that climbs more than
+ * MAX_RISE at once is a cliff. Sliding along the blocked axis keeps the walk smooth. Returns [x, z].
+ */
+export const MAX_RISE = 0.2;
+export function terrainCheck(p, x, z, env) {
+  if (!env.walkable && !env.groundAt) return [x, z];
+  const ok = (nx, nz) => {
+    if (env.walkable && !env.walkable(nx, nz)) return false;
+    if (env.groundAt && p.grounded && env.groundAt(nx, nz) - env.groundAt(p.x, p.z) > MAX_RISE) return false;
+    return true;
+  };
+  if (ok(x, z)) return [x, z];
+  if (ok(x, p.z)) return [x, p.z];
+  if (ok(p.x, z)) return [p.x, z];
+  return [p.x, p.z];
+}
+
+/** Round obstacles in a coarse grid: near(x, z) returns only the ones around a point (thousands of trees stay cheap). */
+export function createGrid(obstacles, cell = 4) {
+  const cells = new Map();
+  const key = (i, j) => `${i},${j}`;
+  for (const o of obstacles) {
+    const i = Math.floor(o.x / cell), j = Math.floor(o.z / cell);
+    const k = key(i, j);
+    if (!cells.has(k)) cells.set(k, []);
+    cells.get(k).push(o);
+  }
+  const out = [];
+  return function near(x, z) {
+    out.length = 0;
+    const i = Math.floor(x / cell), j = Math.floor(z / cell);
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const c = cells.get(key(i + di, j + dj));
+      if (c) for (const o of c) out.push(o);
+    }
+    return out;
+  };
 }
 
 function wrapAngle(a) {
@@ -123,9 +164,12 @@ export function stepPlayer(p, input, dt, env) {
   if (!dead && p.grounded) { p.vx = dx * p.speed; p.vz = dz * p.speed; }
   else if (p.grounded) { p.vx = 0; p.vz = 0; p.speed = 0; }
   let x = p.x + p.vx * dt, z = p.z + p.vz * dt;
-  if (env.obstacles) [x, z] = pushOut(x, z, P.radius, env.obstacles);
+  if (env.near) [x, z] = pushOut(x, z, P.radius, env.near(x, z));
+  else if (env.obstacles) [x, z] = pushOut(x, z, P.radius, env.obstacles);
   if (env.island) [x, z] = keepInside(x, z, env.island, env.margin ?? 0);
+  [x, z] = terrainCheck(p, x, z, env);
   p.x = x; p.z = z;
+  if (env.groundAt) p.ground = env.groundAt(p.x, p.z);
   // jumping
   if (input.jump && p.grounded) { p.vy = P.jumpSpeed; p.grounded = false; p.jumped = true; }
   if (!p.grounded) {
@@ -154,9 +198,12 @@ export function stepFollower(f, player, dt, env = {}) {
     const speed = Math.min(F.speed, d / Math.max(dt, 1e-3));
     f.heading = turnTowards(f.heading, Math.atan2(dx, dz), F.turn, dt);
     let x = f.x + (dx / d) * speed * dt, z = f.z + (dz / d) * speed * dt;
-    if (env.obstacles) [x, z] = pushOut(x, z, F.radius, env.obstacles);
+    if (env.near) [x, z] = pushOut(x, z, F.radius, env.near(x, z));
+    else if (env.obstacles) [x, z] = pushOut(x, z, F.radius, env.obstacles);
     if (env.island) [x, z] = keepInside(x, z, env.island, env.margin ?? 0);
+    if (env.walkable && !env.walkable(x, z)) { x = f.x; z = f.z; f.moving = far > F.start * 2; }
     f.x = x; f.z = z;
+    if (env.groundAt) f.ground = env.groundAt(f.x, f.z);
   } else if (!f.moving) {
     // idle: look at the player
     f.heading = turnTowards(f.heading, Math.atan2(player.x - f.x, player.z - f.z), 4, dt);
