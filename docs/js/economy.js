@@ -1,6 +1,7 @@
 // economy.js — pure, deterministic game economy. No DOM, no Date.now(), no side effects.
 // Every function takes (state, config, ...) and returns a NEW state; nothing is mutated.
 // The game, the unit tests and the balance simulator all share this exact logic.
+import { createEiland } from './eiland.js';
 
 export const THIN_SPACE = ' '; // narrow no-break space: thin, and '2 000' never breaks over two lines
 
@@ -34,6 +35,7 @@ export function createState(config, now) {
     playTimeMs: 0,
     flags: {},
     settings: { voice: true, sound: true, music: true },
+    eiland: createEiland(config),
   };
 }
 

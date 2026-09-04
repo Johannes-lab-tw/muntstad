@@ -3,7 +3,7 @@
 // paths, in the camp, at the cave or on the pier. placeForest(map, seed) → { tree1: [{ x, z, y, s, rot }], ... }
 import { fbm, distToPaths, CAMP, CAVE, PIER } from './heightmap.js';
 
-export const KINDS = ['tree1', 'tree2', 'bush1', 'bush2', 'rock1', 'rock2', 'rock3', 'grass', 'flower'];
+export const KINDS = ['tree1', 'tree2', 'bush1', 'bush2', 'rock1', 'rock2', 'rock3', 'grass', 'flower', 'shell'];
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -41,6 +41,7 @@ export function placeForest(map, seed = 7) {
       if (r < 0.22) out[r < 0.1 ? 'rock2' : 'rock3'].push({ x: px, z: pz, y, s: s * (0.8 + rand() * 0.8), rot });
     } else if (kind === 'beach') {
       if (r < 0.05 && free(px, pz, 1.0)) out.rock1.push({ x: px, z: pz, y, s: s * 0.6, rot });
+      else if (r < 0.19 && free(px, pz, 0.6)) out.shell.push({ x: px, z: pz, y, s, rot });   // shells to pick up (R3)
     }
   }
   return out;

@@ -52,6 +52,10 @@ function geomOf(kind) {
       b.sphere(0, 0, 0.4, 0.11, '#ff6fae', 6);
       b.sphere(0, 0, 0.42, 0.05, '#ffe94d', 5);
       break;
+    case 'shell':
+      b.add(new T.SphereGeometry(0.22, 8, 6).scale(1, 0.45, 0.85).translate(0, 0.08, 0), '#ffe6d5');
+      b.add(new T.SphereGeometry(0.1, 6, 5).scale(1, 0.5, 1).translate(0.12, 0.06, -0.06), '#ff9fbd');
+      break;
     default: break;
   }
   return b.build().geometry;
@@ -62,8 +66,16 @@ const OBSTACLE_R = { tree1: 0.36, tree2: 0.34, rock1: 0.55, rock2: 0.95, rock3: 
 export function buildForest(placements) {
   const group = new T.Group();
   const obstacles = [];
+  const meshes = {};
   const m = new T.Matrix4(), q = new T.Quaternion(), p = new T.Vector3(), sc = new T.Vector3();
   const up = new T.Vector3(0, 1, 0);
+  function place(mesh, it, i, scale) {
+    q.setFromAxisAngle(up, it.rot);
+    p.set(it.x, it.y - 0.05, it.z);
+    sc.set(it.s * scale, it.s * scale, it.s * scale);
+    m.compose(p, q, sc);
+    mesh.setMatrixAt(i, m);
+  }
   for (const kind of KINDS) {
     const list = placements[kind];
     if (!list || !list.length) continue;
@@ -73,16 +85,20 @@ export function buildForest(placements) {
     mesh.castShadow = casts;
     mesh.receiveShadow = true;
     list.forEach((it, i) => {
-      q.setFromAxisAngle(up, it.rot);
-      p.set(it.x, it.y - 0.05, it.z);
-      sc.set(it.s, it.s, it.s);
-      m.compose(p, q, sc);
-      mesh.setMatrixAt(i, m);
-      if (OBSTACLE_R[kind]) obstacles.push({ x: it.x, z: it.z, r: OBSTACLE_R[kind] * it.s, kind });
+      place(mesh, it, i, 1);
+      if (OBSTACLE_R[kind]) obstacles.push({ x: it.x, z: it.z, r: OBSTACLE_R[kind] * it.s, kind, index: i });
     });
     mesh.instanceMatrix.needsUpdate = true;
     mesh.frustumCulled = false;   // one bounding sphere per kind would cull the whole forest; distance fog does the rest
     group.add(mesh);
+    meshes[kind] = mesh;
   }
-  return { group, obstacles };
+  /** Scale one instance (0 hides it: a picked shell, a resting bush's berries are handled by the scene). */
+  function setScale(kind, i, scale) {
+    const mesh = meshes[kind];
+    if (!mesh) return;
+    place(mesh, placements[kind][i], i, scale);
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+  return { group, obstacles, meshes, placements, setScale };
 }

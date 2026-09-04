@@ -962,3 +962,31 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
   z-index: 20;
 }
 .btn-jump { width: 150px; height: 150px; min-width: 150px; min-height: 150px; border-radius: 50%; font-size: 30px; padding: 0; }
+
+
+/* ---------- AVONTUUR round 3: backpack, quest, action button, campfire panel ---------- */
+.av-bag { position: absolute; left: 14px; top: calc(var(--topbar-h) + 12px); display: flex; gap: 14px; padding: 8px 16px; font-size: 26px; font-weight: 800; z-index: 20; pointer-events: none; }
+.av-bag span { display: inline-flex; align-items: center; gap: 4px; }
+.av-bag .n { font-variant-numeric: tabular-nums; min-width: 1.4em; text-align: right; }
+.av-bag .full { color: var(--red); }
+.av-quest { position: absolute; left: 14px; top: calc(var(--topbar-h) + 84px); padding: 8px 16px; font-size: 22px; font-weight: 700; color: #3f475f; z-index: 20; pointer-events: none; max-width: 46vw; }
+.av-quest b { color: var(--ink); }
+.btn-actie { min-height: 98px; min-width: 214px; font-size: 32px; border-radius: 26px; }
+.btn-actie.pulse { animation: glow 0.9s ease-in-out infinite; }
+.av-overlay { z-index: 40; }
+.kamp { width: min(92vw, 960px); text-align: left; }
+.kamp h3 { margin: 6px 0; font-size: 26px; }
+.kamp-cols { display: flex; gap: 18px; align-items: flex-start; }
+.kamp-cols > div { flex: 1; min-width: 0; }
+.kamp-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.kamp-item { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 700; }
+.kamp-item .ic { font-size: 34px; }
+.kamp-item .tot { margin-left: auto; font-variant-numeric: tabular-nums; }
+.kamp-total { font-size: 28px; font-weight: 800; margin: 6px 0 10px; }
+.kamp-tools { display: flex; flex-direction: column; gap: 10px; }
+.kamp-tool { display: flex; align-items: center; gap: 12px; }
+.kamp-tool .ic { font-size: 40px; }
+.kamp-tool .txt { flex: 1; min-width: 0; font-size: 20px; font-weight: 600; color: #3f475f; }
+.kamp-tool .txt b { display: block; font-size: 24px; color: var(--ink); }
+.kamp-tool .btn { min-width: 150px; }
+.kamp-foot { display: flex; justify-content: flex-end; gap: 14px; margin-top: 14px; }

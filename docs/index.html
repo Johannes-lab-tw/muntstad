@@ -63,9 +63,15 @@
     <section class="screen screen-avontuur" data-screen="avontuur" id="screen-avontuur">
       <div id="avontuur" class="gl-host" aria-label="Avontuur" role="img"></div>
       <div class="stick" id="stick" aria-hidden="true"><div class="stick-knob" id="stick-knob"></div></div>
+      <div class="av-bag panel-mini" id="av-bag" aria-label="Rugzak"></div>
+      <div class="av-quest panel-mini" id="av-quest" hidden></div>
       <div class="av-buttons">
         <button class="btn btn-secondary btn-lg" id="av-dorp" type="button">⛵ DORP</button>
+        <button class="btn btn-primary btn-actie" id="av-actie" type="button" hidden>PAK</button>
         <button class="btn btn-success btn-jump" id="av-spring" type="button">SPRING</button>
+      </div>
+      <div class="overlay av-overlay" id="kamp-overlay" hidden>
+        <div class="panel popup kamp" id="kamp" role="dialog"></div>
       </div>
     </section>
 

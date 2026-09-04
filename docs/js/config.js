@@ -35,6 +35,46 @@ export const CONFIG = Object.freeze({
     speechRate: 0.95,
   },
 
+  // Avontuureiland (PLAN-V4): the backpack, prices at the campfire, tools, quests. Texts live in i18n.js.
+  eiland: {
+    bagMax: 30,                       // the backpack holds 30 things; sell at the campfire
+    items: {
+      hout:   { name: 'Hout',   icon: '🪵', price: 2 },
+      schelp: { name: 'Schelp', icon: '🐚', price: 3 },
+      bes:    { name: 'Bes',    icon: '🫐', price: 1 },
+      vis:    { name: 'Vis',    icon: '🐟', price: 8 },
+    },
+    tools: [
+      { id: 'bijl',     name: 'Bijl',     icon: '🪓', price: 60,  tekst: 'Elke hak geeft twee stukken hout.' },
+      { id: 'lantaarn', name: 'Lantaarn', icon: '🏮', price: 80,  tekst: 'Licht in het donker. Spoken blijven weg.' },
+      { id: 'hek',      name: 'Hek',      icon: '🚧', price: 150, tekst: 'Een hek om het kamp. Spoken komen er niet door.' },
+      { id: 'tent',     name: 'Tent',     icon: '⛺', price: 200, tekst: 'Slaap in de tent: de nacht gaat sneller.' },
+    ],
+    chop: { hands: { taps: 3, wood: 1 }, withAxe: { taps: 1, wood: 2 } },   // taps per chop, wood per chop
+    treeWood: 6,                      // a tree gives this much wood, then rests
+    treeRestMs: 90 * 1000,
+    berries: 2,                       // berries per bush
+    bushRestMs: 60 * 1000,
+    fish: { waitMinMs: 2000, waitMaxMs: 4500, biteMs: 1600 },   // wait for a bite, then tap in time
+    questBonus: 2,                    // quest reward = n × item price × bonus
+    quests: [
+      { item: 'hout', n: 4, tekst: 'Hak vier stukken hout bij de bomen.', klaar: 'Vier stukken hout! Goed gedaan.' },
+      { item: 'schelp', n: 3, tekst: 'Raap drie schelpen op het strand.', klaar: 'Drie schelpen! Ze glimmen mooi.' },
+      { item: 'bes', n: 5, tekst: 'Pluk vijf bessen bij de struiken.', klaar: 'Vijf bessen! Ze smaken zoet.' },
+      { item: 'vis', n: 4, tekst: 'Vang vier vissen in het meer.', klaar: 'Vier vissen! Jij vangt ze snel.' },
+      { item: 'hout', n: 7, tekst: 'Hak zeven stukken hout voor mij.', klaar: 'Zeven stukken hout! Sterk werk.' },
+      { item: 'schelp', n: 6, tekst: 'Raap zes schelpen op het zand.', klaar: 'Zes schelpen! Ze zijn mooi.' },
+      { item: 'bes', n: 4, tekst: 'Pluk vier bessen van de struik.', klaar: 'Vier bessen! Lekker voor de soep.' },
+      { item: 'vis', n: 5, tekst: 'Vang vijf vissen bij het water.', klaar: 'Vijf vissen! Wat een vangst.' },
+      { item: 'hout', n: 3, tekst: 'Hak drie stukken hout nu.', klaar: 'Drie stukken hout! Klaar voor het vuur.' },
+      { item: 'schelp', n: 8, tekst: 'Raap acht schelpen op het strand.', klaar: 'Acht schelpen! Een grote stapel.' },
+      { item: 'bes', n: 6, tekst: 'Pluk zes bessen bij de struiken.', klaar: 'Zes bessen! Ze zijn rijp.' },
+      { item: 'vis', n: 3, tekst: 'Vang drie vissen in het meer.', klaar: 'Drie vissen! Ze zwemmen snel.' },
+      { item: 'hout', n: 5, tekst: 'Hak vijf stukken hout voor mij.', klaar: 'Vijf stukken hout! Goed gehakt.' },
+      { item: 'schelp', n: 4, tekst: 'Raap vier schelpen op het zand.', klaar: 'Vier schelpen! Ze zijn glad.' },
+    ],
+  },
+
   // Parent gate
   papa: {
     holdMs: 3000,                     // hold PAPA for 3 s

@@ -240,6 +240,7 @@ export function avatarModel(look = {}) {
     else if (pose === 'jump') { armUp = 1; }
     else if (pose === 'dance') { swing = Math.sin(t / 140) * 0.8; armUp = Math.abs(Math.sin(t / 140)); bob = Math.abs(Math.sin(t / 140)) * 0.12; }
     else if (pose === 'wave') { armUp = 0; }
+    else if (pose === 'hak' || pose === 'vis') { armUp = 0; }
     else if (pose === 'salto') { spinA = Math.min(1, Math.max(0, (extra.since != null ? t - extra.since : t) / 1000)) * Math.PI * 2; }
     const vehicleRide = !!vehicle;
     legL.rotation.x = vehicleRide ? 0.4 : swing * 0.75 + (pose === 'jump' ? 0.35 : 0);
@@ -249,6 +250,8 @@ export function avatarModel(look = {}) {
     armL.rotation.z = pose === 'dance' ? -0.5 - armUp * 0.4 : 0.06;
     armR.rotation.z = pose === 'dance' ? 0.5 + armUp * 0.4 : -0.06;
     if (pose === 'wave') { armR.rotation.x = -2.7; armR.rotation.z = -0.35 + Math.sin(t / 160) * 0.35; }
+    if (pose === 'hak') { const sw = Math.sin(t / 75); armR.rotation.x = -1.7 + sw * 1.3; armL.rotation.x = -1.7 + sw * 1.3; armL.rotation.z = 0.25; armR.rotation.z = -0.25; }
+    if (pose === 'vis') { armR.rotation.x = -1.3; armL.rotation.x = -1.1; armR.rotation.z = -0.15; }
     body.rotation.y = pose === 'dance' ? Math.sin(t / 140) * 0.5 : 0;
     head.group.rotation.y = pose === 'idle' ? Math.sin(t / 1300 + ph) * 0.15 : 0;
     head.group.rotation.z = pose === 'dance' ? Math.sin(t / 140 + 1) * 0.15 : 0;

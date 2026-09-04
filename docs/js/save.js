@@ -1,6 +1,7 @@
 // save.js — versioned localStorage save, migration chain, corruption-safe load, Bewaar-code export/import.
 // Pure helpers take a `storage` object ({ getItem, setItem, removeItem }) so tests can pass a fake.
 import { createState } from './economy.js';
+import { normalizeEiland } from './eiland.js';
 
 const CODE_PREFIX = 'MS1';
 
@@ -96,6 +97,7 @@ export function normalize(data, config, now) {
     milestones,
     playTimeMs: num(data.playTimeMs),
     flags: data.flags && typeof data.flags === 'object' ? { ...data.flags } : {},
+    eiland: normalizeEiland(data.eiland, config),
     settings: {
       voice: data.settings && 'voice' in data.settings ? !!data.settings.voice : true,
       sound: data.settings && 'sound' in data.settings ? !!data.settings.sound : true,
@@ -226,6 +228,8 @@ export function encodeCode(state, config) {
     Math.round(state.bestWorkRate),
     Math.round(state.playTimeMs / 1000),
     (state.settings.voice ? 1 : 0) | (state.settings.sound ? 2 : 0) | (state.settings.music ? 4 : 0),
+    // the island (since PLAN-V4 R3): bag counts in config order, owned tools as indices, quest index + progress, sold, earned
+    [Object.keys(config.eiland.items).map((id) => state.eiland.bag[id] || 0), config.eiland.tools.map((t, i) => (state.eiland.tools[t.id] ? i : -1)).filter((i) => i >= 0), state.eiland.quest, state.eiland.questN, state.eiland.questsDone, state.eiland.sold, state.eiland.earned],
   ];
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   return `${CODE_PREFIX}.${bytesToB64(bytes)}.${checksum(bytes)}`;
@@ -263,6 +267,11 @@ export function decodeCode(code, config, now) {
     for (const i of list(p[13])) if (config.fun[i] && fun[config.fun[i].id]) hidden[config.fun[i].id] = true;
     const milestones = list(p[14]).map((i) => config.milestones[i]?.id).filter(Boolean);
     const bits = Number(p[18]) || 0;
+    const ei = list(p[19]);
+    const bag = {};
+    Object.keys(config.eiland.items).forEach((id, i) => { bag[id] = Number(list(ei[0])[i]) || 0; });
+    const tools = {};
+    for (const i of list(ei[1])) if (config.eiland.tools[i]) tools[config.eiland.tools[i].id] = true;
     return normalize({
       ...fresh,
       name: typeof p[1] === 'string' ? p[1] : '',
@@ -274,6 +283,7 @@ export function decodeCode(code, config, now) {
       settings: { voice: !!(bits & 1), sound: !!(bits & 2), music: !!(bits & 4) },
       // a restored code is a returning player: START must say "Verder spelen", not ask for a name again
       flags: { started: true, workIntro: true },
+      eiland: { bag, tools, quest: ei[2], questN: ei[3], questsDone: ei[4], sold: ei[5], earned: ei[6] },
       lastTick: now, createdAt: now,
     }, config, now);
   } catch (e) {
