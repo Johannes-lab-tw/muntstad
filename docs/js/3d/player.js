@@ -201,7 +201,7 @@ export function stepFollower(f, player, dt, env = {}) {
     if (env.near) [x, z] = pushOut(x, z, F.radius, env.near(x, z));
     else if (env.obstacles) [x, z] = pushOut(x, z, F.radius, env.obstacles);
     if (env.island) [x, z] = keepInside(x, z, env.island, env.margin ?? 0);
-    if (env.walkable && !env.walkable(x, z)) { x = f.x; z = f.z; f.moving = far > F.start * 2; }
+    if (env.walkable && !env.walkable(x, z) && env.walkable(f.x, f.z)) { x = f.x; z = f.z; f.moving = far > F.start * 2; }   // stuck in water? then any step out is allowed
     f.x = x; f.z = z;
     if (env.groundAt) f.ground = env.groundAt(f.x, f.z);
   } else if (!f.moving) {

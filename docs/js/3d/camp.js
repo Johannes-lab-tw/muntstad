@@ -2,7 +2,7 @@
 // seats, the pier with the boat, the cave mouth in the hill, and a signpost. createCamp(map) →
 // { group, update(now, darkness, lite), obstacles, firePos }
 import * as T from '../../vendor/three.module.min.js';
-import { Builder, MAT, col } from './build.js';
+import { Builder, MAT, col, textPlane } from './build.js';
 import { CAMP, PIER, CAVE } from './heightmap.js';
 
 const WOOD = '#8a5a35', WOOD_L = '#b5763f', STONE = '#7c8089';
@@ -84,6 +84,12 @@ export function createCamp(map) {
   const sgx = CAMP.x - 2.2, sgz = CAMP.z + 5.2;
   sm.position.set(sgx, map.heightAt(sgx, sgz), sgz);
   sm.rotation.y = 0.3;
+  // what the boards say (the lake lies north-east, the cave north-west)
+  const t1 = textPlane('MEER →', { w: 1.1, h: 0.3, font: 0.2, color: '#ffffff' });
+  t1.position.set(0, 1.68, 0.06);
+  const t2 = textPlane('← GROT', { w: 0.95, h: 0.26, font: 0.18, color: '#ffffff' });
+  t2.position.set(0, 1.15, 0.06);
+  sm.add(t1, t2);
   group.add(sm);
   obstacles.push({ x: sgx, z: sgz, r: 0.25 });
 

@@ -49,10 +49,13 @@ test('the forest grows on grass only, never on paths, in the camp, on the pier o
   const total = KINDS.reduce((n, k) => n + f[k].length, 0);
   assert.ok(total > 1200 && total < 8000, `${total} things`);
   assert.ok(f.tree1.length + f.tree2.length > 300, `${f.tree1.length + f.tree2.length} trees`);
-  for (const k of ['tree1', 'tree2', 'bush1', 'bush2', 'grass', 'flower']) for (const it of f[k]) {
+  for (const k of ['tree1', 'tree2', 'tree3', 'log', 'bush1', 'bush2', 'grass', 'flower', 'butterfly']) for (const it of f[k]) {
     assert.equal(map.kindAt(it.x, it.z), 'grass', `${k} on ${map.kindAt(it.x, it.z)}`);
   }
-  for (const k of ['tree1', 'tree2']) for (const it of f[k]) {
+  for (const it of f.crab) assert.equal(map.kindAt(it.x, it.z), 'beach', 'crabs live on the beach');
+  for (const it of f.reed) assert.ok(map.walkable(it.x, it.z) && Math.hypot(it.x - LAKE.x, it.z - LAKE.z) < LAKE.r + 2, 'reeds ring the lake');
+  assert.ok(f.tree3.length >= 3 && f.log.length >= 3 && f.reed.length >= 10 && f.crab.length >= 5 && f.butterfly.length >= 5, `tree3 ${f.tree3.length} log ${f.log.length} reed ${f.reed.length} crab ${f.crab.length} fly ${f.butterfly.length}`);
+  for (const k of ['tree1', 'tree2', 'tree3']) for (const it of f[k]) {
     assert.ok(Math.hypot(it.x - CAMP.x, it.z - CAMP.z) > CAMP.r + 1.5, 'tree in the camp');
     assert.ok(!(Math.abs(it.x - PIER.x) < 3 && it.z > PIER.z - PIER.len - 3), 'tree at the pier');
   }

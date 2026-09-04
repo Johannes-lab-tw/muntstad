@@ -1,9 +1,9 @@
 // 3d/forest-place.js — where the forest grows, as pure numbers (no Three.js; unit-tested): a jittered grid over
 // the island, trees in the noise clumps on the grass, bushes, rocks, grass tufts and flowers elsewhere; nothing on
 // paths, in the camp, at the cave or on the pier. placeForest(map, seed) → { tree1: [{ x, z, y, s, rot }], ... }
-import { fbm, distToPaths, CAMP, CAVE, PIER } from './heightmap.js';
+import { fbm, distToPaths, CAMP, CAVE, PIER, LAKE } from './heightmap.js';
 
-export const KINDS = ['tree1', 'tree2', 'bush1', 'bush2', 'rock1', 'rock2', 'rock3', 'grass', 'flower', 'shell'];
+export const KINDS = ['tree1', 'tree2', 'tree3', 'log', 'bush1', 'bush2', 'rock1', 'rock2', 'rock3', 'grass', 'flower', 'shell', 'reed', 'crab', 'butterfly'];
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -29,19 +29,26 @@ export function placeForest(map, seed = 7) {
     const rot = rand() * Math.PI * 2;
     const s = 0.9 + rand() * 0.2;
     const r = rand();
+    const nearLake = Math.hypot(px - LAKE.x, pz - LAKE.z) - LAKE.r;   // > 0 outside the water
     if (kind === 'grass') {
       const clump = fbm(px / 11, pz / 11, 21);           // forest where the clump noise is high
-      if (clump > 0.52 && free(px, pz, 1.8)) {
-        out[r < 0.55 ? 'tree1' : 'tree2'].push({ x: px, z: pz, y, s: s * (0.9 + clump * 0.4), rot });
+      if (nearLake > 0.2 && nearLake < 1.8 && r < 0.6) out.reed.push({ x: px, z: pz, y, s, rot });   // reeds round the lake
+      else if (clump > 0.52 && free(px, pz, 1.8)) {
+        // one old thick tree in about twenty; now and then a fallen log at the edge of a clump
+        if (r < 0.05 && clump > 0.62 && free(px, pz, 2.6)) out.tree3.push({ x: px, z: pz, y, s, rot });
+        else if (r < 0.08 && clump < 0.58) out.log.push({ x: px, z: pz, y, s, rot });
+        else out[r < 0.55 ? 'tree1' : 'tree2'].push({ x: px, z: pz, y, s: s * (0.9 + clump * 0.4), rot });
       } else if (r < 0.10 && free(px, pz, 1.2)) out[r < 0.05 ? 'bush1' : 'bush2'].push({ x: px, z: pz, y, s, rot });
       else if (r < 0.14 && free(px, pz, 1.0)) out.rock1.push({ x: px, z: pz, y, s: s * 0.8, rot });
       else if (r < 0.50) out.grass.push({ x: px, z: pz, y, s, rot });
-      else if (r < 0.60) out.flower.push({ x: px, z: pz, y, s, rot });
+      else if (r < 0.60) { out.flower.push({ x: px, z: pz, y, s, rot }); if (r < 0.515) out.butterfly.push({ x: px, z: pz, y: y + 0.6, s, rot }); }
     } else if (kind === 'rock' || kind === 'snow') {
       if (r < 0.22) out[r < 0.1 ? 'rock2' : 'rock3'].push({ x: px, z: pz, y, s: s * (0.8 + rand() * 0.8), rot });
     } else if (kind === 'beach') {
-      if (r < 0.05 && free(px, pz, 1.0)) out.rock1.push({ x: px, z: pz, y, s: s * 0.6, rot });
+      if (nearLake > -0.5 && nearLake < 1.8 && r < 0.5) out.reed.push({ x: px, z: pz, y, s, rot });
+      else if (r < 0.05 && free(px, pz, 1.0)) out.rock1.push({ x: px, z: pz, y, s: s * 0.6, rot });
       else if (r < 0.19 && free(px, pz, 0.6)) out.shell.push({ x: px, z: pz, y, s, rot });   // shells to pick up (R3)
+      else if (r < 0.215 && free(px, pz, 0.6)) out.crab.push({ x: px, z: pz, y, s: s * 0.8, rot });   // crabs that scuttle
     }
   }
   return out;

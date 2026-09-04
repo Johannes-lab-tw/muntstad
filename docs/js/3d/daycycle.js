@@ -28,7 +28,7 @@ const KEYS = [
   [0.45, { sky: '#7fd0ff', fog: '#b6e4ff', sun: '#ffffff', sunI: 2.6, hemiSky: '#d6f0ff', hemiGround: '#6fa84f', hemiI: 0.9 }],   // noon
   [0.60, { sky: '#ffb78a', fog: '#ffd0a8', sun: '#ffc27a', sunI: 1.6, hemiSky: '#ffd9b3', hemiGround: '#6f8a4a', hemiI: 0.7 }],   // golden hour
   [DAY_END + 0.03, { sky: '#2b2f66', fog: '#2d3468', sun: '#8fa0ff', sunI: 0.35, hemiSky: '#3a4380', hemiGround: '#1f2a2a', hemiI: 0.45 }], // dusk
-  [0.80, { sky: '#0e1236', fog: '#141a44', sun: '#7f8fff', sunI: 0.22, hemiSky: '#26307a', hemiGround: '#141a1a', hemiI: 0.35 }],  // night
+  [0.80, { sky: '#0a0d2c', fog: '#10153a', sun: '#7f8fff', sunI: 0.18, hemiSky: '#1f2868', hemiGround: '#101616', hemiI: 0.27 }],  // night (deep: the fire is the light)
   [0.94, { sky: '#1d1f4a', fog: '#2a2f5c', sun: '#8f9fff', sunI: 0.3, hemiSky: '#333d80', hemiGround: '#1e2a2a', hemiI: 0.4 }],   // before dawn
   [1.00, { sky: '#ffb27a', fog: '#ffc9a0', sun: '#ffb070', sunI: 1.3, hemiSky: '#ffd7b0', hemiGround: '#6f8a4a', hemiI: 0.7 }],
 ];

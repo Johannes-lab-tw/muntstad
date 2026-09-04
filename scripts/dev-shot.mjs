@@ -59,7 +59,7 @@ await page.locator('#btn-start').click();
 await page.waitForTimeout(900);
 await closePopups();
 if (screens.includes('stad')) await shot('02-stad');
-if (screens.includes('avontuur')) { await page.locator('#nav-avontuur').click(); await page.waitForTimeout(1200); await shot('10-avontuur'); await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.8)); await page.waitForTimeout(700); await shot('11-avontuur-nacht'); await page.evaluate(() => window.__muntstad.avontuur.setPhase(null)); await page.locator('#av-dorp').click(); await page.waitForTimeout(300); }
+if (screens.includes('avontuur')) { await page.locator('#nav-avontuur').click(); await page.waitForTimeout(1200); await shot('10-avontuur'); await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.8)); await page.waitForTimeout(700); await shot('11-avontuur-nacht'); await page.evaluate(() => window.__muntstad.avontuur.setPhase(null)); await page.waitForTimeout(700); await closePopups(); await page.locator('#av-dorp').click(); await page.waitForTimeout(300); }
 if (screens.includes('werk')) { await page.locator('#nav-werk').click(); await page.waitForTimeout(1400); await shot('03-werk'); await page.locator('#btn-klaar').click(); }
 if (screens.includes('winkel') || screens.includes('leuk')) {
   await page.locator('#nav-winkel').click(); await page.waitForTimeout(400);

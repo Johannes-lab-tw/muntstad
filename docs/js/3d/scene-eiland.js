@@ -64,7 +64,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
 
   const player = createPlayer(START.x, START.z, START.heading);
   player.ground = map.groundAt(player.x, player.z);
-  const dog = createFollower(START.x + 0.8, START.z + 1.4, START.heading);
+  const dog = createFollower(START.x + 0.9, START.z - 0.9, START.heading);   // beside you, not between you and the camera
   const groundOf = (x, z) => map.heightAt(Math.min(map.size - 1, Math.max(1, x)), Math.min(map.size - 1, Math.max(1, z)));
 
   // ---------- models ----------
@@ -89,7 +89,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (id) {
       pet = petModel(id);
       scene.add(pet.group);
-      dog.x = player.x + 0.8; dog.z = player.z + 1.4; dog.heading = player.heading;
+      dog.x = player.x + 0.9; dog.z = player.z - 0.9; dog.heading = player.heading;
       dog.ground = map.groundAt(dog.x, dog.z);
     }
     petId = id;
@@ -106,6 +106,31 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       scene.add(m);
       chips.push({ m, vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 2, vz: (Math.random() - 0.5) * 3, t: 0 });
     }
+  }
+  // a chopped tree wobbles for half a second; a caught fish jumps out of the water towards you
+  const wobbles = [];   // { kind, index, t }
+  function wobble(o) { wobbles.push({ kind: o.kind, index: o.index, t: 0 }); }
+  function updateWobbles(dt) {
+    for (let i = wobbles.length - 1; i >= 0; i--) {
+      const w = wobbles[i];
+      w.t += dt;
+      const f = Math.min(1, w.t / 0.55);
+      forest.setTilt(w.kind, w.index, Math.sin(f * Math.PI * 3) * 0.09 * (1 - f));
+      if (f >= 1) wobbles.splice(i, 1);
+    }
+  }
+  const fishMesh = (() => { const b = new Builder({ r: 0.03 }); b.add(new T.SphereGeometry(0.16, 8, 6).scale(1.7, 0.7, 0.9), '#7fc4ff'); b.add(new T.ConeGeometry(0.12, 0.22, 4).rotateZ(Math.PI / 2).translate(-0.3, 0, 0), '#5aa9ef'); b.sphere(0.16, 0.07, 0.06, 0.035, '#1b1f3b', 5); const m = b.build({ shadow: false }); m.visible = false; scene.add(m); return m; })();
+  let fishJump = null;   // { from, to, t }
+  function jumpFish(fromV, toV) { fishJump = { from: fromV.clone(), to: toV.clone(), t: 0 }; fishMesh.visible = true; }
+  function updateFish(dt) {
+    if (!fishJump) return;
+    fishJump.t += dt;
+    const f = Math.min(1, fishJump.t / 0.7);
+    fishMesh.position.lerpVectors(fishJump.from, fishJump.to, f);
+    fishMesh.position.y += Math.sin(f * Math.PI) * 1.6;
+    fishMesh.rotation.z = (0.5 - f) * 2.2;
+    fishMesh.rotation.y = Math.atan2(fishJump.to.x - fishJump.from.x, fishJump.to.z - fishJump.from.z) + Math.PI / 2;
+    if (f >= 1) { fishJump = null; fishMesh.visible = false; }
   }
   function updateChips(dt) {
     for (let i = chips.length - 1; i >= 0; i--) {
@@ -445,6 +470,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
         hakUntil = now + 380;
         player.heading = Math.atan2(action.target.x - player.x, action.target.z - player.z);
         game.audio.play('thud');
+        wobble(action.target);
         t.taps++;
         if (t.taps >= rule.taps) {
           t.taps = 0;
@@ -467,6 +493,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       case 'trek':
         if (fishing && fishing.biteUntil && now < fishing.biteUntil) {
           cb.onCollect && cb.onCollect('vis', 1);
+          jumpFish(bobber.position, new T.Vector3(player.x, player.ground + 0.9, player.z));
           game.audio.play('splash');
           game.audio.play('buy');
         }
@@ -537,6 +564,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     }
     updateFishing(now);
     updateChips(dt);
+    updateWobbles(dt);
+    updateFish(dt);
+    forest.animate(now, dt, daynight.darkness);
     const next = findAction(now);
     const key = next ? `${next.type}:${next.label}` : '';
     if (key !== lastActionKey) { lastActionKey = key; action = next; cb.onAction && cb.onAction(next); }

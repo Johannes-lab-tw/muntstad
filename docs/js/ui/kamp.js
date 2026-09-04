@@ -41,6 +41,12 @@ export function createKamp(game, onChange) {
       const r = sellAll(game.state, game.config);
       if (r.coins <= 0) return;
       game.audio.play('buy');
+      // coins you can hear and see: a short rain of coin sounds and a floating +n at the wallet
+      const n = Math.min(8, 2 + Math.floor(r.coins / 10));
+      for (let i = 0; i < n; i++) setTimeout(() => game.audio.play('coin'), 120 + i * 90);
+      const p = game.walletPoint();
+      game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(r.coins)}`, '#2a9d3a');
+      game.bumpWallet();
       game.update(() => r.state);
       game.save();
       if (!game.state.flags.firstSell) {

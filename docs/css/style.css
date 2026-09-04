@@ -965,11 +965,12 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 
 
 /* ---------- AVONTUUR round 3: backpack, quest, action button, campfire panel ---------- */
-.av-bag { position: absolute; left: 14px; top: calc(var(--topbar-h) + 12px); display: flex; gap: 14px; padding: 8px 16px; font-size: 26px; font-weight: 800; z-index: 20; pointer-events: none; }
+.av-left { position: absolute; left: 14px; top: calc(var(--topbar-h) + 12px); display: flex; flex-direction: column; align-items: flex-start; gap: 10px; z-index: 20; pointer-events: none; max-width: 52vw; }
+.av-bag { display: flex; flex-wrap: wrap; gap: 10px 14px; padding: 8px 16px; font-size: 26px; font-weight: 800; }
 .av-bag span { display: inline-flex; align-items: center; gap: 4px; }
 .av-bag .n { font-variant-numeric: tabular-nums; min-width: 1.4em; text-align: right; }
 .av-bag .full { color: var(--red); }
-.av-quest { position: absolute; left: 14px; top: calc(var(--topbar-h) + 84px); padding: 8px 16px; font-size: 22px; font-weight: 700; color: #3f475f; z-index: 20; pointer-events: none; max-width: 46vw; }
+.av-quest { padding: 8px 16px; font-size: 22px; font-weight: 700; color: #3f475f; max-width: 100%; }
 .av-quest b { color: var(--ink); }
 .btn-actie { min-height: 98px; min-width: 214px; font-size: 32px; border-radius: 26px; }
 .btn-actie.pulse { animation: glow 0.9s ease-in-out infinite; }

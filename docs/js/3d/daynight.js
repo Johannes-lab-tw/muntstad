@@ -3,7 +3,7 @@
 // shadows are only drawn nearby (cheap on an iPad).
 // createDayNight(scene, lights) → { update(now, focus), get phase, get darkness, setOverride(phase | null) }
 import * as T from '../../vendor/three.module.min.js';
-import { col } from './build.js';
+import { col, Builder } from './build.js';
 import { phaseAt, paletteAt } from './daycycle.js';
 
 export function createDayNight(scene, lights, { fogNear = 42, fogFar = 95 } = {}) {
@@ -29,8 +29,24 @@ export function createDayNight(scene, lights, { fogNear = 42, fogFar = 95 } = {}
   const stars = new T.Points(sg, new T.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: true, transparent: true, opacity: 0, fog: false, depthWrite: false }));
   stars.frustumCulled = false;
   scene.add(stars);
-  const moon = new T.Mesh(new T.SphereGeometry(4, 12, 10), new T.MeshBasicMaterial({ color: 0xfff6d0, fog: false }));
+  const moon = new T.Mesh(new T.SphereGeometry(9, 14, 12), new T.MeshBasicMaterial({ color: 0xfff6d0, fog: false }));
   scene.add(moon);
+  // puffy clouds high over the island, drifting with the wind, wrapping round the player
+  const clouds = [];
+  const cloudMat = new T.MeshStandardMaterial({ color: 0xffffff, roughness: 1, emissive: 0xffffff, emissiveIntensity: 0.2, transparent: true, opacity: 0.95, fog: false });
+  for (let i = 0; i < 9; i++) {
+    const b = new Builder();
+    const s = 2.2 + Math.random() * 2.4;
+    b.puff(0, 0, 0, 1.0 * s, '#ffffff', 1);
+    b.puff(1.1 * s, 0.1 * s, -0.2 * s, 0.75 * s, '#ffffff', 1);
+    b.puff(-1.0 * s, -0.1 * s, -0.1 * s, 0.65 * s, '#ffffff', 1);
+    b.puff(0.3 * s, 0.7 * s, -0.25 * s, 0.6 * s, '#ffffff', 1);
+    const m = b.build({ material: cloudMat, shadow: false, receive: false });
+    m.position.set((Math.random() - 0.5) * 240, 34 + Math.random() * 14, (Math.random() - 0.5) * 240);
+    scene.add(m);
+    clouds.push({ m, speed: 0.6 + s * 0.15 });
+  }
+  let lastCloudT = 0;
 
   const dir = new T.Vector3();
   function update(now, focus, offsetMs = 0) {
@@ -58,6 +74,18 @@ export function createDayNight(scene, lights, { fogNear = 42, fogFar = 95 } = {}
     stars.material.opacity = darkness * 0.9;
     moon.position.copy(focus).addScaledVector(dir, 140);
     moon.visible = night;
+    // clouds drift east and wrap round the player; they dim with the night
+    const dt = lastCloudT ? Math.min(0.1, (now - lastCloudT) / 1000) : 0;
+    lastCloudT = now;
+    cloudMat.emissiveIntensity = 0.2 * (1 - darkness);
+    cloudMat.color.setScalar(1 - darkness * 0.75);
+    for (const c of clouds) {
+      c.m.position.x += c.speed * dt;
+      if (c.m.position.x - focus.x > 130) c.m.position.x -= 260;
+      if (c.m.position.x - focus.x < -130) c.m.position.x += 260;
+      if (c.m.position.z - focus.z > 130) c.m.position.z -= 260;
+      if (c.m.position.z - focus.z < -130) c.m.position.z += 260;
+    }
   }
   return {
     update,
