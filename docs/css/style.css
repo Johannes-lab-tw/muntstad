@@ -672,7 +672,7 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
   gap: 12px;
   z-index: 6;
 }
-.huis-actions .btn { padding: 0 18px; }
+.huis-actions .btn { padding: 0 18px; min-height: 66px; }   /* ≥ 64 px on the iPad mini too (audit: the rounded height read 64 exactly) */
 .huis-footer {
   position: absolute;
   right: 18px;
