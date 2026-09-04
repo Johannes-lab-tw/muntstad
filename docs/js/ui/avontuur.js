@@ -1,7 +1,8 @@
 // ui/avontuur.js — the AVONTUUR screen: the boat from the village lands you on the pier of the Avontuureiland
 // (3d/scene-eiland.js). Joystick to walk, swipe to look around, SPRING to jump, the action button (PAK / HAK / PLUK /
-// VIS / KAMP / STOOK / BOE / SLAAP) does what is in front of you, the backpack, the fire and Muntje's quest sit under
-// the wallet, DORP sails back. The night (fire, ghosts, bear, dawn reward) is bookkept here with docs/js/nacht.js.
+// VIS / KAMP / STOOK / BOE / SLAAP) does what is in front of you, ZWAAI and DANS are emotes, the backpack, the fire
+// and Muntje's quest sit under the wallet, DORP sails back. The night (fire, ghosts, bear, dawn reward) is bookkept
+// here with docs/js/nacht.js; in a room (SAMEN SPELEN) the host does that and the guests mirror the fire.
 import { createControls } from '../3d/controls.js';
 import { createEilandScene } from '../3d/scene-eiland.js';
 import { createKamp } from './kamp.js';
@@ -15,6 +16,7 @@ export function createAvontuur(game) {
   const host = document.getElementById('avontuur');
   const bagEl = document.getElementById('av-bag');
   const questEl = document.getElementById('av-quest');
+  const peersEl = document.getElementById('av-peers');
   const actieBtn = document.getElementById('av-actie');
   const controls = createControls(el, { stick: document.getElementById('stick'), knob: document.getElementById('stick-knob') });
   let scene3 = null;   // built on first visit: the island is a few thousand things, not needed before the boat sails
@@ -22,6 +24,7 @@ export function createAvontuur(game) {
   let visible = false;
   let questSaid = -1;
   let burnAcc = 0, lastFireWarn = 0, fireOutSaid = false, lastStokeSaid = 0;
+  const samen = game.samen;
 
   const kamp = createKamp(game, (what) => { if (what === 'close') controls.setEnabled(visible); if (what === 'sell' || what === 'tool') renderHud(game.state); });
 
@@ -33,6 +36,8 @@ export function createAvontuur(game) {
     game.audio.play('tap');
     game.show('stad');
   });
+  document.getElementById('av-zwaai').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('wave'); });
+  document.getElementById('av-dans').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('dance'); });
   // keyboard: E / Enter = the action button
   window.addEventListener('keydown', (e) => {
     if (!visible || !scene3 || kamp.isOpen) return;
@@ -71,7 +76,8 @@ export function createAvontuur(game) {
     const e = state.eiland;
     const fire = Math.round(state.nacht.fire);
     const full = bagCount(e) >= cfg.bagMax;
-    const key = `${Object.values(e.bag).join(',')}|${fire}|${e.quest}|${e.questN}|${full}`;
+    const peers = samen && samen.active ? samen.peers.size + 1 : 0;
+    const key = `${Object.values(e.bag).join(',')}|${fire}|${e.quest}|${e.questN}|${full}|${peers}`;
     if (key === hudKey) return;
     hudKey = key;
     bagEl.innerHTML = Object.entries(cfg.items).map(([id, it]) => `<span title="${it.name}">${it.icon}<span class="n${full ? ' full' : ''}">${e.bag[id]}</span></span>`).join('')
@@ -82,6 +88,8 @@ export function createAvontuur(game) {
       const plural = { hout: 'hout', schelp: 'schelpen', bes: 'bessen', vis: 'vissen' }[q.item] || q.item;
       questEl.innerHTML = `${cfg.items[q.item].icon} <b>${q.have} / ${q.n}</b> ${plural}`;
     } else questEl.hidden = true;
+    peersEl.hidden = peers === 0;
+    if (peers) peersEl.textContent = `${samen.animal} 👥 ${peers}`;
   }
   function onAction(a) {
     actieBtn.hidden = !a;
@@ -103,9 +111,13 @@ export function createAvontuur(game) {
       else if (fire > 0 && fire < 25 && game.now() - lastFireWarn > 40000) { lastFireWarn = game.now(); game.mentor.say('lines.fireLow', {}, { kind: 'reaction' }); }
     }
   }
+  function onFireSync(fire) {
+    if (Math.abs(game.state.nacht.fire - fire) < 0.5) return;
+    game.update((s) => ({ ...s, nacht: { ...s.nacht, fire } }));
+  }
   function onNight(bear) {
     fireOutSaid = false;
-    game.mentor.say('lines.nightComing', {}, { kind: 'reaction' });
+    game.mentor.say(samen && samen.isGuest ? 'lines.guestNight' : 'lines.nightComing', {}, { kind: 'reaction' });
     if (bear) setTimeout(() => { if (visible) game.mentor.say('lines.bearComing', {}, { kind: 'reaction' }); }, 5000);
   }
   function onDawn(fireBurned) {
@@ -131,9 +143,17 @@ export function createAvontuur(game) {
     const r = stokeFire(game.state.nacht, game.state.eiland, game.config, 3);
     if (r.used <= 0) { game.mentor.say('lines.noWood', {}, { kind: 'reaction' }); return; }
     game.audio.play('buy');
-    game.update((s) => ({ ...s, nacht: r.nacht, eiland: r.eiland }));
+    if (samen && samen.isGuest) {
+      // a guest's wood goes into the host's fire: take it out of the bag here, the host adds it to the fire
+      game.update((s) => ({ ...s, eiland: r.eiland }));
+      samen.send('stoke', { n: r.used });
+    } else game.update((s) => ({ ...s, nacht: r.nacht, eiland: r.eiland }));
     game.fx.floatText(window.innerWidth * 0.5, window.innerHeight * 0.4, `🔥 +${r.used} 🪵`, '#ffffff');
     if (game.now() - lastStokeSaid > 30000) { lastStokeSaid = game.now(); game.mentor.say('lines.stoked', {}, { kind: 'reaction' }); }
+  }
+  function onRemoteStoke(n) {
+    if (n <= 0) return;
+    game.update((s) => ({ ...s, nacht: { ...s.nacht, fire: Math.min(100, s.nacht.fire + n * game.config.nacht.woodValue) } }));
   }
   function onSleep() {
     const total = CYCLE.dayMs + CYCLE.nightMs;
@@ -147,6 +167,11 @@ export function createAvontuur(game) {
     game.update((s) => ({ ...s, nacht: { ...s.nacht, fire: Math.max(0, s.nacht.fire - game.config.nacht.bearEats * game.config.nacht.woodValue) } }));
     game.audio.play('thud');
     game.mentor.say('lines.bearAte', {}, { kind: 'reaction' });
+  }
+  if (samen) {
+    samen.on('peer', () => { if (visible) game.mentor.say('lines.peerJoined', {}, { kind: 'reaction' }); hudKey = ''; if (visible) renderHud(game.state); });
+    samen.on('left', () => { if (visible) game.mentor.say('lines.peerLeft', {}, { kind: 'reaction' }); hudKey = ''; if (visible) renderHud(game.state); });
+    samen.on('change', () => { hudKey = ''; if (visible) renderHud(game.state); });
   }
 
   function loop(now) {
@@ -167,7 +192,7 @@ export function createAvontuur(game) {
       onKamp() { controls.setEnabled(false); kamp.show(); },
       onAction,
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
-      onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte,
+      onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte, onFireSync, onRemoteStoke,
     });
     Object.setPrototypeOf(hook, scene3.hook);   // the tests read positions and set inputs through window.__muntstad.avontuur
   }

@@ -1,9 +1,10 @@
 // 3d/scene-eiland.js — the Avontuureiland: terrain, forest, camp, day and night, you walking around it with the
-// camera behind you (3d/player.js + 3d/controls.js), the things you can do (chop, pick, fish, campfire; round 3)
-// and the night (fire that wants wood, ghosts, the Nachtbeer, lantern/torches/fence/tent; round 4). Own Three scene.
-// createEilandScene(game, engine, controls, cb) → { mount, resize, render(now), setState, reset, doAction, hook }
+// camera behind you (3d/player.js + 3d/controls.js), the things you can do (chop, pick, fish, campfire; round 3),
+// the night (fire that wants wood, ghosts, the Nachtbeer, lantern/torches/fence/tent; round 4) and the other
+// players in your room (round 5: the host runs the world, everyone sends their own moves). Own Three scene.
+// createEilandScene(game, engine, controls, cb) → { mount, resize, render(now), setState, reset, doAction, emote, hook }
 // cb = { onCollect(item, n), onKamp(), onAction(action | null), onSay(lineKey), onBurn(dtMs, darkness), onNight(bear),
-//        onDawn(fireBurned), onSteal(), onStoke(), onSleep(), onBearAte() }
+//        onDawn(fireBurned), onSteal(), onStoke(), onSleep(), onBearAte(), onFireSync(fire), onRemoteStoke(n) }
 import * as T from '../../vendor/three.module.min.js';
 import { avatarModel, lookKey } from './avatar.js';
 import { petModel } from './pets.js';
@@ -15,10 +16,11 @@ import { placeForest, buildForest } from './forest.js';
 import { createCamp } from './camp.js';
 import { createDayNight } from './daynight.js';
 import { ghostModel, bearModel, tentModel, torchModel, fenceModel } from './spoken.js';
-import { Builder } from './build.js';
+import { Builder, textPlane } from './build.js';
 import { isFunActive } from '../economy.js';
 import { chopRule } from '../eiland.js';
 import { fireRadius, isLit, stepGhost, bearTonight, stepBear, scareBear } from '../nacht.js';
+import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
 const START = { x: PIER.x, z: PIER.z - 2.5, heading: Math.PI };   // on the pier, facing the island
@@ -29,6 +31,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   const config = game.config;
   const E = config.eiland;
   const N = config.nacht;
+  const samen = game.samen;
   const scene = new T.Scene();
   const map = createHeightmap();
   const terrain = createTerrain(map);
@@ -57,6 +60,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   const player = createPlayer(START.x, START.z, START.heading);
   player.ground = map.groundAt(player.x, player.z);
   const dog = createFollower(START.x + 0.8, START.z + 1.4, START.heading);
+  const groundOf = (x, z) => map.heightAt(Math.min(map.size - 1, Math.max(1, x)), Math.min(map.size - 1, Math.max(1, z)));
 
   // ---------- models ----------
   let avatar = null, avatarKey = '';
@@ -107,6 +111,116 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       c.m.rotation.x += 6 * dt; c.m.rotation.z += 4 * dt;
       if (c.t > 0.9) { scene.remove(c.m); chips.splice(i, 1); }
     }
+  }
+
+  // ---------- the other players (round 5) ----------
+  const remotes = new Map();   // id → { model, tag, x, z, h, y, tx, tz, th, ty, pose, emoteUntil, key }
+  function remoteLook(id) {
+    const l = samen.lookOf(id) || { animal: 0, color: 0, hat: null, skin: null };
+    const colorHex = (config.colors[l.color] || config.colors[0]).hex;
+    return { look: { color: colorHex, hat: l.hat, skin: l.skin, vehicle: null }, animal: ANIMALS[l.animal] || ANIMALS[0] };
+  }
+  function ensureRemote(id) {
+    let r = remotes.get(id);
+    const { look, animal } = remoteLook(id);
+    const key = lookKey(look) + animal;
+    if (r && r.key === key) return r;
+    if (r) { scene.remove(r.model.group); scene.remove(r.tag); }
+    const model = avatarModel(look);
+    scene.add(model.group);
+    const tag = textPlane(`${animal} ${id}`, { w: 1.6, h: 0.5, font: 0.34, bg: '#ffffff' });
+    scene.add(tag);
+    const prev = r || { x: PIER.x, z: PIER.z - 2, h: Math.PI, y: 0, pose: 'idle', emoteUntil: 0 };
+    r = { ...prev, model, tag, key, tx: prev.x, tz: prev.z, th: prev.h, ty: prev.y };
+    remotes.set(id, r);
+    return r;
+  }
+  function dropRemote(id) {
+    const r = remotes.get(id);
+    if (!r) return;
+    scene.remove(r.model.group); scene.remove(r.tag);
+    remotes.delete(id);
+  }
+  if (samen) {
+    samen.on('pos', (d, from) => {
+      if (!d || typeof d.x !== 'number') return;
+      const r = ensureRemote(from);
+      r.tx = d.x; r.tz = d.z; r.th = d.h || 0; r.ty = d.y || 0; r.pose = typeof d.p === 'string' ? d.p : 'idle';
+    });
+    samen.on('look', (id) => { if (remotes.has(id)) ensureRemote(id); });
+    samen.on('left', dropRemote);
+    samen.on('emote', (d, from) => { const r = remotes.get(from); if (r && (d?.e === 'wave' || d?.e === 'dance')) { r.emote = d.e; r.emoteUntil = performance.now() + 2500; } });
+    samen.on('world', (d) => { if (!samen.isGuest || !d) return; applyWorld(d); });
+    samen.on('stoke', (d) => { if (samen.isHost && cb.onRemoteStoke) cb.onRemoteStoke(Math.max(0, Math.min(10, Number(d?.n) || 0))); });
+    samen.on('boe', () => { if (samen.isHost && bear) doScare(); });
+    samen.on('sleep', () => { if (samen.isHost && cb.onSleep) cb.onSleep(); });
+    samen.on('change', () => { if (!samen.active) { for (const id of [...remotes.keys()]) dropRemote(id); remoteWorld = null; daynight.setOverride(phaseOverride); } });
+  }
+  let myEmote = null, myEmoteUntil = 0;
+  function emote(e) {
+    if (e !== 'wave' && e !== 'dance') return;
+    myEmote = e; myEmoteUntil = performance.now() + 2500;
+    if (samen && samen.active) samen.send('emote', { e });
+  }
+  function updateRemotes(now, dt) {
+    const k = 1 - Math.exp(-10 * dt);
+    for (const r of remotes.values()) {
+      r.x += (r.tx - r.x) * k; r.z += (r.tz - r.z) * k; r.y += (r.ty - r.y) * k;
+      r.h = turnTowards(r.h, r.th, 12, dt);
+      const g = groundOf(r.x, r.z);
+      const ground = map.onPier(r.x, r.z) ? PIER.deck : g;
+      r.model.group.position.set(r.x, 0, r.z);
+      r.model.group.rotation.y = r.h;
+      const pose = r.emoteUntil > now ? r.emote : r.pose;
+      r.model.update(now, pose, { z: ground + r.y });
+      r.tag.position.set(r.x, ground + r.y + 2.05, r.z);
+      r.tag.quaternion.copy(camera.quaternion);
+    }
+  }
+  // the host's world, as seen by a guest
+  let remoteWorld = null;
+  let phaseOverride = null;
+  const remoteGhosts = [];
+  let remoteBear = null;
+  function applyWorld(d) {
+    remoteWorld = d;
+    if (typeof d.ph === 'number') daynight.setOverride(Math.max(0, Math.min(0.9999, d.ph)));
+    if (typeof d.f === 'number' && cb.onFireSync) cb.onFireSync(Math.max(0, Math.min(100, d.f)));
+    const gs = Array.isArray(d.g) ? d.g.slice(0, N.ghostsMax) : [];
+    while (remoteGhosts.length < gs.length) { const m = ghostModel(); const holder = new T.Group(); holder.add(m.group); scene.add(holder); remoteGhosts.push({ m, holder }); }
+    while (remoteGhosts.length > gs.length) { const g = remoteGhosts.pop(); scene.remove(g.holder); }
+    gs.forEach((g, i) => { const rg = remoteGhosts[i]; rg.tx = g.x; rg.tz = g.z; if (rg.tx0 == null) { rg.holder.position.set(g.x, groundOf(g.x, g.z), g.z); rg.tx0 = 1; } });
+    if (d.b && typeof d.b.x === 'number') {
+      if (!remoteBear) { const m = bearModel(); const holder = new T.Group(); holder.add(m.group); scene.add(holder); remoteBear = { m, holder, tx: d.b.x, tz: d.b.z }; holder.position.set(d.b.x, groundOf(d.b.x, d.b.z), d.b.z); }
+      remoteBear.tx = d.b.x; remoteBear.tz = d.b.z; remoteBear.state = d.b.s;
+    } else if (remoteBear) { scene.remove(remoteBear.holder); remoteBear = null; }
+  }
+  function updateRemoteWorld(now, dt) {
+    const k = 1 - Math.exp(-8 * dt);
+    const lit = lightsNow();
+    for (const rg of remoteGhosts) {
+      const p = rg.holder.position;
+      p.x += (rg.tx - p.x) * k; p.z += (rg.tz - p.z) * k; p.y = groundOf(p.x, p.z);
+      rg.holder.rotation.y = Math.atan2(rg.tx - p.x, rg.tz - p.z);
+      rg.m.update(now, { fade: isLit(p.x, p.z, lit) ? 0.35 : 1 });
+    }
+    if (remoteBear) {
+      const p = remoteBear.holder.position;
+      p.x += (remoteBear.tx - p.x) * k; p.z += (remoteBear.tz - p.z) * k; p.y = groundOf(p.x, p.z);
+      remoteBear.holder.rotation.y = Math.atan2(remoteBear.tx - p.x, remoteBear.tz - p.z);
+      remoteBear.m.update(now, { walking: true });
+    }
+  }
+  let lastWorldSent = 0;
+  function broadcastWorld(now) {
+    if (!samen || !samen.isHost || now - lastWorldSent < config.net.worldMs) return;
+    lastWorldSent = now;
+    samen.send('world', {
+      ph: +daynight.phase.toFixed(4),
+      f: +state.nacht.fire.toFixed(1),
+      g: ghosts.map((gh) => ({ x: +gh.g.x.toFixed(1), z: +gh.g.z.toFixed(1) })),
+      b: bear ? { x: +bear.b.x.toFixed(1), z: +bear.b.z.toFixed(1), s: bear.b.state } : null,
+    });
   }
 
   // ---------- the night: camp gear, lights, ghosts, the bear ----------
@@ -180,11 +294,16 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     ghosts.length = 0;
     if (bear) { scene.remove(bear.holder); bear = null; }
   }
-  const groundOf = (x, z) => map.heightAt(Math.min(map.size - 1, Math.max(1, x)), Math.min(map.size - 1, Math.max(1, z)));
+  function doScare() {
+    if (!bear) return;
+    const gone = scareBear(bear.b, config);
+    cb.onSay && cb.onSay(gone ? 'lines.bearGone' : 'lines.bearScared');
+  }
   function updateNight(now, dt) {
     syncGear();
     const dark = daynight.darkness;
-    cb.onBurn && cb.onBurn(dt * 1000, dark);
+    const guest = samen && samen.isGuest;
+    if (!guest) cb.onBurn && cb.onBurn(dt * 1000, dark);
     const n = state.nacht;
     camp.setFire(n.fire / 100);
     lantern.position.set(player.x, player.ground + 1.7, player.z);
@@ -196,8 +315,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       fireWasBurning = n.fire > 0;
       ghostTimer = N.ghostEveryMs * 0.6;   // the first ghost comes soon after dark
       const bearNight = bearTonight(n, config);
-      cb.onNight && cb.onNight(bearNight);
-      if (bearNight) spawnBear();
+      cb.onNight && cb.onNight(bearNight && !guest);
+      if (bearNight && !guest) spawnBear();
     }
     if (!isDark && wasDark) {
       wasDark = false;
@@ -205,6 +324,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       clearNight();
     }
     if (isDark && n.fire <= 0) fireWasBurning = false;
+    if (guest) { updateRemoteWorld(now, dt); return; }
     if (isDark) {
       ghostTimer += dt * 1000;
       if (ghosts.length < N.ghostsMax && ghostTimer > N.ghostEveryMs) { ghostTimer = 0; spawnGhost(); }
@@ -232,6 +352,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
         bear.model.update(now, { walking: bear.b.pause <= 0 });
       }
     }
+    broadcastWorld(now);
   }
 
   // ---------- what can you do here? ----------
@@ -239,10 +360,14 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   let lastActionKey = '';
   let hakUntil = 0;
   let fishing = null;       // { until, biteUntil }
+  function bearNear() {
+    const b = bear ? bear.b : remoteBear && remoteBear.state === 'come' ? remoteBear.holder.position : null;
+    return b && Math.hypot(player.x - b.x, player.z - b.z) < REACH.bear && (!bear || bear.b.state === 'come');
+  }
   function findAction(now) {
     const px = player.x, pz = player.z;
     if (fishing) return { type: fishing.biteUntil ? 'trek' : 'vis', label: fishing.biteUntil ? 'TREK' : 'WACHT', target: null };
-    if (bear && bear.b.state === 'come' && Math.hypot(px - bear.b.x, pz - bear.b.z) < REACH.bear) return { type: 'boe', label: 'BOE', target: null };
+    if (bearNear()) return { type: 'boe', label: 'BOE', target: null };
     if (gear.tent && daynight.darkness > 0.5 && Math.hypot(px - TENT_AT.x, pz - TENT_AT.z) < REACH.tent) return { type: 'slaap', label: 'SLAAP', target: null };
     if (Math.hypot(px - CAMP.x, pz - CAMP.z) < REACH.camp) {
       if ((state.eiland.bag.hout || 0) > 0 && state.nacht.fire < 100 - N.woodValue) return { type: 'stook', label: 'STOOK', target: null };
@@ -283,15 +408,16 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     switch (action.type) {
       case 'kamp': cb.onKamp && cb.onKamp(); return;
       case 'stook': cb.onStoke && cb.onStoke(); return;
-      case 'slaap': cb.onSleep && cb.onSleep(); return;
-      case 'boe': {
-        if (!bear) return;
+      case 'slaap':
+        if (samen && samen.isGuest) { samen.send('sleep', {}); cb.onSay && cb.onSay('lines.sleep'); }
+        else cb.onSleep && cb.onSleep();
+        return;
+      case 'boe':
         game.audio.play('unlock');
         hakUntil = now + 300;
-        const gone = scareBear(bear.b, config);
-        cb.onSay && cb.onSay(gone ? 'lines.bearGone' : 'lines.bearScared');
+        if (samen && samen.isGuest) { samen.send('boe', {}); cb.onSay && cb.onSay('lines.bearScared'); }
+        else doScare();
         return;
-      }
       case 'schelp':
         action.target.taken = true;
         forest.setScale('shell', action.target.index, 0);
@@ -412,13 +538,15 @@ export function createEilandScene(game, engine, controls, cb = {}) {
 
     avatar.group.position.set(player.x, 0, player.z);
     avatar.group.rotation.y = player.heading;
-    const pose = !player.grounded ? 'jump' : hakUntil > now ? 'hak' : fishing ? 'vis' : player.moving ? 'walk' : 'idle';
+    const pose = !player.grounded ? 'jump' : hakUntil > now ? 'hak' : fishing ? 'vis' : myEmoteUntil > now ? myEmote : player.moving ? 'walk' : 'idle';
     avatar.update(player.running && player.grounded ? now * 1.45 : now, pose, { z: player.ground + player.y });
     if (pet) {
       pet.group.position.set(dog.x, dog.ground, dog.z);
       pet.group.rotation.y = dog.heading;
       pet.update(now, { walking: dog.moving, phase: petPhase });
     }
+    if (samen && samen.active) samen.sendPos(player.x, player.z, player.heading, pose, player.y, now);
+    updateRemotes(now, dt);
 
     placeCamera(dt);
     focus.set(player.x, player.ground, player.z);
@@ -449,9 +577,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get darkness() { return daynight.darkness; },
     get action() { return action ? { type: action.type, label: action.label } : null; },
     get fishing() { return fishing ? { biting: !!fishing.biteUntil } : null; },
-    get ghosts() { return ghosts.map((gh) => ({ x: gh.g.x, z: gh.g.z, state: gh.g.state })); },
+    get ghosts() { return (samen && samen.isGuest ? remoteGhosts.map((rg) => ({ x: rg.holder.position.x, z: rg.holder.position.z, state: 'remote' })) : ghosts.map((gh) => ({ x: gh.g.x, z: gh.g.z, state: gh.g.state }))); },
     get bear() { return bear ? { x: bear.b.x, z: bear.b.z, state: bear.b.state, scared: bear.b.scared } : null; },
     get lights() { return state ? lightsNow() : []; },
+    get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, tag: r.key })); },
     onLand(x, z) { return map.walkable(x, z); },
     kindAt(x, z) { return map.kindAt(x, z); },
     landmarks: { CAMP, PIER, LAKE, TENT: TENT_AT },
@@ -465,14 +594,15 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     },
     setInput(x, y, run = false) { controls.setOverride(x == null ? null : { x, y, run }); },
     jump() { controls.pressJump(); },
-    setPhase(p) { daynight.setOverride(p); },
+    setPhase(p) { phaseOverride = p; daynight.setOverride(p); },
     teleport(x, z) { player.x = x; player.z = z; player.ground = map.groundAt(x, z); firstFrame = true; },
     act() { doAction(); },
+    emote,
     bite() { if (fishing && !fishing.biteUntil) fishing.until = 0; },
     spawnGhost, spawnBear,
     /** Put a ghost right next to the player (tests): it steals on the next step unless the spot is lit. */
     ghostAt(x, z) { spawnGhost(); const gh = ghosts[ghosts.length - 1]; gh.g.x = x; gh.g.z = z; },
   };
 
-  return { mount, resize, render, setState, reset, doAction, hook, camera, scene };
+  return { mount, resize, render, setState, reset, doAction, emote, hook, camera, scene };
 }

@@ -103,6 +103,13 @@ export const CONFIG = Object.freeze({
     sleepSkipsTo: 0.97,               // SLAAP in the tent moves the clock to just before dawn
   },
 
+  // SAMEN SPELEN (PLAN-V4 R5): our own relay only (address set by a parent on PAPA), positions 8×/s, the host's world 4×/s.
+  net: {
+    posMs: 125,
+    worldMs: 250,
+    maxPlayers: 6,
+  },
+
   // Parent gate
   papa: {
     holdMs: 3000,                     // hold PAPA for 3 s

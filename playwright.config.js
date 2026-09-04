@@ -30,12 +30,21 @@ export default defineConfig({
   },
   // one worker by default: a software-rendered WebGL page per worker is heavy on the CPU
   workers: process.env.PW_WORKERS ? Number(process.env.PW_WORKERS) : 1,
-  webServer: process.env.BASE_URL ? undefined : {
-    command: `node scripts/serve.js --port ${PORT}`,
-    url: BASE,
-    reuseExistingServer: true,
-    timeout: 30000,
-  },
+  webServer: process.env.BASE_URL ? undefined : [
+    {
+      command: `node scripts/serve.js --port ${PORT}`,
+      url: BASE,
+      reuseExistingServer: true,
+      timeout: 30000,
+    },
+    {
+      // the SAMEN SPELEN relay (server/relay/relay.js) for the two-player test
+      command: 'node server/relay/relay.js --port 4174',
+      url: 'http://127.0.0.1:4174/',
+      reuseExistingServer: true,
+      timeout: 30000,
+    },
+  ],
   // WebKit is opt-in (WEBKIT=1): on the build PC Windows' application-control policy blocks Playwright's
   // unsigned WebKit DLLs (libxslt.dll), so the default run is Chromium only. See RAPPORT.md.
   projects: IPADS.flatMap(([name, id]) => [

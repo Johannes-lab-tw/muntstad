@@ -14,6 +14,8 @@ import { createFx } from './ui/fx.js';
 import { createStart } from './ui/start.js';
 import { createStad } from './ui/stad.js';
 import { createAvontuur } from './ui/avontuur.js';
+import { createSamen } from './net/samen.js';
+import { createSamenUi } from './ui/samen.js';
 import { createWerk } from './ui/werk.js';
 import { createWinkel } from './ui/winkel.js';
 import { createHuis } from './ui/huis.js';
@@ -304,6 +306,7 @@ function boot() {
   game.fx = createFx(game);
   // real 3D (Three.js): one renderer for the town, the yard and the thumbnails
   game.engine = createEngine();
+  game.samen = createSamen(game);
   setThumbEngine(game.engine);
   game.scene = createScene($('town'), game, game.engine);
   screens.start = createStart(game);
@@ -315,6 +318,8 @@ function boot() {
   const papa = createPapa(game);
   screens.papa = papa;
   screens.gate = papa.gate;
+  game.samenUi = createSamenUi(game);
+  game.on('screen', (name) => { if (name === 'papa') game.samenUi.renderPapa(); });
 
   // blocky icons for the HUD and navigation (rendered once from the same art as the town)
   const icons = { 'ico-werk': 'werk', 'ico-winkel': 'winkel', 'ico-winkel-2': 'winkel', 'ico-huis': 'huis', 'ico-stad-1': 'stad', 'ico-stad-2': 'stad', 'ico-stad-3': 'stad', 'ico-stad-4': 'stad', 'ico-makers': 'makers', 'ico-fun': 'fun', 'income-icon': 'income', 'ico-car': 'car' };
@@ -354,7 +359,7 @@ function boot() {
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch((e) => console.info('[muntstad] service worker not registered:', e.message));
   }
-  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 4, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook, get mentorLog() { return game.mentor.log; } };
+  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 4, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook, get mentorLog() { return game.mentor.log; }, get samen() { return game.samen; } };
 }
 
 boot();

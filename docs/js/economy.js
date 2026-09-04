@@ -35,7 +35,7 @@ export function createState(config, now) {
     milestones: [],          // achieved milestone ids, in order
     playTimeMs: 0,
     flags: {},
-    settings: { voice: true, sound: true, music: true },
+    settings: { voice: true, sound: true, music: true, relayUrl: '' },
     eiland: createEiland(config),
     nacht: createNacht(),
   };

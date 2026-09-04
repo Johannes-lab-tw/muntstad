@@ -104,6 +104,7 @@ export function normalize(data, config, now) {
       voice: data.settings && 'voice' in data.settings ? !!data.settings.voice : true,
       sound: data.settings && 'sound' in data.settings ? !!data.settings.sound : true,
       music: data.settings && 'music' in data.settings ? !!data.settings.music : true,
+      relayUrl: data.settings && typeof data.settings.relayUrl === 'string' && /^wss?:\/\//.test(data.settings.relayUrl) ? data.settings.relayUrl.slice(0, 200) : '',
     },
   };
 }

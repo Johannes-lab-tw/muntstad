@@ -995,3 +995,17 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .av-bag .fire-bar { display: inline-block; width: 64px; height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 2px; }
 .av-bag .fire-bar b { display: block; height: 100%; background: linear-gradient(90deg, #ff9f2e, #ffd23f); }
 .av-bag .fire-bar.low b { background: var(--red); }
+
+
+/* ---------- SAMEN SPELEN (R5) ---------- */
+.btn-samen { grid-column: 1 / -1; justify-self: center; min-width: 220px; }
+.samen-overlay { z-index: 45; }
+.samen-panel { text-align: center; }
+.samen-slots { display: flex; justify-content: center; gap: 16px; margin: 10px 0 16px; }
+.samen-slot { width: 84px; height: 84px; border: 3px solid var(--ink); border-radius: 20px; background: #fff; font-size: 48px; line-height: 78px; }
+.samen-keys { display: grid; grid-template-columns: repeat(4, 96px); gap: 12px; justify-content: center; margin-bottom: 12px; }
+.btn-pic { width: 96px; height: 84px; min-height: 84px; padding: 0; font-size: 44px; --c: #ffffff; --cd: #cfd6e2; --cl: #ffffff; text-shadow: none; }
+.samen-code { font-size: 44px; letter-spacing: 6px; }
+.av-peers { position: absolute; right: 14px; top: calc(var(--topbar-h) + 12px); padding: 8px 16px; font-size: 26px; font-weight: 800; z-index: 20; pointer-events: none; }
+.av-emotes { position: absolute; left: 150px; bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; gap: 14px; z-index: 20; }
+.btn-emote { min-height: 82px; min-width: 150px; font-size: 26px; }

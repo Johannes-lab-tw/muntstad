@@ -44,6 +44,19 @@
           <input id="name-input" class="name-input" type="text" maxlength="12" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="kapitein">
         </div>
         <button class="btn btn-success btn-xl" id="btn-start" type="button">SPEEL ▶</button>
+        <button class="btn btn-purple btn-lg btn-samen" id="btn-samen" type="button">SAMEN</button>
+      </div>
+      <div class="overlay samen-overlay" id="samen-pad" hidden>
+        <div class="panel popup samen-panel" role="dialog">
+          <h2 class="popup-title">Samen spelen</h2>
+          <div class="samen-slots" id="samen-slots"></div>
+          <div class="samen-keys" id="samen-keys"></div>
+          <p class="popup-text" id="samen-pad-status"></p>
+          <div class="row">
+            <button class="btn btn-secondary btn-lg" id="samen-wis" type="button">WIS</button>
+            <button class="btn btn-grey btn-lg" id="samen-terug" type="button">TERUG</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -65,6 +78,11 @@
       <div class="stick" id="stick" aria-hidden="true"><div class="stick-knob" id="stick-knob"></div></div>
       <div class="av-bag panel-mini" id="av-bag" aria-label="Rugzak"></div>
       <div class="av-quest panel-mini" id="av-quest" hidden></div>
+      <div class="av-peers panel-mini" id="av-peers" hidden></div>
+      <div class="av-emotes">
+        <button class="btn btn-purple btn-emote" id="av-zwaai" type="button">ZWAAI</button>
+        <button class="btn btn-orange btn-emote" id="av-dans" type="button">DANS</button>
+      </div>
       <div class="av-buttons">
         <button class="btn btn-secondary btn-lg" id="av-dorp" type="button">⛵ DORP</button>
         <button class="btn btn-primary btn-actie" id="av-actie" type="button" hidden>PAK</button>
@@ -156,6 +174,15 @@
               <button class="btn btn-secondary btn-lg" id="code-load" type="button">LADEN</button>
             </div>
             <p class="papa-status" id="code-status"></p>
+            <h3>Samen spelen</h3>
+            <p class="papa-help" id="samen-help">Zet hier het adres van jullie eigen relais (wss://…). Druk dan op KAMER: de vier plaatjes zijn de code. Op de andere iPad: START → SAMEN → de vier plaatjes tikken.</p>
+            <input class="code-in" id="relay-url" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="wss://…">
+            <div class="row">
+              <button class="btn btn-purple btn-lg" id="samen-kamer" type="button">KAMER</button>
+              <button class="btn btn-danger btn-lg" id="samen-stop" type="button" hidden>STOP</button>
+              <span class="samen-code" id="samen-code"></span>
+            </div>
+            <p class="papa-status" id="samen-status"></p>
             <h3>Opnieuw beginnen</h3>
             <div class="reset-area" id="reset-area">
               <button class="btn btn-danger btn-lg" id="reset-1" type="button">ALLES WISSEN</button>
