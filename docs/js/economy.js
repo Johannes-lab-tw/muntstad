@@ -304,6 +304,10 @@ function milestoneReached(state, config, m) {
     case 'earned': return totalEarned(state) >= m.value;
     case 'all-makers': return ownedMakerCount(state, config) === config.makers.length;
     case 'level': return config.makers.some((mk) => makerLevel(state, mk.id) >= m.value);
+    // the island (PLAN-V4)
+    case 'nights': return (state.nacht?.nights || 0) >= m.value;
+    case 'island-sold': return (state.eiland?.earned || 0) >= m.value;
+    case 'quests': return (state.eiland?.questsDone || 0) >= m.value;
     default: return false;
   }
 }
@@ -361,6 +365,11 @@ export function stats(state, config) {
     playTimeMs: state.playTimeMs,
     carsWashed: state.carsWashed,
     makersOwned: ownedMakerCount(state, config),
+    nights: state.nacht ? state.nacht.nights : 0,
+    stolen: state.nacht ? state.nacht.stolen : 0,
+    islandEarned: state.eiland ? state.eiland.earned : 0,
+    questsDone: state.eiland ? state.eiland.questsDone : 0,
+    tools: state.eiland ? Object.keys(state.eiland.tools).length : 0,
     funOwned: ownedFunIds(state, config).length,
     milestones: state.milestones.length,
   };

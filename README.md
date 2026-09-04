@@ -7,7 +7,8 @@ A small iPad web game (PWA) for a 6-year-old that teaches one thing through play
 - **WERK** — wash cars in a real 3D wash bay for coins (linear, bounded).
 - **WINKEL** — buy coin-makers (Limonadekraam → Flatgebouw) that earn while you play or while the iPad is off, and fun things (hats, pets, scooter, car, garden, fireworks…).
 - **HUIS** — the yard: pets that wander, toys, the sticker wall.
-- **PAPA** — parent screen behind a 3-second hold + a sum: stats, conversation starters, voice/sound/music toggles, Bewaar-code (export/import), reset.
+- **AVONTUUR** (PLAN-V4, September 2026) — the boat to the Avontuureiland: walk around in third person (joystick, swipe, SPRING), chop wood, pick shells and berries, fish, sell at the campfire, buy the axe/lantern/fence/tent/torches, Muntje's daily quests; a 9-minute day/night cycle with ghosts that steal in the dark, the Nachtbeer every third night and a reward at dawn; SAMEN SPELEN with up to six players through a tiny relay (room code = four pictures, host runs the world).
+- **PAPA** — parent screen behind a 3-second hold + a sum: stats (town and island), conversation starters, voice/sound/music toggles, Bewaar-code (export/import), the relay address + KAMER for SAMEN SPELEN, reset.
 
 ## Stack
 

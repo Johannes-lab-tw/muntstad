@@ -41,7 +41,12 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   const camp = createCamp(map);
   scene.add(camp.group);
   const lights = addLights(scene, new T.Vector3(CAMP.x, 1, CAMP.z), 20, engine.tier);
-  engine.onTier((t) => lights.setTier(t));
+  engine.onTier((t) => {
+    lights.setTier(t);
+    // lite tier (slow iPad / software renderer): the two biggest instanced kinds (grass tufts, flowers) are pure decoration
+    for (const k of ['grass', 'flower']) if (forest.meshes[k]) forest.meshes[k].visible = t < 2;
+    if (scene.fog) scene.fog.far = t >= 2 ? 70 : 95;   // the fog exists once daynight is created
+  });
   const daynight = createDayNight(scene, lights);
   const near = createGrid([...forest.obstacles, ...camp.obstacles], 4);
   const env = { yaw: START.heading, near, walkable: map.walkable, groundAt: map.groundAt };
@@ -462,6 +467,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       case 'trek':
         if (fishing && fishing.biteUntil && now < fishing.biteUntil) {
           cb.onCollect && cb.onCollect('vis', 1);
+          game.audio.play('splash');
           game.audio.play('buy');
         }
         stopFishing();

@@ -126,12 +126,36 @@ export function createAudio() {
     unlock() {
       [NOTE.C5, NOTE.G5, NOTE.C6].forEach((f, i) => tone({ freq: f, type: 'triangle', start: i * 0.1, dur: 0.3, gain: 0.2 }));
     },
+    // ---- the island (PLAN-V4 R6): ghosts, the bear, the night and the day ----
+    boo() { tone({ freq: 420, type: 'sine', dur: 0.7, gain: 0.16, slideTo: 180, attack: 0.15 }); noise({ dur: 0.5, gain: 0.05, filter: 'bandpass', freq: 600, q: 2 }); },
+    growl() { tone({ freq: 90, type: 'sawtooth', dur: 0.6, gain: 0.14, slideTo: 60, attack: 0.05 }); noise({ dur: 0.5, gain: 0.08, filter: 'lowpass', freq: 250 }); },
+    owl() { tone({ freq: 380, type: 'sine', dur: 0.28, gain: 0.1, attack: 0.05 }); tone({ freq: 340, type: 'sine', start: 0.36, dur: 0.4, gain: 0.1, attack: 0.05 }); },
+    bird() { for (let i = 0; i < 3; i++) tone({ freq: 2200 + Math.random() * 1200, type: 'sine', start: i * 0.11, dur: 0.08, gain: 0.05, slideTo: 2800 + Math.random() * 800 }); },
+    crackle() { for (let i = 0; i < 3; i++) noise({ start: Math.random() * 0.4, dur: 0.03, gain: 0.05, filter: 'highpass', freq: 3000 }); },
+    splash() { noise({ dur: 0.25, gain: 0.14, filter: 'bandpass', freq: 1200, q: 1 }); tone({ freq: 500, type: 'sine', dur: 0.15, gain: 0.08, slideTo: 200 }); },
   };
+
+  // ---- ambience on the island: birds by day, an owl and the fire by night (a few soft sounds a minute) ----
+  let ambientTimer = null, ambientKind = null;
+  function setAmbient(kind) {
+    if (kind === ambientKind) return;
+    ambientKind = kind;
+    if (ambientTimer) clearInterval(ambientTimer);
+    ambientTimer = null;
+    if (!kind) return;
+    ambientTimer = setInterval(() => {
+      if (!soundOn || !ctx || ctx.state !== 'running') return;
+      const r = Math.random();
+      if (kind === 'day') { if (r < 0.35) SFX.bird(); }
+      else { if (r < 0.2) SFX.owl(); else if (r < 0.6) SFX.crackle(); }
+    }, 2500);
+  }
 
   // ---- music: a quiet generated loop (pentatonic melody + bass), scheduled with lookahead ----
   const MELODY = [NOTE.C5, NOTE.E5, NOTE.G5, NOTE.E5, NOTE.D5, NOTE.E5, NOTE.C5, 0, NOTE.A4, NOTE.C5, NOTE.E5, NOTE.D5, NOTE.C5, 0, NOTE.G4, 0];
   const BASS = [NOTE.C4, 0, NOTE.G4, 0, NOTE.A4 / 2, 0, NOTE.E4, 0, NOTE.C4, 0, NOTE.G4 / 2, 0, NOTE.A4 / 2, 0, NOTE.G4 / 2, 0];
-  const STEP = 0.28; // seconds per 8th note (~107 BPM)
+  let STEP = 0.28; // seconds per 8th note (~107 BPM); the night slows it down and drops an octave
+  let octave = 1;
 
   function scheduleMusic() {
     if (!ctx || !musicOn) return;
@@ -140,8 +164,8 @@ export function createAudio() {
       const m = MELODY[i];
       const b = BASS[i];
       const start = Math.max(0, nextNoteTime - ctx.currentTime);
-      if (m) tone({ freq: m, type: 'triangle', start, dur: STEP * 0.9, gain: 0.5, attack: 0.02, dest: musicGain });
-      if (b) tone({ freq: b, type: 'sine', start, dur: STEP * 1.6, gain: 0.45, attack: 0.03, dest: musicGain });
+      if (m) tone({ freq: m * octave, type: 'triangle', start, dur: STEP * 0.9, gain: 0.5, attack: 0.02, dest: musicGain });
+      if (b) tone({ freq: b * octave, type: 'sine', start, dur: STEP * 1.6, gain: 0.45, attack: 0.03, dest: musicGain });
       if (i % 4 === 0) tone({ freq: 2000, type: 'square', start, dur: 0.03, gain: 0.05, dest: musicGain });
       nextNoteTime += STEP;
       step++;
@@ -196,6 +220,14 @@ export function createAudio() {
       else stopMusic();
     },
     get ready() { return !!ctx; },
+    /** 'day' | 'night' | null: island ambience; night also slows the music and drops it an octave. */
+    setAmbient(kind) {
+      setAmbient(kind);
+      const night = kind === 'night';
+      STEP = night ? 0.42 : 0.28;
+      octave = night ? 0.5 : 1;
+      if (musicGain) musicGain.gain.value = musicOn ? (night ? 0.1 : 0.16) : 0;
+    },
     pause() { stopMusic(); if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {}); },
     resume() { if (ctx) { if (ctx.state !== 'running') ctx.resume().catch(() => {}); startMusic(); } },
   };

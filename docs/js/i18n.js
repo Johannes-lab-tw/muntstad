@@ -150,6 +150,9 @@ export const T = {
     'alle-geldmakers': 'Alle geldmakers van Muntstad zijn van jou!',
     'level-5': 'Level vijf! Beter kan niet.',
     'honderdduizend': 'Honderdduizend munten! Jij bent de baas van Muntstad.',
+    'eerste-nacht': 'Je eerste nacht op het eiland en het vuur bleef branden. Dapper!',
+    'eiland-verkoper': 'Honderd munten verdiend op het eiland. Verzamelen loont!',
+    'vijf-opdrachten': 'Vijf opdrachten klaar. Jij bent mijn beste helper!',
   },
 
   papa: {
@@ -167,7 +170,15 @@ export const T = {
       carsWashed: 'Auto’s gewassen',
       makersOwned: 'Geldmakers',
       funOwned: 'Leuke spullen',
+      nights: 'Nachten overleefd op het eiland',
+      islandEarned: 'Verdiend op het eiland',
+      questsDone: 'Opdrachten van Muntje',
+      stolen: 'Gepakt door spoken',
+      tools: 'Eilandspullen',
     },
+    busy: 'Waar was {naam} mee bezig',
+    busyTown: 'in het dorp: {makers} geldmakers, {cars} auto’s gewassen',
+    busyIsland: 'op het eiland: {nights} nachten, {quests} opdrachten, {earned} munten verdiend, {tools} van 5 spullen',
     starters: [
       'Wat werkt harder: jij of je wasstraat?',
       'Wat gebeurde er met je munten toen de iPad uit stond?',

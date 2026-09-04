@@ -20,22 +20,22 @@ const island = (extra = {}) => ({ bag: { hout: 3, schelp: 0, bes: 0, vis: 0 }, t
 test('night falls: Muntje warns, STOOK feeds the fire with the wood in the bag, a ghost steals in the dark, dawn pays', async ({ page }) => {
   const errors = watchErrors(page);
   await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island(); s.nacht = { fire: 60, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
-  await startGame(page);
+  await startGame(page, { url: '/?lowres=1' });
   await closePopups(page);
   await openAvontuur(page);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
-  await expect.poll(async () => (await hook(page)).darkness, { timeout: 12000 }).toBe(1);
-  await expect.poll(() => mentorHas(page, 'donker'), { timeout: 12000 }).toBe(true);
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBe(1);
+  await expect.poll(() => mentorHas(page, 'donker'), { timeout: 20000 }).toBe(true);
 
   // STOOK at the fire: 3 pieces of wood → +36 fire units
   const h = await hook(page);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), h.camp);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 12000 }).toBe('STOOK');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('STOOK');
   const fireBefore = (await state(page)).nacht.fire;
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 12000 }).toBe(0);
+  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 20000 }).toBe(0);
   expect((await state(page)).nacht.fire).toBeGreaterThan(fireBefore + 30);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 12000 }).toBe('KAMP');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('KAMP');
 
   // a ghost next to the player, far from the fire's light: it steals once
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 24), h.camp);
@@ -43,26 +43,26 @@ test('night falls: Muntje warns, STOOK feeds the fire with the wood in the bag, 
   const p = (await hook(page)).player;
   expect((await hook(page)).lights.some((l) => Math.hypot(l.x - p.x, l.z - p.z) < l.r)).toBe(false);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.ghostAt(x, z + 1.0), p);
-  await expect.poll(async () => (await state(page)).nacht.stolen, { timeout: 12000 }).toBe(1);
-  await expect.poll(() => mentorHas(page, 'spook'), { timeout: 12000 }).toBe(true);
+  await expect.poll(async () => (await state(page)).nacht.stolen, { timeout: 20000 }).toBe(1);
+  await expect.poll(() => mentorHas(page, 'spook'), { timeout: 20000 }).toBe(true);
 
   // dawn: the fire still burns → the first night pays 20 coins
   const walletBefore = Math.floor((await state(page)).wallet);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));
-  await expect.poll(async () => (await state(page)).nacht.nights, { timeout: 12000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).nacht.nights, { timeout: 20000 }).toBe(1);
   expect(Math.floor((await state(page)).wallet)).toBe(walletBefore + 20);
-  await expect.poll(async () => (await hook(page)).ghosts.length, { timeout: 12000 }).toBe(0);
+  await expect.poll(async () => (await hook(page)).ghosts.length, { timeout: 20000 }).toBe(0);
   expect(errors()).toEqual([]);
 });
 
 test('with the lantern a ghost next to you cannot steal; the tent lets you sleep to the morning', async ({ page }) => {
   const errors = watchErrors(page);
   await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ tools: { lantaarn: true, tent: true } }); s.nacht = { fire: 60, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
-  await startGame(page);
+  await startGame(page, { url: '/?lowres=1' });
   await closePopups(page);
   await openAvontuur(page);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
-  await expect.poll(async () => (await hook(page)).darkness, { timeout: 12000 }).toBe(1);
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBe(1);
   const h = await hook(page);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 24), h.camp);
   await page.waitForTimeout(200);
@@ -77,11 +77,11 @@ test('with the lantern a ghost next to you cannot steal; the tent lets you sleep
   // SLAAP in the tent shifts the clock to just before dawn (visible once the forced night phase is released)
   const tent = await page.evaluate(() => window.__muntstad.avontuur.landmarks.TENT);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 1.2), tent);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 12000 }).toBe('SLAAP');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('SLAAP');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await state(page)).nacht.clockOffsetMs, { timeout: 12000 }).toBeGreaterThan(0);
+  await expect.poll(async () => (await state(page)).nacht.clockOffsetMs, { timeout: 20000 }).toBeGreaterThan(0);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(null));
-  await expect.poll(async () => (await hook(page)).darkness, { timeout: 12000 }).toBeLessThan(1);
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBeLessThan(1);
   const phase = await page.evaluate(() => window.__muntstad.avontuur.phase);
   expect(phase).toBeGreaterThan(0.95);
   expect(errors()).toEqual([]);

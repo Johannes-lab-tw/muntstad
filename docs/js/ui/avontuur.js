@@ -117,10 +117,13 @@ export function createAvontuur(game) {
   }
   function onNight(bear) {
     fireOutSaid = false;
+    game.audio.setAmbient('night');
+    if (bear) game.audio.play('growl');
     game.mentor.say(samen && samen.isGuest ? 'lines.guestNight' : 'lines.nightComing', {}, { kind: 'reaction' });
     if (bear) setTimeout(() => { if (visible) game.mentor.say('lines.bearComing', {}, { kind: 'reaction' }); }, 5000);
   }
   function onDawn(fireBurned) {
+    game.audio.setAmbient('day');
     const r = dawnReward(game.state.nacht, game.config, fireBurned);
     game.update((s) => ({ ...s, nacht: r.nacht, wallet: s.wallet + r.reward, earnedWork: s.earnedWork + r.reward }));
     game.save();
@@ -132,6 +135,7 @@ export function createAvontuur(game) {
     } else game.mentor.say('lines.dawnNoFire', {}, { kind: 'reaction' });
   }
   function onSteal() {
+    game.audio.play('boo');
     const r = ghostSteal(game.state.nacht, game.state.eiland, game.state.wallet, game.config);
     game.update((s) => ({ ...s, nacht: r.nacht, eiland: r.eiland, wallet: r.wallet }));
     const cfg = game.config.eiland;
@@ -207,6 +211,7 @@ export function createAvontuur(game) {
       controls.setEnabled(true);
       hudKey = '';
       renderHud(game.state);
+      game.audio.setAmbient(scene3.hook.darkness > 0.5 ? 'night' : 'day');
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(loop);
       if (!game.state.flags.avontuurIntro) {
@@ -219,6 +224,7 @@ export function createAvontuur(game) {
     hide() {
       visible = false;
       controls.setEnabled(false);
+      game.audio.setAmbient(null);
       kamp.close();
       cancelAnimationFrame(raf);
       raf = 0;

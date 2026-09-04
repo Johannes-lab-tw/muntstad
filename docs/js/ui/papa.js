@@ -92,7 +92,18 @@ export function createPapa(game) {
       [L.carsWashed, String(s.carsWashed)],
       [L.makersOwned, `${s.makersOwned} / ${game.config.makers.length}`],
       [L.funOwned, `${s.funOwned} / ${game.config.fun.length}`],
+      [L.nights, String(s.nights)],
+      [L.islandEarned, `${formatCoins(s.islandEarned)} 🪙`],
+      [L.questsDone, `${s.questsDone}`],
+      [L.stolen, `${s.stolen}×`],
+      [L.tools, `${s.tools} / ${game.config.eiland.tools.length}`],
     ];
+    // one line for a parent who asks "what was he up to?"
+    const busy = document.getElementById('papa-busy');
+    if (busy) {
+      const naam = game.displayName();
+      busy.textContent = `${game.t('papa.busy', { naam })}: ${game.t('papa.busyTown', { makers: s.makersOwned, cars: s.carsWashed })} · ${game.t('papa.busyIsland', { nights: s.nights, quests: s.questsDone, earned: formatCoins(s.islandEarned), tools: s.tools })}.`;
+    }
     statsEl.innerHTML = '';
     for (const [k, v] of rows) {
       const dt = document.createElement('dt');

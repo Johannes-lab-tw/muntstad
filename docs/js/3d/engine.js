@@ -28,7 +28,10 @@ export function createEngine() {
     if (cores <= 2 || (/swiftshader|llvmpipe|software/i.test(name) && cores <= 4)) forcedLite = true; // CI runners; a fast desktop keeps full quality in dev-shot
   } catch (e) { /* ignore */ }
 
+  // ?lowres=1 (tests on software renderers): draw at half resolution, everything else unchanged
+  const lowres = /[?&]lowres=1/.test(location.search);
   function pixelRatio() {
+    if (lowres) return 0.5;
     const base = Math.min(2, window.devicePixelRatio || 1);
     return tier === 2 ? Math.min(base, 1) : tier === 1 ? base * 0.8 : base;
   }

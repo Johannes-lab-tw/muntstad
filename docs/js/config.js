@@ -186,6 +186,9 @@ export const CONFIG = Object.freeze({
     { id: 'alle-geldmakers',  kind: 'all-makers',         value: 0,      sticker: '🏙️', title: 'Alle geldmakers!' },
     { id: 'level-5',          kind: 'level',              value: 5,      sticker: '⭐', title: 'Eerste level 5!' },
     { id: 'honderdduizend',   kind: 'earned',             value: 100000, sticker: '🏆', title: '100 000 munten verdiend!' },
+    { id: 'eerste-nacht',     kind: 'nights',             value: 1,      sticker: '🌙', title: 'Eerste nacht overleefd!' },
+    { id: 'eiland-verkoper',  kind: 'island-sold',        value: 100,    sticker: '🐚', title: '100 munten verdiend op het eiland!' },
+    { id: 'vijf-opdrachten',  kind: 'quests',             value: 5,      sticker: '🎒', title: 'Vijf opdrachten van Muntje!' },
   ],
 
   // Avatar colours offered on START (id → CSS colour)

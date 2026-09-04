@@ -25,7 +25,7 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
   await seedSave(b, (s) => { s.wallet = 20; s.earnedWork = 20; s.color = 'rood'; s.settings.relayUrl = RELAY; s.eiland = { bag: { hout: 3, schelp: 0, bes: 0, vis: 0 }, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: {}, sold: 0, earned: 0 }; s.nacht = { fire: 90, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
 
   // A: the parent opens the room
-  await startGame(a);
+  await startGame(a, { url: '/?lowres=1' });
   await closePopups(a);
   await openPapa(a);
   await expect(a.locator('#relay-url')).toHaveValue(RELAY);
@@ -37,7 +37,7 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
   await a.locator('#papa-stad').click();
 
   // B: the child taps SAMEN and the pictures
-  await b.goto('/');
+  await b.goto('/?lowres=1');
   await expect(b.locator('#btn-start')).toBeVisible();
   await b.locator('#btn-samen').click();
   await expect(b.locator('#samen-pad')).toBeVisible();

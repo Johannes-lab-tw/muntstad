@@ -2,6 +2,22 @@
 
 **Live:** https://johannes-lab-tw.github.io/muntstad/
 
+## 0. Vierde ronde: Muntstad Avontuur (3 tot 5 september 2026)
+
+Je besluit van 3 september: doorbouwen in de eigen app, richting 99 Nights in the Forest. Dat staat er nu, in zes rondes uit PLAN-V4.md, elk met een commit en tests in de cloud.
+
+**Wat je ziet.** In STAD staat rechtsboven een knop AVONTUUR. Die brengt je per boot naar het Avontuureiland: een eiland van 96 bij 96 meter met strand rondom, een bos van honderden bomen, een meer, een heuvel met sneeuwtop en een grot, zandpaden en in het midden het kamp met het kampvuur, drie hutjes en een steiger. Je loopt er zelf rond met een joystick onder je duim, veegt rechts om rond te kijken, springt met SPRING, en de hond (of kat, of dino) draaft mee. De grote knop rechtsonder zegt steeds wat je hier kunt doen: PAK (schelpen op het strand), PLUK (bessen), HAK (hout bij bomen, met snippers), VIS (bij het meer: wachten, tikken als de dobber duikt), KAMP (verkopen en kopen bij het vuur), STOOK (hout in het vuur), BOE (de Nachtbeer wegjagen), SLAAP (in de tent). Elke 9 minuten gaat de dag over in nacht: de zon zakt, de lucht en de mist kleuren, sterren en maan komen op, het kampvuur en de lantaarn geven echt licht.
+
+**De les blijft dezelfde.** Verzamelen is werk; verkopen bij het vuur geeft munten in dezelfde portemonnee als het dorp; de geldmakers in het dorp werken door terwijl je op avontuur bent. De bijl (60 munten) is de eerste investering die zichzelf terugbetaalt: met de hand kost een stuk hout drie tikken, met de bijl geeft één tik twee stuks. Een nacht vraagt ongeveer acht stuks hout; drie nachten beloning betalen de bijl terug. Muntje geeft dagopdrachten ("raap vijf schelpen") met een bonus.
+
+**De nacht.** Het vuur brandt op hout. In het donker komen spoken: ze zweven naar het vuur of naar jou, blijven buiten het licht, en pakken in het donker hout uit het vuur, iets uit je rugzak of drie munten. Lantaarn, fakkels en hek houden ze weg. Elke derde nacht komt de Nachtbeer; drie keer BOE en hij keert om. Overleef je de nacht met brandend vuur, dan krijg je 's ochtends munten. Niemand gaat dood, niemand slaat; verliezen is hout of munten kwijt.
+
+**Samen.** Op PAPA zet je het adres van jullie eigen relais en druk je op KAMER: vier plaatjes zijn de code. Op de andere iPad: START, SAMEN, de vier plaatjes tikken. Dan lopen jullie op hetzelfde eiland, zien elkaar met een naambordje (dier en nummer), zwaaien en dansen, en delen het vuur en de nacht: de eerste speler is de baas van de wereld. Er gaan geen namen over de lijn, alleen getallen. Het relais is 150 regels, draait op Cloudflare (gratis) of op een pc thuis; zie §1a.
+
+**Op een echte iPad.** Dit is gebouwd en getest in Chromium op drie iPad-formaten (in GitHub Actions) en op een pc; op de iPad zelf moet jij de snelheid beoordelen. Het spel zet zelf schaduwen, gras en bloemen uit als het traag wordt.
+
+**Hoe dit is gebouwd.** Claude schreef de architectuur, de besturing, de netwerkcode en de tests; Ollama (qwen3.8:27b, lokaal, nul tokens) beoordeelde de screenshots en schreef de veertien dagopdrachten van Muntje. De e2e-tests draaien sinds deze ronde in de cloud, zodat jouw pc vrij blijft.
+
 ## 0. Derde ronde: echt 3D (2 september 2026)
 
 Je koos voor route 1: geen opgepoetste tekenlaag, maar echte 3D. Het referentiebeeld dat je gaf: Roblox zoals in Brookhaven, hotel-tycoons en Steal a Brainrot, dus gladde afgeronde plastic vormen, felle kleuren, echt licht, geen Minecraft-blokjes. Dat is nu gebouwd.
@@ -71,6 +87,15 @@ Vanaf dan start Muntstad als app en werkt hij ook zonder internet. Let op twee i
 - iOS negeert de liggende stand uit het manifest. Houd de iPad liggend; staand toont het spel "Draai je iPad".
 
 Als beginscherm-app blijft de voortgang bewaard; in een gewoon Safari-tabblad kan Safari opslag na 7 dagen zonder gebruik opruimen. Daarom is er de Bewaar-code (§3, PAPA).
+
+## 1a. Samen spelen: het relais aanzetten (één keer, door een ouder)
+
+Het relais geeft alleen berichten door tussen de iPads in één kamer. Twee manieren:
+
+1. **Cloudflare (gratis, werkt ook bij oma).** Maak een account op cloudflare.com. Op een pc met Node: `cd server/relay`, `npx wrangler login`, `npx wrangler deploy`. Je krijgt een adres zoals `https://muntstad-relay.<naam>.workers.dev`; zet dat als `wss://muntstad-relay.<naam>.workers.dev` op het PAPA-scherm onder "Samen spelen".
+2. **Thuis op een pc.** `node server/relay/relay.js --host 0.0.0.0 --port 4174` en op PAPA `ws://<ip-van-de-pc>:4174`. Werkt alleen op hetzelfde wifi-netwerk; Safari op de iPad accepteert ws:// naar een lokaal adres alleen als de site zelf ook via http (niet https) is geopend, dus dit is vooral voor testen.
+
+Daarna: PAPA → KAMER → de vier plaatjes. De andere iPads: START → SAMEN → plaatjes tikken. STOP op PAPA sluit de kamer.
 
 ## 2. Wat het spel leert
 
@@ -166,10 +191,12 @@ Bekende beperkingen:
 Volgende versie (bewust weggelaten voor een afgemaakte versie):
 - Meer geldmakers na de flat en meer levels.
 - Vaste WERK-baantjes naast auto's wassen (bijvoorbeeld pizza's bezorgen).
-- De avatar zelf laten rondlopen met tikken op de weg.
 - Een tweede kind/profiel op dezelfde iPad.
 - Seizoensdingen (sneeuw, Sinterklaas) in de tuin.
-- Dag-en-nachtcyclus op het eiland (lampen aan, ramen verlicht).
+- Dag-en-nacht ook in het dorp (lampen aan, ramen verlicht); op het Avontuureiland is het er al.
+- Een tweede eiland per boot (de vuurtoren), meer dieren, en spoken die ook bij gasten in de kamer stelen.
+- Tikken op dingen in de wereld naast de contextknop.
+- Een echte iPad-meting van de framerate op het eiland (nu alleen Chromium).
 
 ## 8. Later iets veranderen
 
