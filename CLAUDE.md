@@ -25,7 +25,7 @@ At the start of every session and after any context compaction: re-read SPEC.md 
 
 ## Conventions
 - Commit small and often on main. Bump CACHE_VERSION in docs/sw.js on every deploy.
-- Node is a portable install in %USERPROFILE%\.local\node (on the user PATH). In Git Bash: `export PATH="$HOME/.local/node:$PATH"`.
+- Node: since 2026-09-05 a normal install in C:\Program Files\nodejs (v24.19). The older portable copy in %USERPROFILE%\.local\node (v24.20) still exists and is first on the user PATH; both work. A shell started before the install may only see the portable one (`export PATH="$HOME/.local/node:$PATH"` still helps there).
 - Displayed numbers are integers with a thin space as thousands separator; never abbreviate.
 
 ## Ronde 3: Three.js en de lokale criticus (sinds 2026-09-02)
