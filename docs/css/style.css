@@ -990,3 +990,8 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .kamp-tool .txt b { display: block; font-size: 24px; color: var(--ink); }
 .kamp-tool .btn { min-width: 150px; }
 .kamp-foot { display: flex; justify-content: flex-end; gap: 14px; margin-top: 14px; }
+
+/* fire bar in the backpack panel (R4) */
+.av-bag .fire-bar { display: inline-block; width: 64px; height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 2px; }
+.av-bag .fire-bar b { display: block; height: 100%; background: linear-gradient(90deg, #ff9f2e, #ffd23f); }
+.av-bag .fire-bar.low b { background: var(--red); }

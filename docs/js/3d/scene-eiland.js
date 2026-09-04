@@ -1,8 +1,9 @@
 // 3d/scene-eiland.js — the Avontuureiland: terrain, forest, camp, day and night, you walking around it with the
-// camera behind you (3d/player.js + 3d/controls.js), and since round 3 the things you can do: chop wood, pick shells
-// and berries, fish at the lake, open the campfire. Own Three scene.
+// camera behind you (3d/player.js + 3d/controls.js), the things you can do (chop, pick, fish, campfire; round 3)
+// and the night (fire that wants wood, ghosts, the Nachtbeer, lantern/torches/fence/tent; round 4). Own Three scene.
 // createEilandScene(game, engine, controls, cb) → { mount, resize, render(now), setState, reset, doAction, hook }
-// cb = { onCollect(item, n), onKamp(), onAction(action | null), onSay(lineKey) }
+// cb = { onCollect(item, n), onKamp(), onAction(action | null), onSay(lineKey), onBurn(dtMs, darkness), onNight(bear),
+//        onDawn(fireBurned), onSteal(), onStoke(), onSleep(), onBearAte() }
 import * as T from '../../vendor/three.module.min.js';
 import { avatarModel, lookKey } from './avatar.js';
 import { petModel } from './pets.js';
@@ -13,17 +14,21 @@ import { createTerrain } from './terrain.js';
 import { placeForest, buildForest } from './forest.js';
 import { createCamp } from './camp.js';
 import { createDayNight } from './daynight.js';
+import { ghostModel, bearModel, tentModel, torchModel, fenceModel } from './spoken.js';
 import { Builder } from './build.js';
 import { isFunActive } from '../economy.js';
 import { chopRule } from '../eiland.js';
+import { fireRadius, isLit, stepGhost, bearTonight, stepBear, scareBear } from '../nacht.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
 const START = { x: PIER.x, z: PIER.z - 2.5, heading: Math.PI };   // on the pier, facing the island
-const REACH = { tree: 1.3, shell: 1.4, bush: 1.5, camp: 3.4, lake: 2.4 };
+const REACH = { tree: 1.3, shell: 1.4, bush: 1.5, camp: 3.4, lake: 2.4, tent: 2.4, bear: 7 };
+const TENT_AT = { x: CAMP.x - 4.6, z: CAMP.z - 3.8 };
 
 export function createEilandScene(game, engine, controls, cb = {}) {
   const config = game.config;
   const E = config.eiland;
+  const N = config.nacht;
   const scene = new T.Scene();
   const map = createHeightmap();
   const terrain = createTerrain(map);
@@ -104,15 +109,145 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     }
   }
 
+  // ---------- the night: camp gear, lights, ghosts, the bear ----------
+  const ghosts = [];   // { g, model, holder }
+  let bear = null;     // { b, model, holder }
+  let ghostTimer = 0, wasDark = false, fireWasBurning = true;
+  const lantern = new T.PointLight(0xffd080, 0, 12, 1.6);
+  lantern.visible = false;
+  scene.add(lantern);
+  const gear = { tent: null, torches: null, fence: null };
+  function syncGear() {
+    const tools = state.eiland.tools;
+    if (tools.tent && !gear.tent) {
+      gear.tent = tentModel();
+      gear.tent.position.set(TENT_AT.x, map.heightAt(TENT_AT.x, TENT_AT.z), TENT_AT.z);
+      gear.tent.rotation.y = 0.6;
+      scene.add(gear.tent);
+    }
+    if (tools.fakkels && !gear.torches) {
+      gear.torches = [];
+      for (let i = 0; i < 4; i++) {
+        const a = (i * Math.PI) / 2 + Math.PI / 4;
+        const x = CAMP.x + Math.cos(a) * 6.2, z = CAMP.z + Math.sin(a) * 6.2;
+        const t = torchModel();
+        t.mesh.position.set(x, map.heightAt(x, z), z);
+        scene.add(t.mesh);
+        gear.torches.push({ ...t, x, z });
+      }
+    }
+    if (tools.hek && !gear.fence) {
+      gear.fence = fenceModel(CAMP.x, CAMP.z, N.fenceRadius, map.heightAt);
+      scene.add(gear.fence);
+    }
+    lantern.visible = !!tools.lantaarn;
+  }
+  function lightsNow() {
+    const ls = [{ x: CAMP.x, z: CAMP.z, r: fireRadius(state.nacht, config) }];
+    if (state.eiland.tools.lantaarn) ls.push({ x: player.x, z: player.z, r: N.lanternRadius });
+    if (gear.torches) for (const t of gear.torches) ls.push({ x: t.x, z: t.z, r: N.torchRadius });
+    return ls;
+  }
+  function landSpot(dist) {
+    for (let i = 0; i < 20; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const x = CAMP.x + Math.cos(a) * dist, z = CAMP.z + Math.sin(a) * dist;
+      if (map.walkable(x, z)) return { x, z, heading: Math.atan2(CAMP.x - x, CAMP.z - z) };
+    }
+    return { x: CAMP.x, z: CAMP.z + dist * 0.6, heading: Math.PI };
+  }
+  function spawnGhost() {
+    const p = landSpot(22);
+    const model = ghostModel();
+    const holder = new T.Group();
+    holder.add(model.group);
+    holder.position.set(p.x, map.heightAt(p.x, p.z), p.z);
+    scene.add(holder);
+    ghosts.push({ g: { x: p.x, z: p.z, heading: p.heading, state: 'come' }, model, holder });
+  }
+  function spawnBear() {
+    if (bear) return;
+    const p = landSpot(30);
+    const model = bearModel();
+    const holder = new T.Group();
+    holder.add(model.group);
+    holder.position.set(p.x, map.heightAt(p.x, p.z), p.z);
+    scene.add(holder);
+    bear = { b: { x: p.x, z: p.z, heading: p.heading, state: 'come', scared: 0, pause: 0 }, model, holder };
+  }
+  function clearNight() {
+    for (const gh of ghosts) scene.remove(gh.holder);
+    ghosts.length = 0;
+    if (bear) { scene.remove(bear.holder); bear = null; }
+  }
+  const groundOf = (x, z) => map.heightAt(Math.min(map.size - 1, Math.max(1, x)), Math.min(map.size - 1, Math.max(1, z)));
+  function updateNight(now, dt) {
+    syncGear();
+    const dark = daynight.darkness;
+    cb.onBurn && cb.onBurn(dt * 1000, dark);
+    const n = state.nacht;
+    camp.setFire(n.fire / 100);
+    lantern.position.set(player.x, player.ground + 1.7, player.z);
+    lantern.intensity = (0.2 + dark * 2.5) * 4;
+    if (gear.torches) for (const t of gear.torches) { t.light.intensity = (0.3 + dark * 2.2) * 3; t.flame.scale.setScalar(1 + Math.sin(now / 80 + t.x) * 0.12); }
+    const isDark = dark > 0.5;
+    if (isDark && !wasDark) {
+      wasDark = true;
+      fireWasBurning = n.fire > 0;
+      ghostTimer = N.ghostEveryMs * 0.6;   // the first ghost comes soon after dark
+      const bearNight = bearTonight(n, config);
+      cb.onNight && cb.onNight(bearNight);
+      if (bearNight) spawnBear();
+    }
+    if (!isDark && wasDark) {
+      wasDark = false;
+      cb.onDawn && cb.onDawn(fireWasBurning && n.fire > 0);
+      clearNight();
+    }
+    if (isDark && n.fire <= 0) fireWasBurning = false;
+    if (isDark) {
+      ghostTimer += dt * 1000;
+      if (ghosts.length < N.ghostsMax && ghostTimer > N.ghostEveryMs) { ghostTimer = 0; spawnGhost(); }
+    }
+    const lit = lightsNow();
+    const fence = state.eiland.tools.hek ? { x: CAMP.x, z: CAMP.z, r: N.fenceRadius } : null;
+    for (let i = ghosts.length - 1; i >= 0; i--) {
+      const gh = ghosts[i];
+      const dp = Math.hypot(player.x - gh.g.x, player.z - gh.g.z);
+      const target = dp < 12 ? { x: player.x, z: player.z } : { x: CAMP.x, z: CAMP.z };
+      const res = stepGhost(gh.g, { target, lights: lit, fence, dt }, config);
+      if (res === 'steal') { game.audio.play('thud'); cb.onSteal && cb.onSteal(); }
+      if (res === 'gone') { scene.remove(gh.holder); ghosts.splice(i, 1); continue; }
+      gh.holder.position.set(gh.g.x, groundOf(gh.g.x, gh.g.z), gh.g.z);
+      gh.holder.rotation.y = gh.g.heading;
+      gh.model.update(now, { fade: isLit(gh.g.x, gh.g.z, lit) ? 0.35 : 1 });
+    }
+    if (bear) {
+      const res = stepBear(bear.b, { target: { x: CAMP.x, z: CAMP.z }, dt }, config);
+      if (res === 'eat') cb.onBearAte && cb.onBearAte();
+      if (res === 'gone') { scene.remove(bear.holder); bear = null; }
+      else {
+        bear.holder.position.set(bear.b.x, groundOf(bear.b.x, bear.b.z), bear.b.z);
+        bear.holder.rotation.y = bear.b.heading;
+        bear.model.update(now, { walking: bear.b.pause <= 0 });
+      }
+    }
+  }
+
   // ---------- what can you do here? ----------
-  let action = null;        // { type: 'kamp'|'schelp'|'bes'|'hak'|'vis'|'trek', label, target }
+  let action = null;        // { type, label, target }
   let lastActionKey = '';
   let hakUntil = 0;
   let fishing = null;       // { until, biteUntil }
   function findAction(now) {
     const px = player.x, pz = player.z;
     if (fishing) return { type: fishing.biteUntil ? 'trek' : 'vis', label: fishing.biteUntil ? 'TREK' : 'WACHT', target: null };
-    if (Math.hypot(px - CAMP.x, pz - CAMP.z) < REACH.camp) return { type: 'kamp', label: 'KAMP', target: null };
+    if (bear && bear.b.state === 'come' && Math.hypot(px - bear.b.x, pz - bear.b.z) < REACH.bear) return { type: 'boe', label: 'BOE', target: null };
+    if (gear.tent && daynight.darkness > 0.5 && Math.hypot(px - TENT_AT.x, pz - TENT_AT.z) < REACH.tent) return { type: 'slaap', label: 'SLAAP', target: null };
+    if (Math.hypot(px - CAMP.x, pz - CAMP.z) < REACH.camp) {
+      if ((state.eiland.bag.hout || 0) > 0 && state.nacht.fire < 100 - N.woodValue) return { type: 'stook', label: 'STOOK', target: null };
+      return { type: 'kamp', label: 'KAMP', target: null };
+    }
     let best = null, bestD = Infinity;
     for (const s of nearShells(px, pz)) {
       if (s.taken) continue;
@@ -141,59 +276,71 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (!t) { t = { taps: 0, wood: 0, restUntil: 0 }; trees.set(key, t); }
     return t;
   }
-  /** The action button was pressed (or the space of a keyboard player). */
+  /** The action button was pressed (or E / Enter on a keyboard). */
   function doAction() {
     const now = performance.now();
     if (!action) return;
-    if (action.type === 'kamp') { cb.onKamp && cb.onKamp(); return; }
-    if (action.type === 'schelp') {
-      action.target.taken = true;
-      forest.setScale('shell', action.target.index, 0);
-      cb.onCollect && cb.onCollect('schelp', 1);
-      game.audio.play('coinSoft');
-      return;
-    }
-    if (action.type === 'bes') {
-      action.target.restUntil = now + E.bushRestMs;
-      forest.setScale('bush2', action.target.index, 0.8);
-      setTimeout(() => forest.setScale('bush2', action.target.index, 1), E.bushRestMs);
-      cb.onCollect && cb.onCollect('bes', E.berries);
-      game.audio.play('coinSoft');
-      return;
-    }
-    if (action.type === 'hak') {
-      const t = treeState(action.target);
-      if (t.restUntil > now) { cb.onSay && cb.onSay('lines.treeRest'); return; }
-      const rule = chopRule(state.eiland, config);
-      hakUntil = now + 380;
-      // face the tree
-      player.heading = Math.atan2(action.target.x - player.x, action.target.z - player.z);
-      game.audio.play('thud');
-      t.taps++;
-      if (t.taps >= rule.taps) {
-        t.taps = 0;
-        t.wood += rule.wood;
-        burstChips(action.target.x, action.target.y || player.ground, action.target.z);
-        cb.onCollect && cb.onCollect('hout', rule.wood);
-        if (t.wood >= E.treeWood) { t.wood = 0; t.restUntil = now + E.treeRestMs; }
+    switch (action.type) {
+      case 'kamp': cb.onKamp && cb.onKamp(); return;
+      case 'stook': cb.onStoke && cb.onStoke(); return;
+      case 'slaap': cb.onSleep && cb.onSleep(); return;
+      case 'boe': {
+        if (!bear) return;
+        game.audio.play('unlock');
+        hakUntil = now + 300;
+        const gone = scareBear(bear.b, config);
+        cb.onSay && cb.onSay(gone ? 'lines.bearGone' : 'lines.bearScared');
+        return;
       }
-      return;
-    }
-    if (action.type === 'vis') {
-      fishing = { until: now + E.fish.waitMinMs + Math.random() * (E.fish.waitMaxMs - E.fish.waitMinMs), biteUntil: 0 };
-      player.heading = Math.atan2(LAKE.x - player.x, LAKE.z - player.z);
-      const d = 1.6;
-      bobber.position.set(player.x + Math.sin(player.heading) * d, LAKE.level + 0.05, player.z + Math.cos(player.heading) * d);
-      bobber.visible = true;
-      cb.onSay && cb.onSay('lines.fishWait');
-      return;
-    }
-    if (action.type === 'trek') {
-      if (fishing && fishing.biteUntil && now < fishing.biteUntil) {
-        cb.onCollect && cb.onCollect('vis', 1);
-        game.audio.play('buy');
+      case 'schelp':
+        action.target.taken = true;
+        forest.setScale('shell', action.target.index, 0);
+        cb.onCollect && cb.onCollect('schelp', 1);
+        game.audio.play('coinSoft');
+        return;
+      case 'bes': {
+        const b = action.target;
+        b.restUntil = now + E.bushRestMs;
+        forest.setScale('bush2', b.index, 0.8);
+        setTimeout(() => forest.setScale('bush2', b.index, 1), E.bushRestMs);
+        cb.onCollect && cb.onCollect('bes', E.berries);
+        game.audio.play('coinSoft');
+        return;
       }
-      stopFishing();
+      case 'hak': {
+        const t = treeState(action.target);
+        if (t.restUntil > now) { cb.onSay && cb.onSay('lines.treeRest'); return; }
+        const rule = chopRule(state.eiland, config);
+        hakUntil = now + 380;
+        player.heading = Math.atan2(action.target.x - player.x, action.target.z - player.z);
+        game.audio.play('thud');
+        t.taps++;
+        if (t.taps >= rule.taps) {
+          t.taps = 0;
+          t.wood += rule.wood;
+          burstChips(action.target.x, player.ground, action.target.z);
+          cb.onCollect && cb.onCollect('hout', rule.wood);
+          if (t.wood >= E.treeWood) { t.wood = 0; t.restUntil = now + E.treeRestMs; }
+        }
+        return;
+      }
+      case 'vis': {
+        fishing = { until: now + E.fish.waitMinMs + Math.random() * (E.fish.waitMaxMs - E.fish.waitMinMs), biteUntil: 0 };
+        player.heading = Math.atan2(LAKE.x - player.x, LAKE.z - player.z);
+        const d = 1.6;
+        bobber.position.set(player.x + Math.sin(player.heading) * d, LAKE.level + 0.05, player.z + Math.cos(player.heading) * d);
+        bobber.visible = true;
+        cb.onSay && cb.onSay('lines.fishWait');
+        return;
+      }
+      case 'trek':
+        if (fishing && fishing.biteUntil && now < fishing.biteUntil) {
+          cb.onCollect && cb.onCollect('vis', 1);
+          game.audio.play('buy');
+        }
+        stopFishing();
+        return;
+      default: return;
     }
   }
   function stopFishing() { fishing = null; bobber.visible = false; }
@@ -210,7 +357,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const cp = Math.cos(pitch), sp = Math.sin(pitch);
     const py = player.ground + player.y * 0.5;
     camPos.set(player.x - Math.sin(yaw) * CAM.dist * cp, py + CAM.dist * sp + 0.4, player.z - Math.cos(yaw) * CAM.dist * cp);
-    const floor = map.heightAt(Math.min(map.size - 1, Math.max(1, camPos.x)), Math.min(map.size - 1, Math.max(1, camPos.z))) + 0.8;
+    const floor = groundOf(camPos.x, camPos.z) + 0.8;
     if (camPos.y < floor) camPos.y = floor;
     camLook.set(player.x, py + CAM.lookUp, player.z);
     if (firstFrame) { camera.position.copy(camPos); firstFrame = false; }
@@ -275,10 +422,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
 
     placeCamera(dt);
     focus.set(player.x, player.ground, player.z);
-    daynight.update(now, focus);
+    daynight.update(now, focus, state.nacht.clockOffsetMs);
     const lite = engine.tier >= 2;
     terrain.update(now, lite);
     camp.update(now, daynight.darkness, lite);
+    updateNight(now, dt);
     engine.render(scene, camera);
   }
 
@@ -301,9 +449,12 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get darkness() { return daynight.darkness; },
     get action() { return action ? { type: action.type, label: action.label } : null; },
     get fishing() { return fishing ? { biting: !!fishing.biteUntil } : null; },
+    get ghosts() { return ghosts.map((gh) => ({ x: gh.g.x, z: gh.g.z, state: gh.g.state })); },
+    get bear() { return bear ? { x: bear.b.x, z: bear.b.z, state: bear.b.state, scared: bear.b.scared } : null; },
+    get lights() { return state ? lightsNow() : []; },
     onLand(x, z) { return map.walkable(x, z); },
     kindAt(x, z) { return map.kindAt(x, z); },
-    landmarks: { CAMP, PIER, LAKE },
+    landmarks: { CAMP, PIER, LAKE, TENT: TENT_AT },
     forestCount: Object.values(forest.placements).reduce((n, l) => n + l.length, 0),
     /** Nearest untaken shell / berry bush / tree, for the tests to walk to. */
     nearest(kind) {
@@ -318,6 +469,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     teleport(x, z) { player.x = x; player.z = z; player.ground = map.groundAt(x, z); firstFrame = true; },
     act() { doAction(); },
     bite() { if (fishing && !fishing.biteUntil) fishing.until = 0; },
+    spawnGhost, spawnBear,
+    /** Put a ghost right next to the player (tests): it steals on the next step unless the spot is lit. */
+    ghostAt(x, z) { spawnGhost(); const gh = ghosts[ghosts.length - 1]; gh.g.x = x; gh.g.z = z; },
   };
 
   return { mount, resize, render, setState, reset, doAction, hook, camera, scene };

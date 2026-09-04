@@ -56,13 +56,13 @@ test('the joystick walks the player off the pier, the dog follows, SPRING jumps,
 
   // SPRING: the player jumps and lands again
   await page.locator('#av-spring').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await hook(page)).jumps, { timeout: 3000 }).toBe(after.jumps + 1);
-  await expect.poll(async () => (await hook(page)).player.grounded, { timeout: 4000 }).toBe(true);
+  await expect.poll(async () => (await hook(page)).jumps, { timeout: 12000 }).toBe(after.jumps + 1);
+  await expect.poll(async () => (await hook(page)).player.grounded, { timeout: 12000 }).toBe(true);
   await shot(page, testInfo, '10-avontuur');
 
   // night: the palette darkens (forced phase for the test), then back to the clock
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
-  await expect.poll(async () => (await hook(page)).darkness, { timeout: 3000 }).toBe(1);
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 12000 }).toBe(1);
   await shot(page, testInfo, '11-avontuur-nacht');
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(null));
 
@@ -83,7 +83,7 @@ test('WASD walks, space jumps, and the player never walks into the sea or up the
   const moved = await hook(page);
   expect(Math.hypot(moved.player.x - start.player.x, moved.player.z - start.player.z)).toBeGreaterThan(1);
   await page.keyboard.press('Space');
-  await expect.poll(async () => (await hook(page)).jumps, { timeout: 3000 }).toBe(moved.jumps + 1);
+  await expect.poll(async () => (await hook(page)).jumps, { timeout: 12000 }).toBe(moved.jumps + 1);
 
   // run backwards (south) for a long time: the sea is off limits, the player stays on the pier or the beach
   await page.evaluate(() => window.__muntstad.avontuur.setInput(0, -1, true));

@@ -116,16 +116,20 @@ export function createCamp(map) {
   obstacles.push({ x: CAVE.x - Math.sin(CAVE.heading) * 1.9 + Math.cos(CAVE.heading) * -1.9, z: CAVE.z - Math.cos(CAVE.heading) * 1.9 - Math.sin(CAVE.heading) * -1.9, r: 0.9 });
 
   const fireBase = y0;
+  let level = 1;   // 0 = out, 1 = a full fire (round 4: the fire wants wood)
   function update(now, darkness = 0, lite = false) {
     for (const fn of anim) fn(now);
+    const size = level <= 0 ? 0 : 0.35 + level * 0.65;
     flames.forEach((c, i) => {
-      const f = 1 + Math.sin(now / 90 + i * 2.1) * 0.12 + Math.sin(now / 37 + i) * 0.06;
-      c.scale.set(f, 1 + Math.sin(now / 70 + i) * 0.18, f);
-      c.position.y = fireBase + 0.6 + i * 0.1 + Math.sin(now / 120 + i) * 0.05;
+      const f = (1 + Math.sin(now / 90 + i * 2.1) * 0.12 + Math.sin(now / 37 + i) * 0.06) * size;
+      c.visible = size > 0;
+      c.scale.set(f, (1 + Math.sin(now / 70 + i) * 0.18) * size, f);
+      c.position.y = fireBase + 0.25 + (0.35 + i * 0.1) * size + Math.sin(now / 120 + i) * 0.05;
       c.rotation.y = now / 400 + i;
     });
     // the fire is the light of the night: warm, flickering, strong in the dark and a soft glow by day
-    fireLight.intensity = (lite ? 0.7 : 1) * (0.3 + darkness * 2.8) * (1 + Math.sin(now / 80) * 0.08 + Math.sin(now / 210) * 0.05) * 8;
+    fireLight.intensity = size * (lite ? 0.7 : 1) * (0.3 + darkness * 2.8) * (1 + Math.sin(now / 80) * 0.08 + Math.sin(now / 210) * 0.05) * 8;
+    fireLight.distance = 6 + size * 18;
   }
-  return { group, update, obstacles, fireLight, firePos: new T.Vector3(CAMP.x, y0, CAMP.z) };
+  return { group, update, obstacles, fireLight, firePos: new T.Vector3(CAMP.x, y0, CAMP.z), setFire(l) { level = Math.max(0, Math.min(1, l)); } };
 }

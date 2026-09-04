@@ -49,6 +49,7 @@ export const CONFIG = Object.freeze({
       { id: 'lantaarn', name: 'Lantaarn', icon: '🏮', price: 80,  tekst: 'Licht in het donker. Spoken blijven weg.' },
       { id: 'hek',      name: 'Hek',      icon: '🚧', price: 150, tekst: 'Een hek om het kamp. Spoken komen er niet door.' },
       { id: 'tent',     name: 'Tent',     icon: '⛺', price: 200, tekst: 'Slaap in de tent: de nacht gaat sneller.' },
+      { id: 'fakkels',  name: 'Fakkels',  icon: '🔥', price: 40,  tekst: 'Vier fakkels om het kamp. Meer licht, minder spoken.' },
     ],
     chop: { hands: { taps: 3, wood: 1 }, withAxe: { taps: 1, wood: 2 } },   // taps per chop, wood per chop
     treeWood: 6,                      // a tree gives this much wood, then rests
@@ -73,6 +74,33 @@ export const CONFIG = Object.freeze({
       { item: 'hout', n: 5, tekst: 'Hak vijf stukken hout voor mij.', klaar: 'Vijf stukken hout! Goed gehakt.' },
       { item: 'schelp', n: 4, tekst: 'Raap vier schelpen op het zand.', klaar: 'Vier schelpen! Ze zijn glad.' },
     ],
+  },
+
+  // The night on the island (PLAN-V4 R4). Balance: a night (3 min) burns ≈ 8 pieces of wood; by hand that is 24 taps,
+  // with the axe 4 taps. The reward for a night with the fire still burning grows with every night.
+  nacht: {
+    burnDay: 4,                       // fire units per minute by day (100 = a full fire)
+    burnNight: 30,                    // ... in the dark: a full fire lasts a whole night and a bit
+    woodValue: 12,                    // one piece of wood = 12 fire units
+    fireRadiusMin: 3,                 // light radius of a nearly-out fire
+    fireRadiusMax: 9,                 // ... of a full fire
+    lanternRadius: 5,                 // light around the player with the lantern
+    torchRadius: 4,                   // each of the four torches
+    fenceRadius: 9.5,                 // the fence keeps ghosts out of the camp
+    ghostsMax: 3,                     // at most this many ghosts at once
+    ghostEveryMs: 20 * 1000,          // a new ghost about every 20 s of darkness (while fewer than ghostsMax)
+    ghostSpeed: 1.6,                  // units per second
+    ghostReach: 1.3,                  // steals when this close
+    ghostPatience: 9,                 // seconds it hovers at the edge of the light before it gives up
+    ghostCoins: 3,                    // coins stolen when the bag is empty and the fire is out
+    bearEvery: 3,                     // the Nachtbeer comes every third night
+    bearSpeed: 0.9,
+    bearReach: 1.8,
+    bearScares: 3,                    // BOE this many times and it turns round
+    bearEats: 3,                      // pieces of wood (36 fire units) it takes from the fire
+    rewardBase: 20,                   // coins at dawn when the fire burned all night
+    rewardPerNight: 5,                // ... plus this per night survived before
+    sleepSkipsTo: 0.97,               // SLAAP in the tent moves the clock to just before dawn
   },
 
   // Parent gate

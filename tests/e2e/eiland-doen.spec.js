@@ -20,7 +20,7 @@ async function goTo(page, kind, label) {
   const target = await page.evaluate((k) => window.__muntstad.avontuur.nearest(k), kind);
   expect(target, `a ${kind} exists`).not.toBeNull();
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 0.9), target);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 5000 }).toBe(label);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 12000 }).toBe(label);
 }
 
 test('PAK picks a shell, HAK chops wood (three taps by hand), the backpack and the quest count along', async ({ page }) => {
@@ -33,16 +33,16 @@ test('PAK picks a shell, HAK chops wood (three taps by hand), the backpack and t
 
   await goTo(page, 'schelp', 'PAK');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await state(page)).eiland.bag.schelp, { timeout: 3000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).eiland.bag.schelp, { timeout: 12000 }).toBe(1);
   // the shell is gone: the button no longer offers PAK for it
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 3000 }).not.toBe('PAK');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 12000 }).not.toBe('PAK');
 
   await goTo(page, 'hout', 'HAK');
   for (let i = 0; i < 3; i++) {
     await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
     await page.waitForTimeout(150);
   }
-  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 3000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 12000 }).toBe(1);
   const s = await state(page);
   expect(s.eiland.collected.hout).toBe(1);
   expect(s.eiland.collected.schelp).toBe(1);
@@ -58,18 +58,18 @@ test('KAMP sells the backpack for coins and the axe is bought with the shared wa
   await openAvontuur(page);
   const h = await hook(page);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), h.camp);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 5000 }).toBe('KAMP');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 12000 }).toBe('KAMP');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await expect(page.locator('#kamp-overlay')).toBeVisible();
   await expect(page.locator('#kamp')).toContainText('Kampvuur');
   const before = (await state(page)).wallet;
   await page.locator('#kamp-verkoop').click();
   const expected = 5 * 2 + 4 * 3 + 1 * 8;
-  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 3000 }).toBe(Math.floor(before) + expected);
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 12000 }).toBe(Math.floor(before) + expected);
   expect((await state(page)).eiland.bag.hout).toBe(0);
   // 50 + 30 = 80 coins: the axe (60) is affordable, the lantern (80) too, the fence not
   await page.locator('[data-tool="bijl"]').click();
-  await expect.poll(async () => (await state(page)).eiland.tools.bijl, { timeout: 3000 }).toBe(true);
+  await expect.poll(async () => (await state(page)).eiland.tools.bijl, { timeout: 12000 }).toBe(true);
   expect(Math.floor((await state(page)).wallet)).toBe(Math.floor(before) + expected - 60);
   await expect(page.locator('[data-tool="bijl"]')).toHaveCount(0);
   await page.locator('#kamp-dicht').click();

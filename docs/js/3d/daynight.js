@@ -33,8 +33,9 @@ export function createDayNight(scene, lights, { fogNear = 42, fogFar = 95 } = {}
   scene.add(moon);
 
   const dir = new T.Vector3();
-  function update(now, focus) {
-    phase = override != null ? override : phaseAt(now);
+  function update(now, focus, offsetMs = 0) {
+    // the wall clock (not the frame timer) so every device agrees; SLAAP in the tent shifts it with offsetMs
+    phase = override != null ? override : phaseAt(Date.now(), offsetMs);
     const pal = paletteAt(phase);
     darkness = pal.darkness;
     scene.background.set(pal.sky);

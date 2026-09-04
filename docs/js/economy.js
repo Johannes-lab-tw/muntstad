@@ -2,6 +2,7 @@
 // Every function takes (state, config, ...) and returns a NEW state; nothing is mutated.
 // The game, the unit tests and the balance simulator all share this exact logic.
 import { createEiland } from './eiland.js';
+import { createNacht } from './nacht.js';
 
 export const THIN_SPACE = ' '; // narrow no-break space: thin, and '2 000' never breaks over two lines
 
@@ -36,6 +37,7 @@ export function createState(config, now) {
     flags: {},
     settings: { voice: true, sound: true, music: true },
     eiland: createEiland(config),
+    nacht: createNacht(),
   };
 }
 
