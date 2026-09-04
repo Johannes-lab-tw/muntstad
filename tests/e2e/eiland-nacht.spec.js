@@ -10,7 +10,7 @@ const hook = (page) => page.evaluate(() => {
 const mentorHas = (page, text) => page.evaluate((t) => window.__muntstad.mentorLog.some((l) => l.includes(t)), text);
 
 async function openAvontuur(page) {
-  await page.locator('#nav-avontuur').click();
+  await page.locator('#nav-avontuur').click({ force: true });   // force: the 3D screen behind it renders at ~1 fps on CI, so Playwright's "stable" check never settles
   await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
   await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
   await page.waitForTimeout(300);

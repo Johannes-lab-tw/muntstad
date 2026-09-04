@@ -11,7 +11,8 @@ const hook = (page) => page.evaluate(() => {
   return { player: h.player, remotes: h.remotes, darkness: h.darkness, forestCount: h.forestCount, camp: h.landmarks.CAMP, action: h.action, samen: { status: s.status, isHost: s.isHost, isGuest: s.isGuest, code: s.code, peers: s.peers.size, id: s.id } };
 });
 async function openAvontuur(page) {
-  await page.locator('#nav-avontuur').click();
+  await closePopups(page);   // a late "terwijl je weg was" or sticker popup would sit in front of the button
+  await page.locator('#nav-avontuur').click({ force: true });   // force: the 3D screen behind it renders at ~1 fps on CI, so Playwright's "stable" check never settles
   await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
   await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
 }

@@ -11,7 +11,7 @@ const hook = (page) => page.evaluate(() => {
 });
 
 async function openAvontuur(page) {
-  await page.locator('#nav-avontuur').click();
+  await page.locator('#nav-avontuur').click({ force: true });   // force: the 3D screen behind it renders at ~1 fps on CI, so Playwright's "stable" check never settles
   await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
   await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
   await page.waitForTimeout(400);
@@ -69,7 +69,7 @@ test('the joystick walks the player off the pier, the dog follows, SPRING jumps,
   await page.waitForTimeout(800);
   await closePopups(page);
 
-  await page.locator('#av-dorp').click();
+  await page.locator('#av-dorp').click({ force: true });
   await expect(page.locator('#screen-stad')).toHaveClass(/active/);
   expect(errors()).toEqual([]);
 });
