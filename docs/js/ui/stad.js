@@ -22,6 +22,7 @@ export function createStad(game) {
   // ---- PAPA: hold 3 s (long-press is reserved for the parent gate) ----
   let holdStart = 0;
   let holdRaf = 0;
+  let holdTimer = 0;   // a timer next to the rAF loop: on a slow (software-rendered) frame rate the 3 s must still count
   function holdFrame() {
     const p = Math.min(1, (performance.now() - holdStart) / game.config.papa.holdMs);
     papaRing.style.setProperty('--p', String(Math.round(p * 100)));
@@ -39,11 +40,15 @@ export function createStad(game) {
     holdStart = performance.now();
     cancelAnimationFrame(holdRaf);
     holdRaf = requestAnimationFrame(holdFrame);
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => { cancelAnimationFrame(holdRaf); holdFrame(); }, game.config.papa.holdMs + 40);
     try { papaBtn.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
   }
   function cancelHold() {
     cancelAnimationFrame(holdRaf);
     holdRaf = 0;
+    clearTimeout(holdTimer);
+    holdTimer = 0;
     papaRing.style.setProperty('--p', '0');
   }
   papaBtn.addEventListener('pointerdown', startHold);

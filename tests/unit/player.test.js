@@ -26,8 +26,9 @@ test('pushing the stick forward walks in the camera direction and turns the play
   assert.ok(Math.abs(p.heading) < 0.01, 'faces +z');
   const q = createPlayer(8, 6, 0);
   run(q, { x: 1, y: 0 }, 1, { yaw: 0, obstacles: [], island });
-  assert.ok(q.x > 8 + 2.0, 'stick right moves right of the camera');
-  assert.ok(Math.abs(q.heading - Math.PI / 2) < 0.02, 'faces +x');
+  // looking along +z in a right-handed y-up world, the right-hand side is -x
+  assert.ok(q.x < 8 - 2.0, 'stick right moves right of the camera (-x when looking along +z)');
+  assert.ok(Math.abs(q.heading + Math.PI / 2) < 0.02, 'faces -x');
 });
 
 test('a full stick runs, a half stick walks, no stick stops', () => {

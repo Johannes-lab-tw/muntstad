@@ -10,7 +10,8 @@ test('every screen loads without console errors, with a screenshot of each', asy
 
   await page.locator('#btn-start').click();
   await expect(page.locator('#screen-stad')).toHaveClass(/active/);
-  await expect(page.locator('#bubble-text')).toContainText('Muntje');
+  // the welcome line ('Ik ben Muntje') may already be replaced by the WERK tip on a slow runner: check the log
+  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((t) => t.includes('Muntje'))), { timeout: 15000 }).toBe(true);
   await shot(page, testInfo, '13-muntje-praat', { keepBubble: true });
   await page.waitForTimeout(500);
   await shot(page, testInfo, '02-stad');
@@ -55,9 +56,9 @@ test('the gate screen and popups render without errors', async ({ page }, testIn
   const box = await btn.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.waitForTimeout(3400);
+  await page.waitForTimeout(3100);
+  await expect(page.locator('#screen-gate')).toHaveClass(/active/, { timeout: 20000 });
   await page.mouse.up();
-  await expect(page.locator('#screen-gate')).toHaveClass(/active/);
   await shot(page, testInfo, '07-gate');
   // a wrong answer stays on the gate with a new sum
   const sumBefore = await page.locator('#gate-sum').textContent();

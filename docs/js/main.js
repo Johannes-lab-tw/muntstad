@@ -354,7 +354,7 @@ function boot() {
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch((e) => console.info('[muntstad] service worker not registered:', e.message));
   }
-  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 4, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook };
+  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 4, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook, get mentorLog() { return game.mentor.log; } };
 }
 
 boot();

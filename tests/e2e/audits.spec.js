@@ -155,9 +155,9 @@ test('gate screen audit', async ({ page }) => {
   const box = await btn.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.waitForTimeout(3400);
+  await page.waitForTimeout(3100);
+  await expect(page.locator('#screen-gate')).toHaveClass(/active/, { timeout: 20000 });
   await page.mouse.up();
-  await expect(page.locator('#screen-gate')).toHaveClass(/active/);
   await page.waitForTimeout(400);
   check(await audit(page, 'gate'));
 });

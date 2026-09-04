@@ -110,9 +110,10 @@ export async function openPapa(page) {
   const box = await btn.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.waitForTimeout(3400);
+  await page.waitForTimeout(3100);
+  // keep holding until the gate really opened: a slow CI runner may need a few more frames
+  await expect(page.locator('#screen-gate')).toHaveClass(/active/, { timeout: 20000 });
   await page.mouse.up();
-  await expect(page.locator('#screen-gate')).toHaveClass(/active/);
   const sum = await page.locator('#gate-sum').textContent();
   const [a, b] = sum.split('+').map((s) => Number(s.trim()));
   const answer = String(a + b);

@@ -106,8 +106,9 @@ export function stepPlayer(p, input, dt, env) {
   const wantRun = !dead && (input.run || mag >= P.runAt);
   const target = dead ? 0 : (wantRun ? P.run : P.walk) * Math.min(1, mag / P.runAt);
   // move direction in the world: forward = the camera's looking direction on the ground
+  // Three.js is right-handed with y up: looking along forward (fx, fz), the right-hand side is (-fz, fx)
   const fx = Math.sin(env.yaw), fz = Math.cos(env.yaw);
-  const rx = Math.cos(env.yaw), rz = -Math.sin(env.yaw);
+  const rx = -fz, rz = fx;
   let dx = 0, dz = 0;
   if (!dead) {
     dx = rx * ix + fx * iy;
@@ -142,8 +143,8 @@ export function stepFollower(f, player, dt, env = {}) {
   const F = FOLLOWER;
   // the spot the dog aims for: behind and to the right of the player, so it never sits between camera and player
   const sh = Math.sin(player.heading), ch = Math.cos(player.heading);
-  const bx = player.x - sh * F.keep + ch * F.side;
-  const bz = player.z - ch * F.keep - sh * F.side;
+  const bx = player.x - sh * F.keep - ch * F.side;
+  const bz = player.z - ch * F.keep + sh * F.side;
   const dx = bx - f.x, dz = bz - f.z;
   const d = Math.hypot(dx, dz);
   const far = Math.hypot(player.x - f.x, player.z - f.z);

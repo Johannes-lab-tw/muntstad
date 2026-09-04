@@ -14,6 +14,7 @@ export function createMentor(game) {
   let hideTimer = null;
   let talkTimer = null;
   let lastText = '';
+  const log = [];   // the last lines Muntje said (tests read them; a tip may replace the welcome line on a slow device)
   let shownAt = 0;
 
   function talk(ms) {
@@ -25,6 +26,8 @@ export function createMentor(game) {
   function show(text) {
     shownAt = game.now();
     lastText = text;
+    log.push(text);
+    if (log.length > 20) log.shift();
     textEl.textContent = text;
     bubble.classList.remove('hidden');
     // restart the pop animation
@@ -88,5 +91,6 @@ export function createMentor(game) {
     hide,
     setVisible(v) { root.hidden = !v; if (!v) hide(); },
     get lastText() { return lastText; },
+    get log() { return log; },
   };
 }
