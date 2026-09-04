@@ -9,7 +9,17 @@ export const CAMP = Object.freeze({ x: 48, z: 52, r: 8 });     // the campfire, 
 export const PIER = Object.freeze({ x: 48, z: 86, len: 8, w: 2.4, deck: 0.55 });   // south beach, planks over the water, boat to the village
 export const LAKE = Object.freeze({ x: 68, z: 34, r: 8.5, level: 0.7 });
 export const HILL = Object.freeze({ x: 30, z: 26, r: 22, top: 13 });
-export const CAVE = Object.freeze({ x: 39.5, z: 37.5, heading: 2.4 });   // mouth on the hill's south-east flank
+// the cave: its mouth on the hill's south-east flank, a flat tunnel `depth` metres into the hill (towards HILL),
+// a chest at the end. heading = the direction the mouth faces (local +z of the model); the tunnel runs the other way.
+export const CAVE = Object.freeze({ x: 39.5, z: 37.5, heading: Math.atan2(39.5 - 30, 37.5 - 26), depth: 5.5, halfWidth: 1.6, floor: 2.2, chestAt: 4.3 });
+/** A point `t` metres into the tunnel from the mouth. */
+export function caveInner(t) {
+  return { x: CAVE.x - Math.sin(CAVE.heading) * t, z: CAVE.z - Math.cos(CAVE.heading) * t };
+}
+export function inCave(x, z, margin = 0) {
+  const end = caveInner(CAVE.depth);
+  return distToPath(x, z, [[CAVE.x + Math.sin(CAVE.heading) * 0.5, CAVE.z + Math.cos(CAVE.heading) * 0.5], [end.x, end.z]]) < CAVE.halfWidth + margin;
+}
 export const PATHS = Object.freeze([
   [[48, 79], [48, 72], [48, 58]],              // pier (land end) → camp
   [[52, 48], [57, 44], [61, 41]],              // camp → lake shore
@@ -75,9 +85,12 @@ export function baseHeight(x, z) {
   // the camp is flat
   const dc = Math.hypot(x - CAMP.x, z - CAMP.z) / CAMP.r;
   h = h * smoothstep(0.55, 1.1, dc) + 1.3 * (1 - smoothstep(0.55, 1.1, dc));
-  // the cave mouth: a flat shelf cut into the hill
+  // the cave: a flat shelf at the mouth and a flat tunnel floor cut into the hill
   const dv = Math.hypot(x - CAVE.x, z - CAVE.z);
-  h = h * smoothstep(1.6, 3.6, dv) + 2.2 * (1 - smoothstep(1.6, 3.6, dv));
+  h = h * smoothstep(1.6, 3.6, dv) + CAVE.floor * (1 - smoothstep(1.6, 3.6, dv));
+  const end = caveInner(CAVE.depth);
+  const dtun = distToPath(x, z, [[CAVE.x, CAVE.z], [end.x, end.z]]);
+  if (dtun < CAVE.halfWidth + 1.2) h = h * smoothstep(CAVE.halfWidth, CAVE.halfWidth + 1.2, dtun) + CAVE.floor * (1 - smoothstep(CAVE.halfWidth, CAVE.halfWidth + 1.2, dtun));
   // paths are gently levelled (keeps them walkable)
   const dp = distToPaths(x, z);
   if (dp < 2.4) {
@@ -114,6 +127,7 @@ export function createHeightmap() {
   function kindAt(x, z) {
     const y = heightAt(x, z);
     if (y < 0.05) return 'sea';
+    if (inCave(x, z)) return 'cave';
     if (Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r * 0.95 && y < LAKE.level) return 'lake';
     if (y > HILL.top * 0.82) return 'snow';
     if (slopeAt(x, z) > 0.9 || y > HILL.top * 0.55) return 'rock';
@@ -130,5 +144,5 @@ export function createHeightmap() {
     const k = kindAt(x, z);
     return k !== 'sea' && k !== 'lake' && k !== 'snow';
   };
-  return { size, n, cell, h: s, heightAt, groundAt, slopeAt, kindAt, walkable, onPier, CAMP, PIER, LAKE, HILL, CAVE, PATHS };
+  return { size, n, cell, h: s, heightAt, groundAt, slopeAt, kindAt, walkable, onPier, inCave, CAMP, PIER, LAKE, HILL, CAVE, PATHS };
 }

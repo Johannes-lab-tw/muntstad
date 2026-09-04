@@ -2,7 +2,7 @@
 // sand paths; the forest never grows on paths, in the camp or in the water; the day cycle is 6 min day + 3 min night.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHeightmap, CAMP, PIER, LAKE, HILL, CAVE, PATHS, MAP } from '../../docs/js/3d/heightmap.js';
+import { createHeightmap, CAMP, PIER, LAKE, HILL, CAVE, PATHS, MAP, caveInner } from '../../docs/js/3d/heightmap.js';
 import { placeForest, KINDS } from '../../docs/js/3d/forest-place.js';
 import { phaseAt, paletteAt, darknessAt, DAY_END, CYCLE } from '../../docs/js/3d/daycycle.js';
 import { createPlayer, stepPlayer, createGrid, MAX_RISE } from '../../docs/js/3d/player.js';
@@ -28,13 +28,28 @@ test('the island is surrounded by sea and its landmarks are where the plan puts 
 test('paths are walkable sand from the pier to the camp, the lake and the cave', () => {
   for (const path of PATHS) for (const [x, z] of path) {
     assert.ok(map.walkable(x, z), `walkable at ${x},${z}`);
-    assert.ok(['path', 'beach', 'grass'].includes(map.kindAt(x, z)), `${map.kindAt(x, z)} at ${x},${z}`);
+    assert.ok(['path', 'beach', 'grass', 'cave'].includes(map.kindAt(x, z)), `${map.kindAt(x, z)} at ${x},${z}`);   // the cave path ends in the mouth
   }
   // walking the pier path: every half metre the ground rises less than a step
   const [[x0, z0], , [x1, z1]] = PATHS[0];
   let prev = map.groundAt(x0, z0);
   for (let z = z0; z >= z1; z -= 0.5) { const g = map.groundAt(x0, z); assert.ok(g - prev < MAX_RISE, `rise ${g - prev} at z ${z}`); prev = g; }
   assert.equal(x0, x1);
+});
+
+test('the cave is a flat tunnel into the hill: walkable inside, rock beside it, the chest at the end', () => {
+  for (const t of [0, 1, 2, 3, 4, CAVE.chestAt, CAVE.depth]) {
+    const p = caveInner(t);
+    assert.equal(map.kindAt(p.x, p.z), 'cave', `cave at ${t} m`);
+    assert.ok(map.walkable(p.x, p.z));
+    assert.ok(Math.abs(map.heightAt(p.x, p.z) - CAVE.floor) < 0.05, `flat floor at ${t} m: ${map.heightAt(p.x, p.z)}`);
+  }
+  const mid = caveInner(3);
+  const side = { x: mid.x + Math.cos(CAVE.heading) * 3, z: mid.z - Math.sin(CAVE.heading) * 3 };
+  assert.ok(map.heightAt(side.x, side.z) > CAVE.floor + 2, 'the hill rises beside the tunnel');
+  // the tunnel points at the hill top, so the mouth faces away from it
+  const inner = caveInner(5), hill = Math.hypot(inner.x - HILL.x, inner.z - HILL.z), mouth = Math.hypot(CAVE.x - HILL.x, CAVE.z - HILL.z);
+  assert.ok(hill < mouth);
 });
 
 test('heightAt is continuous (bilinear) and deterministic', () => {

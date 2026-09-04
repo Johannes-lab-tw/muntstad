@@ -50,6 +50,37 @@ test('PAK picks a shell, HAK chops wood (three taps by hand), the backpack and t
   expect(errors()).toEqual([]);
 });
 
+test('the chest in the cave: OPEN pays 30 coins once, then the chest is LEEG; a wall stops you at the side', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; return s; });
+  await startGame(page, { url: '/?lowres=1' });
+  await closePopups(page);
+  await openAvontuur(page);
+  const lm = await page.evaluate(() => { const l = window.__muntstad.avontuur.landmarks; return { chest: l.CHEST, cave: l.CAVE }; });
+  // in through the mouth: stand at the mouth, then a step in front of the chest
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z), lm.cave);
+  await page.waitForTimeout(300);
+  expect((await hook(page)).player.ground).toBeCloseTo(lm.cave.floor, 0);
+  const h = lm.cave.heading;
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z), { x: lm.chest.x + Math.sin(h) * 1.3, z: lm.chest.z + Math.cos(h) * 1.3 });
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('OPEN');
+  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 20000 }).toBe(40);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('LEEG');
+  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await page.waitForTimeout(500);
+  expect(Math.floor((await state(page)).wallet)).toBe(40);
+  // the wall of the tunnel: standing beside the chest, pushing towards it, you never reach it
+  const side = { x: lm.chest.x + Math.cos(h) * 2.6, z: lm.chest.z - Math.sin(h) * 2.6 };
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z), side);
+  await page.evaluate(() => window.__muntstad.avontuur.setInput(0, 1, true));
+  await page.waitForTimeout(2500);
+  await page.evaluate(() => window.__muntstad.avontuur.setInput(null));
+  const p = (await hook(page)).player;
+  expect(Math.hypot(p.x - lm.chest.x, p.z - lm.chest.z), 'the wall keeps you out').toBeGreaterThan(1.4);
+  expect(errors()).toEqual([]);
+});
+
 test('KAMP sells the backpack for coins and the axe is bought with the shared wallet', async ({ page }) => {
   const errors = watchErrors(page);
   // a full fire, otherwise the button offers STOOK first (the wood in the bag wants to go into the fire)

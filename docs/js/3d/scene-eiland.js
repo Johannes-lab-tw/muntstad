@@ -10,7 +10,7 @@ import { avatarModel, lookKey } from './avatar.js';
 import { petModel } from './pets.js';
 import { createPlayer, createFollower, stepPlayer, stepFollower, turnTowards, createGrid } from './player.js';
 import { addLights } from './engine.js';
-import { createHeightmap, PIER, CAMP, LAKE } from './heightmap.js';
+import { createHeightmap, PIER, CAMP, LAKE, CAVE } from './heightmap.js';
 import { createTerrain } from './terrain.js';
 import { placeForest, buildForest } from './forest.js';
 import { createCamp } from './camp.js';
@@ -399,6 +399,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (fishing) return { type: fishing.biteUntil ? 'trek' : 'vis', label: fishing.biteUntil ? 'TREK' : 'WACHT', target: null };
     if (bearNear()) return { type: 'boe', label: 'BOE', target: null };
     if (gear.tent && daynight.darkness > 0.5 && Math.hypot(px - TENT_AT.x, pz - TENT_AT.z) < REACH.tent) return { type: 'slaap', label: 'SLAAP', target: null };
+    if (Math.hypot(px - camp.chest.pos.x, pz - camp.chest.pos.z) < 1.9) return { type: 'kist', label: camp.chest.isOpen ? 'LEEG' : 'OPEN', target: null };
     if (Math.hypot(px - CAMP.x, pz - CAMP.z) < REACH.camp) {
       if ((state.eiland.bag.hout || 0) > 0 && state.nacht.fire < 100 - N.woodValue) return { type: 'stook', label: 'STOOK', target: null };
       return { type: 'kamp', label: 'KAMP', target: null };
@@ -437,6 +438,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (!action) return;
     switch (action.type) {
       case 'kamp': cb.onKamp && cb.onKamp(); return;
+      case 'kist': cb.onChest && cb.onChest(); return;
       case 'stook': cb.onStoke && cb.onStoke(); return;
       case 'slaap':
         if (samen && samen.isGuest) { samen.send('sleep', {}); cb.onSay && cb.onSay('lines.sleep'); }
@@ -516,8 +518,19 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const cp = Math.cos(pitch), sp = Math.sin(pitch);
     const py = player.ground + player.y * 0.5;
     camPos.set(player.x - Math.sin(yaw) * CAM.dist * cp, py + CAM.dist * sp + 0.4, player.z - Math.cos(yaw) * CAM.dist * cp);
-    const floor = groundOf(camPos.x, camPos.z) + 0.8;
-    if (camPos.y < floor) camPos.y = floor;
+    if (map.inCave(player.x, player.z, 0.4)) {
+      // inside the tunnel the camera stays close and inside the walls, under the roof
+      const d = 2.6;
+      camPos.set(player.x - Math.sin(yaw) * d, player.ground + 1.7, player.z - Math.cos(yaw) * d);
+      const ax = -Math.sin(CAVE.heading), az = -Math.cos(CAVE.heading), rx = Math.cos(CAVE.heading), rz = -Math.sin(CAVE.heading);
+      const relx = camPos.x - CAVE.x, relz = camPos.z - CAVE.z;
+      const along = Math.max(-4, Math.min(CAVE.depth - 0.4, relx * ax + relz * az));
+      const lat = Math.max(-(CAVE.halfWidth - 0.4), Math.min(CAVE.halfWidth - 0.4, relx * rx + relz * rz));
+      camPos.set(CAVE.x + ax * along + rx * lat, camPos.y, CAVE.z + az * along + rz * lat);
+    } else {
+      const floor = groundOf(camPos.x, camPos.z) + 0.8;
+      if (camPos.y < floor) camPos.y = floor;
+    }
     camLook.set(player.x, py + CAM.lookUp, player.z);
     if (firstFrame) { camera.position.copy(camPos); firstFrame = false; }
     else camera.position.lerp(camPos, 1 - Math.exp(-9 * dt));
@@ -619,7 +632,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, tag: r.key })); },
     onLand(x, z) { return map.walkable(x, z); },
     kindAt(x, z) { return map.kindAt(x, z); },
-    landmarks: { CAMP, PIER, LAKE, TENT: TENT_AT },
+    landmarks: { CAMP, PIER, LAKE, TENT: TENT_AT, CHEST: camp.chest.pos, CAVE },
+    setChestOpen(open) { camp.chest.setOpen(open); },
     forestCount: Object.values(forest.placements).reduce((n, l) => n + l.length, 0),
     /** Nearest untaken shell / berry bush / tree, for the tests to walk to. */
     nearest(kind) {
@@ -640,5 +654,5 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     ghostAt(x, z) { spawnGhost(); const gh = ghosts[ghosts.length - 1]; gh.g.x = x; gh.g.z = z; },
   };
 
-  return { mount, resize, render, setState, reset, doAction, emote, hook, camera, scene };
+  return { mount, resize, render, setState, reset, doAction, emote, hook, camera, scene, setChestOpen: (o) => camp.chest.setOpen(o) };
 }

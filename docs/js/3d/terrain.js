@@ -27,6 +27,7 @@ export function createTerrain(map) {
     const v = fbm(x / 6, z / 6, 31);          // colour variation
     if (kind === 'sea') tmp.set(col(COL.seabed)).lerp(col(COL.beach), Math.min(1, Math.max(0, (y + 0.9) / 0.9)));
     else if (kind === 'lake') tmp.set(col(COL.lakeBed));
+    else if (kind === 'cave') tmp.set(col('#3a3d47'));
     else if (kind === 'beach') tmp.set(col(COL.beach)).lerp(col(COL.grass), Math.max(0, (y - 0.3) / 0.15) * 0.5);
     else if (kind === 'path') tmp.set(col(COL.path));
     else if (kind === 'snow') tmp.set(col(COL.snow));

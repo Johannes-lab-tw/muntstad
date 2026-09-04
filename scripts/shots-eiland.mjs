@@ -16,5 +16,7 @@ await tp(60, 42); await p.waitForTimeout(900); await shot('13-meer');
 await tp(48, 58); await p.waitForTimeout(900); await shot('14-kamp');
 await p.evaluate(() => window.__muntstad.avontuur.setPhase(0.85)); await p.waitForTimeout(1200); await shot('15-kamp-nacht');
 await tp(30, 50); await p.evaluate(() => window.__muntstad.avontuur.setPhase(0.5)); await p.waitForTimeout(900); await shot('16-bos');
+const cave = await p.evaluate(() => window.__muntstad.avontuur.landmarks.CAVE); await tp(cave.x + Math.sin(cave.heading) * 5, cave.z + Math.cos(cave.heading) * 5); await p.waitForTimeout(900); await shot('17-grot-buiten');
+const chest = await p.evaluate(() => window.__muntstad.avontuur.landmarks.CHEST); await tp(chest.x + Math.sin(cave.heading) * 1.6, chest.z + Math.cos(cave.heading) * 1.6); await p.waitForTimeout(900); await shot('18-grot-binnen');
 console.log(errs.length ? 'ERRORS ' + errs.join(' | ') : 'no page errors');
 await b.close();

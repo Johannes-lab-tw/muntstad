@@ -7,7 +7,7 @@ import { createControls } from '../3d/controls.js';
 import { createEilandScene } from '../3d/scene-eiland.js';
 import { createKamp } from './kamp.js';
 import { setFlag, formatCoins } from '../economy.js';
-import { collect, completeQuest, currentQuest, bagCount } from '../eiland.js';
+import { collect, completeQuest, currentQuest, bagCount, openChest, chestOpenedToday, todayKey } from '../eiland.js';
 import { burnFire, stokeFire, ghostSteal, dawnReward } from '../nacht.js';
 import { CYCLE } from '../3d/daycycle.js';
 
@@ -167,6 +167,18 @@ export function createAvontuur(game) {
     game.audio.play('unlock');
     game.mentor.say('lines.sleep', {}, { kind: 'reaction' });
   }
+  function onChest() {
+    const r = openChest(game.state, game.config, todayKey(game.now()));
+    if (!r.ok) { game.mentor.say('lines.chestEmpty', {}, { kind: 'reaction' }); return; }
+    game.update(() => r.state);
+    game.save();
+    scene3.setChestOpen(true);
+    game.audio.play('fanfare');
+    game.mentor.say('lines.chestOpen', { n: formatCoins(r.coins) }, { kind: 'reaction' });
+    const p = game.walletPoint();
+    game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(r.coins)}`, '#2a9d3a');
+    game.bumpWallet();
+  }
   function onBearAte() {
     game.update((s) => ({ ...s, nacht: { ...s.nacht, fire: Math.max(0, s.nacht.fire - game.config.nacht.bearEats * game.config.nacht.woodValue) } }));
     game.audio.play('thud');
@@ -196,7 +208,7 @@ export function createAvontuur(game) {
       onKamp() { controls.setEnabled(false); kamp.show(); },
       onAction,
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
-      onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte, onFireSync, onRemoteStoke,
+      onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte, onFireSync, onRemoteStoke, onChest,
     });
     Object.setPrototypeOf(hook, scene3.hook);   // the tests read positions and set inputs through window.__muntstad.avontuur
   }
@@ -207,6 +219,7 @@ export function createAvontuur(game) {
       visible = true;
       scene3.setState(game.state);
       scene3.reset();
+      scene3.setChestOpen(chestOpenedToday(game.state.eiland, todayKey(game.now())));
       scene3.mount(host);
       controls.setEnabled(true);
       hudKey = '';

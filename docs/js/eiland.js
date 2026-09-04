@@ -5,7 +5,7 @@
 export function createEiland(config) {
   const bag = {};
   for (const id of Object.keys(config.eiland.items)) bag[id] = 0;
-  return { bag, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: { ...bag }, sold: 0, earned: 0 };
+  return { bag, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: { ...bag }, sold: 0, earned: 0, chestDay: '' };
 }
 
 export function bagCount(e) {
@@ -91,6 +91,21 @@ export function currentQuest(e, config) {
   return q ? { ...q, index: e.quest, have: e.questN } : null;
 }
 
+/** The chest in the cave fills once a day (local calendar day, e.g. '2026-09-05'). Returns { ok, state, coins }. */
+export function chestOpenedToday(e, today) {
+  return e.chestDay === today;
+}
+export function openChest(state, config, today) {
+  const e = state.eiland;
+  if (chestOpenedToday(e, today)) return { ok: false, state, coins: 0 };
+  const coins = config.eiland.chest.coins;
+  return { ok: true, coins, state: { ...state, wallet: state.wallet + coins, earnedWork: state.earnedWork + coins, eiland: { ...e, chestDay: today, earned: e.earned + coins } } };
+}
+export function todayKey(now = Date.now()) {
+  const d = new Date(now);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /** Keep a loaded/decoded slice sane. */
 export function normalizeEiland(data, config) {
   const fresh = createEiland(config);
@@ -107,5 +122,6 @@ export function normalizeEiland(data, config) {
   if (data.collected && typeof data.collected === 'object') for (const id of Object.keys(collected)) collected[id] = num(data.collected[id]);
   const quest = num(data.quest) % Math.max(1, config.eiland.quests.length);
   const q = config.eiland.quests[quest];
-  return { bag, tools, quest, questN: Math.min(q ? q.n : 0, num(data.questN)), questsDone: num(data.questsDone), collected, sold: num(data.sold), earned: num(data.earned) };
+  const chestDay = typeof data.chestDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data.chestDay) ? data.chestDay : '';
+  return { bag, tools, quest, questN: Math.min(q ? q.n : 0, num(data.questN)), questsDone: num(data.questsDone), collected, sold: num(data.sold), earned: num(data.earned), chestDay };
 }

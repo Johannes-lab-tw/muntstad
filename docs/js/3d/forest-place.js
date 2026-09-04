@@ -1,7 +1,7 @@
 // 3d/forest-place.js — where the forest grows, as pure numbers (no Three.js; unit-tested): a jittered grid over
 // the island, trees in the noise clumps on the grass, bushes, rocks, grass tufts and flowers elsewhere; nothing on
 // paths, in the camp, at the cave or on the pier. placeForest(map, seed) → { tree1: [{ x, z, y, s, rot }], ... }
-import { fbm, distToPaths, CAMP, CAVE, PIER, LAKE } from './heightmap.js';
+import { fbm, distToPaths, CAMP, CAVE, PIER, LAKE, inCave } from './heightmap.js';
 
 export const KINDS = ['tree1', 'tree2', 'tree3', 'log', 'bush1', 'bush2', 'rock1', 'rock2', 'rock3', 'grass', 'flower', 'shell', 'reed', 'crab', 'butterfly'];
 
@@ -17,7 +17,7 @@ export function placeForest(map, seed = 7) {
   const free = (x, z, margin) => {
     if (distToPaths(x, z) < margin) return false;
     if (Math.hypot(x - CAMP.x, z - CAMP.z) < CAMP.r + margin) return false;
-    if (Math.hypot(x - CAVE.x, z - CAVE.z) < 3.5 + margin) return false;
+    if (Math.hypot(x - CAVE.x, z - CAVE.z) < 3.5 + margin || inCave(x, z, 3 + margin)) return false;
     if (Math.abs(x - PIER.x) < 3 + margin && z > PIER.z - PIER.len - 3) return false;
     return true;
   };
@@ -43,7 +43,7 @@ export function placeForest(map, seed = 7) {
       else if (r < 0.50) out.grass.push({ x: px, z: pz, y, s, rot });
       else if (r < 0.60) { out.flower.push({ x: px, z: pz, y, s, rot }); if (r < 0.515) out.butterfly.push({ x: px, z: pz, y: y + 0.6, s, rot }); }
     } else if (kind === 'rock' || kind === 'snow') {
-      if (r < 0.22) out[r < 0.1 ? 'rock2' : 'rock3'].push({ x: px, z: pz, y, s: s * (0.8 + rand() * 0.8), rot });
+      if (r < 0.22 && free(px, pz, 0)) out[r < 0.1 ? 'rock2' : 'rock3'].push({ x: px, z: pz, y, s: s * (0.8 + rand() * 0.8), rot });
     } else if (kind === 'beach') {
       if (nearLake > -0.5 && nearLake < 1.8 && r < 0.5) out.reed.push({ x: px, z: pz, y, s, rot });
       else if (r < 0.05 && free(px, pz, 1.0)) out.rock1.push({ x: px, z: pz, y, s: s * 0.6, rot });

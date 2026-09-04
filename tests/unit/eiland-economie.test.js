@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { CONFIG } from '../../docs/js/config.js';
 import { createState } from '../../docs/js/economy.js';
 import { encodeCode, decodeCode, normalize } from '../../docs/js/save.js';
-import { createEiland, collect, bagCount, bagValue, sellAll, buyTool, chopRule, completeQuest, currentQuest, normalizeEiland } from '../../docs/js/eiland.js';
+import { createEiland, collect, bagCount, bagValue, sellAll, buyTool, chopRule, completeQuest, currentQuest, normalizeEiland, openChest, chestOpenedToday, todayKey } from '../../docs/js/eiland.js';
 
 test('a fresh state has an empty backpack, no tools and the first quest', () => {
   const s = createState(CONFIG, 0);
@@ -84,6 +84,23 @@ test('a quest counts its item, pays a bonus when done and moves on to the next',
   // a different item does not count
   const other = Object.keys(CONFIG.eiland.items).find((id) => id !== CONFIG.eiland.quests[1].item);
   assert.equal(collect(done.state.eiland, CONFIG, other, 3).eiland.questN, 0);
+});
+
+test('the chest in the cave pays once a day', () => {
+  const s = { ...createState(CONFIG, 0), wallet: 5 };
+  const a = openChest(s, CONFIG, '2026-09-05');
+  assert.ok(a.ok);
+  assert.equal(a.coins, CONFIG.eiland.chest.coins);
+  assert.equal(a.state.wallet, 5 + CONFIG.eiland.chest.coins);
+  assert.equal(a.state.eiland.chestDay, '2026-09-05');
+  assert.ok(chestOpenedToday(a.state.eiland, '2026-09-05'));
+  const b = openChest(a.state, CONFIG, '2026-09-05');
+  assert.equal(b.ok, false);
+  assert.equal(b.state.wallet, a.state.wallet);
+  assert.ok(openChest(a.state, CONFIG, '2026-09-06').ok, 'the next day it is full again');
+  assert.match(todayKey(Date.UTC(2026, 8, 5, 12)), /^2026-09-0[56]$/);
+  assert.equal(normalizeEiland({ chestDay: 'gisteren' }, CONFIG).chestDay, '');
+  assert.equal(normalizeEiland({ chestDay: '2026-09-05' }, CONFIG).chestDay, '2026-09-05');
 });
 
 test('the Bewaar-code and normalize carry the island along and clamp nonsense', () => {

@@ -58,6 +58,7 @@ export const CONFIG = Object.freeze({
     bushRestMs: 60 * 1000,
     fish: { waitMinMs: 2000, waitMaxMs: 4500, biteMs: 1600 },   // wait for a bite, then tap in time
     questBonus: 2,                    // quest reward = n × item price × bonus
+    chest: { coins: 30 },             // the chest in the cave: this many coins, once a day
     quests: [
       { item: 'hout', n: 4, tekst: 'Hak vier stukken hout bij de bomen.', klaar: 'Vier stukken hout! Goed gedaan.' },
       { item: 'schelp', n: 3, tekst: 'Raap drie schelpen op het strand.', klaar: 'Drie schelpen! Ze glimmen mooi.' },
