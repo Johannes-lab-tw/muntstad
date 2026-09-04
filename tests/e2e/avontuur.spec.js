@@ -14,6 +14,7 @@ async function openAvontuur(page) {
   await page.locator('#nav-avontuur').click({ force: true });   // force: the 3D screen behind it renders at ~1 fps on CI, so Playwright's "stable" check never settles
   await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
   await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
+  await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));   // daytime, whatever the wall clock says (a night would burn the fire, pay at dawn and pop a sticker)
   await page.waitForTimeout(400);
 }
 
@@ -34,7 +35,7 @@ async function thumb(page, dx, dy, holdMs) {
 test('the joystick walks the player off the pier, the dog follows, SPRING jumps, night falls, DORP returns', async ({ page }, testInfo) => {
   const errors = watchErrors(page);
   await seedSave(page, (s) => { s.wallet = 130; s.earnedWork = 130; s.makers.limonade = 1; s.fun = { hond: true }; s.milestones = ['eerste-geldmaker']; return s; });
-  await startGame(page, { url: '/?lowres=1' });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
   await closePopups(page);
   await expect(page.locator('#nav-avontuur')).toBeVisible();
   await openAvontuur(page);
@@ -76,7 +77,7 @@ test('the joystick walks the player off the pier, the dog follows, SPRING jumps,
 
 test('WASD walks, space jumps, and the player never walks into the sea or up the snow', async ({ page }) => {
   const errors = watchErrors(page);
-  await startGame(page, { url: '/?lowres=1' });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
   await closePopups(page);
   await openAvontuur(page);
   const start = await hook(page);

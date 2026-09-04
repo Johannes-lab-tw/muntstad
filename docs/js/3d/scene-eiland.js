@@ -209,7 +209,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   }
   // the host's world, as seen by a guest
   let remoteWorld = null;
-  let phaseOverride = null;
+  // ?phase=0.3 (tests, screenshots): a fixed time of day from the very first frame, so no wall-clock night sneaks in
+  const phaseParam = Number(new URLSearchParams(location.search).get('phase'));
+  let phaseOverride = Number.isFinite(phaseParam) && location.search.includes('phase=') ? Math.max(0, Math.min(0.9999, phaseParam)) : null;
+  if (phaseOverride != null) daynight.setOverride(phaseOverride);
   const remoteGhosts = [];
   let remoteBear = null;
   function applyWorld(d) {

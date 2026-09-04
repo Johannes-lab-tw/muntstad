@@ -20,7 +20,7 @@ const island = (extra = {}) => ({ bag: { hout: 3, schelp: 0, bes: 0, vis: 0 }, t
 test('night falls: Muntje warns, STOOK feeds the fire with the wood in the bag, a ghost steals in the dark, dawn pays', async ({ page }) => {
   const errors = watchErrors(page);
   await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island(); s.nacht = { fire: 60, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
-  await startGame(page, { url: '/?lowres=1' });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
   await closePopups(page);
   await openAvontuur(page);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
@@ -58,7 +58,7 @@ test('night falls: Muntje warns, STOOK feeds the fire with the wood in the bag, 
 test('with the lantern a ghost next to you cannot steal; the tent lets you sleep to the morning', async ({ page }) => {
   const errors = watchErrors(page);
   await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ tools: { lantaarn: true, tent: true } }); s.nacht = { fire: 60, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
-  await startGame(page, { url: '/?lowres=1' });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
   await closePopups(page);
   await openAvontuur(page);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));

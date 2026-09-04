@@ -12,6 +12,7 @@ async function openAvontuur(page) {
   await page.locator('#nav-avontuur').click({ force: true });   // force: the 3D screen behind it renders at ~1 fps on CI, so Playwright's "stable" check never settles
   await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
   await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
+  await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));   // daytime, whatever the wall clock says (a night would burn the fire, pay at dawn and pop a sticker)
   await page.waitForTimeout(300);
 }
 
@@ -26,7 +27,7 @@ async function goTo(page, kind, label) {
 test('PAK picks a shell, HAK chops wood (three taps by hand), the backpack and the quest count along', async ({ page }) => {
   const errors = watchErrors(page);
   await seedSave(page, (s) => { s.wallet = 20; s.earnedWork = 20; return s; });
-  await startGame(page, { url: '/?lowres=1' });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
   await closePopups(page);
   await openAvontuur(page);
   await expect(page.locator('#av-bag')).toContainText('0');
@@ -53,7 +54,7 @@ test('PAK picks a shell, HAK chops wood (three taps by hand), the backpack and t
 test('the chest in the cave: OPEN pays 30 coins once, then the chest is LEEG; a wall stops you at the side', async ({ page }) => {
   const errors = watchErrors(page);
   await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; return s; });
-  await startGame(page, { url: '/?lowres=1' });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
   await closePopups(page);
   await openAvontuur(page);
   const lm = await page.evaluate(() => { const l = window.__muntstad.avontuur.landmarks; return { chest: l.CHEST, cave: l.CAVE }; });
@@ -85,7 +86,7 @@ test('KAMP sells the backpack for coins and the axe is bought with the shared wa
   const errors = watchErrors(page);
   // a full fire, otherwise the button offers STOOK first (the wood in the bag wants to go into the fire)
   await seedSave(page, (s) => { s.wallet = 50; s.earnedWork = 50; s.eiland = { bag: { hout: 5, schelp: 4, bes: 0, vis: 1 }, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: {}, sold: 0, earned: 0 }; s.nacht = { fire: 100, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
-  await startGame(page, { url: '/?lowres=1' });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
   await closePopups(page);
   await openAvontuur(page);
   const h = await hook(page);
