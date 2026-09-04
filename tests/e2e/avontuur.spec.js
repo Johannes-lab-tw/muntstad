@@ -65,6 +65,9 @@ test('the joystick walks the player off the pier, the dog follows, SPRING jumps,
   await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBe(1);
   await shot(page, testInfo, '11-avontuur-nacht');
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(null));
+  // back to day = dawn: the first night survived pays and earns the 🌙 sticker popup (R6); close it before DORP
+  await page.waitForTimeout(800);
+  await closePopups(page);
 
   await page.locator('#av-dorp').click();
   await expect(page.locator('#screen-stad')).toHaveClass(/active/);
