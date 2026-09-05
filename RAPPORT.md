@@ -219,6 +219,8 @@ Bekende beperkingen:
 - WebKit-tests konden hier niet draaien (zie §5).
 - De beginscherm-app en Safari delen geen opslag (zie §1).
 
+Volgende versie na de zesde ronde (5 september 2026): samen een boomstam tillen; spoken die ook bij gasten stelen; NPC's en remmende auto's in het loopbare dorp, de winkel als gebouw, het huis binnenlopen; Avontuur als losse game met eigen titelscherm (docs/avontuur.html); gouden zaterdag en honderd dagopdrachten na de campagne; de gouden kist bij het standbeeld; spoken die het vuurtorenlicht stelen (veenhout); de boot tussen drie plekken; steiger met props, golven bij de palen, rustigere HUD op het eiland. Open voor Johannes: de iPad-test met de MELD-code op PAPA.
+
 Volgende versie (bewust weggelaten voor een afgemaakte versie):
 - Meer geldmakers na de flat en meer levels.
 - Vaste WERK-baantjes naast auto's wassen (bijvoorbeeld pizza's bezorgen).
