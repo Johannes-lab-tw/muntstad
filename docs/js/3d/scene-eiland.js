@@ -424,7 +424,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   function wolfNear() { return wolves.some((v) => v.w.state !== 'flee' && Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 2); }
   function scareWolves() {
     // the pack runs together: BOE near any wolf sends them all off
-    const near = wolves.some((v) => v.w.state !== 'flee' && Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 6);
+    const near = wolves.some((v) => Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 6);   // any wolf close by, fleeing or not (a bite a frame ago still counts)
     if (!near) return false;
     for (const v of wolves) if (v.w.state !== 'flee') scareWolf(v.w, config);
     cb.onSay && cb.onSay('lines.wolvesFled');
