@@ -179,6 +179,17 @@ export function createAvontuur(game) {
     game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(r.coins)}`, '#2a9d3a');
     game.bumpWallet();
   }
+  function onCaveGhostCaught() {
+    // the cave ghost takes shells first (up to caveGhost.steals), otherwise one thing of whatever you carry
+    const e = game.state.eiland;
+    const n = game.config.eiland.caveGhost.steals;
+    const bag = { ...e.bag };
+    let taken = null;
+    if (bag.schelp > 0) { const k = Math.min(n, bag.schelp); bag.schelp -= k; taken = `${k} ${k === 1 ? 'schelp' : 'schelpen'}`; }
+    else { const id = Object.keys(bag).find((k) => bag[k] > 0); if (id) { bag[id] -= 1; taken = `een ${game.config.eiland.items[id].name.toLowerCase()}`; } }
+    if (taken) game.update((s) => ({ ...s, eiland: { ...s.eiland, bag }, nacht: { ...s.nacht, stolen: s.nacht.stolen + 1 } }));
+    game.mentor.say(taken ? 'lines.caveGhostCaught' : 'lines.ghostNothing', {}, { kind: 'reaction' });
+  }
   function onBearAte() {
     game.update((s) => ({ ...s, nacht: { ...s.nacht, fire: Math.max(0, s.nacht.fire - game.config.nacht.bearEats * game.config.nacht.woodValue) } }));
     game.audio.play('thud');
@@ -208,7 +219,7 @@ export function createAvontuur(game) {
       onKamp() { controls.setEnabled(false); kamp.show(); },
       onAction,
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
-      onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte, onFireSync, onRemoteStoke, onChest,
+      onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte, onFireSync, onRemoteStoke, onChest, onCaveGhostCaught,
     });
     Object.setPrototypeOf(hook, scene3.hook);   // the tests read positions and set inputs through window.__muntstad.avontuur
   }

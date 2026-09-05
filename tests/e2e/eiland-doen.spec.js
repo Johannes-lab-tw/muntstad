@@ -90,14 +90,23 @@ test('the chest in the cave: OPEN pays 30 coins once, then the chest is LEEG; a 
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await page.waitForTimeout(500);
   expect(Math.floor((await state(page)).wallet)).toBe(40);
-  // the wall of the tunnel: standing beside the chest, pushing towards it, you never reach it
-  const side = { x: lm.chest.x + Math.cos(h) * 2.6, z: lm.chest.z - Math.sin(h) * 2.6 };
+  // V5.2: the bats flew when you came into the chamber, and the cave ghost woke up when the chest opened
+  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.bats), { timeout: 20000 }).not.toBe('hang');
+  await expect.poll(() => page.evaluate(() => { const s = window.__muntstad.avontuur.caveGhost.state; return s === 'chase' || s === 'pause' ? 'awake' : s; }), { timeout: 20000 }).toBe('awake');
+  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('wakker'))), { timeout: 20000 }).toBe(true);
+  // run for the mouth: outside, the ghost gives up and goes back to sleep
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x + Math.sin(0.69) * 3, z + Math.cos(0.69) * 3), lm.cave);
+  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.caveGhost.state), { timeout: 20000 }).not.toBe('chase');
+  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('veilig'))), { timeout: 20000 }).toBe(true);
+  // the walls of the first leg: beside the tunnel, pushing towards it, you stay out (the hill's rock or the wall)
+  const mid = { x: lm.cave.x - Math.sin(h) * 2.2, z: lm.cave.z - Math.cos(h) * 2.2 };
+  const side = { x: mid.x + Math.cos(h) * 3.0, z: mid.z - Math.sin(h) * 3.0 };
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z), side);
   await page.evaluate(() => window.__muntstad.avontuur.setInput(0, 1, true));
   await page.waitForTimeout(2500);
   await page.evaluate(() => window.__muntstad.avontuur.setInput(null));
   const p = (await hook(page)).player;
-  expect(Math.hypot(p.x - lm.chest.x, p.z - lm.chest.z), 'the wall keeps you out').toBeGreaterThan(1.4);
+  expect(await page.evaluate(({ x, z }) => window.__muntstad.avontuur.inCave(x, z), p), 'the wall keeps you out').toBe(false);
   expect(errors()).toEqual([]);
 });
 

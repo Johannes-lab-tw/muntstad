@@ -10,7 +10,7 @@ import { avatarModel, lookKey } from './avatar.js';
 import { petModel } from './pets.js';
 import { createPlayer, createFollower, stepPlayer, stepFollower, turnTowards, createGrid } from './player.js';
 import { addLights } from './engine.js';
-import { createHeightmap, PIER, CAMP, LAKE, CAVE } from './heightmap.js';
+import { createHeightmap, PIER, CAMP, LAKE, CAVE, caveInner } from './heightmap.js';
 import { createTerrain } from './terrain.js';
 import { placeForest, buildForest } from './forest.js';
 import { createCamp } from './camp.js';
@@ -585,20 +585,116 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     bobber.position.y = LAKE.level + (fishing.biteUntil ? -0.12 + Math.sin(now / 40) * 0.05 : 0.05 + Math.sin(now / 300) * 0.03);
   }
 
+  // ---------- the cave (V5.2): keep a point inside the corridor or the chamber; bats; drips; the cave ghost ----------
+  const cv = camp.cave;
+  /** The nearest point inside the cave to (x, z), `margin` away from the walls. */
+  function clampInCave(x, z, margin) {
+    let best = null, bd = Infinity;
+    for (let i = 0; i < cv.segs.length; i++) {
+      const s = cv.segs[i];
+      const dx = Math.sin(s.h), dz = Math.cos(s.h), rx = Math.cos(s.h), rz = -Math.sin(s.h);
+      const relx = x - s.ax, relz = z - s.az;
+      const along = Math.max(i === 0 ? -4 : 0, Math.min(s.len, relx * dx + relz * dz));
+      const lat = Math.max(-(CAVE.halfWidth - margin), Math.min(CAVE.halfWidth - margin, relx * rx + relz * rz));
+      const px = s.ax + dx * along + rx * lat, pz = s.az + dz * along + rz * lat;
+      const d = Math.hypot(px - x, pz - z);
+      if (d < bd) { bd = d; best = { x: px, z: pz }; }
+    }
+    const ch = cv.chamber;
+    const dc = Math.hypot(x - ch.x, z - ch.z);
+    const rr = Math.min(dc, ch.r - margin);
+    const cx = dc > 1e-6 ? ch.x + ((x - ch.x) / dc) * rr : ch.x, cz = dc > 1e-6 ? ch.z + ((z - ch.z) / dc) * rr : ch.z;
+    if (Math.hypot(cx - x, cz - z) < bd) best = { x: cx, z: cz };
+    return best;
+  }
+  let batsState = 'hang', batsT = 0, batsReturnAt = 0;
+  function updateBats(now, dt) {
+    const inChamber = map.inChamber(player.x, player.z, -0.5);
+    if (batsState === 'hang' && inChamber) { batsState = 'fly'; batsT = 0; game.audio.play('flutter'); cb.onSay && cb.onSay('lines.batsFly'); }
+    if (batsState === 'fly') {
+      batsT += dt;
+      cv.bats.forEach((b, i) => {
+        const t = Math.max(0, batsT - i * 0.12);
+        const along = CAVE.depth + 1.5 - t * 5.5;   // from the chamber out through the mouth
+        if (along < -6) { b.mesh.visible = false; return; }
+        const p = caveInner(Math.max(0, along));
+        const out = along < 0 ? { x: p.x + Math.sin(CAVE.heading) * -along, z: p.z + Math.cos(CAVE.heading) * -along } : p;
+        b.mesh.position.set(out.x + Math.sin(now / 90 + b.ph) * 0.4, CAVE.floor + 2.2 + Math.sin(now / 140 + b.ph) * 0.4 + (along < 0 ? -along * 0.4 : 0), out.z + Math.cos(now / 110 + b.ph) * 0.4);
+        b.mesh.scale.y = 1 + Math.sin(now / 45 + b.ph) * 0.6;
+        b.mesh.rotation.y = -CAVE.heading + Math.PI;
+      });
+      if (batsT > 4) { batsState = 'away'; batsReturnAt = now + 45000; }
+    } else if (batsState === 'away' && now > batsReturnAt && !inChamber) {
+      batsState = 'hang';
+      for (const b of cv.bats) { b.mesh.visible = true; b.mesh.position.copy(b.home); b.mesh.scale.y = 1; }
+    } else if (batsState === 'hang') {
+      for (const b of cv.bats) b.mesh.rotation.z = Math.sin(now / 700 + b.ph) * 0.15;
+    }
+  }
+  let nextDrip = 0;
+  const drop = (() => { const m = new T.Mesh(new T.SphereGeometry(0.07, 6, 5), new T.MeshStandardMaterial({ color: 0x9fe8ff, emissive: 0x4fc8ff, emissiveIntensity: 0.6 })); m.visible = false; scene.add(m); return m; })();
+  let dropT = -1;
+  function updateDrips(now, dt) {
+    const inside = map.inCave(player.x, player.z);
+    if (inside && now > nextDrip) {
+      nextDrip = now + 2500 + Math.random() * 4000;
+      game.audio.play('drip');
+      const a = Math.random() * Math.PI * 2, rr = Math.random() * (cv.chamber.r - 0.8);
+      drop.position.set(cv.chamber.x + Math.cos(a) * rr, CAVE.floor + 3.4, cv.chamber.z + Math.sin(a) * rr);
+      drop.visible = true; dropT = 0;
+    }
+    if (dropT >= 0) { dropT += dt; drop.position.y -= 6 * dt * dropT * 2; if (drop.position.y < CAVE.floor + 0.05) { dropT = -1; drop.visible = false; } }
+  }
+  // the cave ghost: asleep beside the chest; wakes when the chest opens; chases you to the mouth; steals when it catches you
+  const caveGhost = { model: ghostModel(), holder: new T.Group(), x: cv.ghostAt.x, z: cv.ghostAt.z, state: 'sleep', pauseUntil: 0, woke: false, said: false };
+  caveGhost.model.group.scale.setScalar(1.25);
+  caveGhost.holder.add(caveGhost.model.group);
+  caveGhost.holder.position.set(caveGhost.x, CAVE.floor, caveGhost.z);
+  scene.add(caveGhost.holder);
+  function updateCaveGhost(now, dt) {
+    const g = caveGhost;
+    const CG = E.caveGhost;
+    const inside = map.inCave(player.x, player.z, -0.3);
+    if (g.state === 'sleep') {
+      if (camp.chest.isOpen && !g.woke) { g.woke = true; g.state = 'chase'; g.said = false; game.audio.play('boo'); cb.onSay && cb.onSay('lines.caveGhostWakes'); }
+      if (!camp.chest.isOpen) g.woke = false;
+      g.model.update(now, { fade: 0.7 });
+      g.holder.rotation.y += (Math.atan2(cv.chamber.x - g.x, cv.chamber.z - g.z) - g.holder.rotation.y) * 0.05;
+      return;
+    }
+    if (g.state === 'chase' || g.state === 'pause') {
+      if (!inside) { g.state = 'return'; if (!g.said) { g.said = true; cb.onSay && cb.onSay('lines.caveGhostEscaped'); } }
+      else if (g.state === 'pause' && now > g.pauseUntil) g.state = 'chase';
+      else if (g.state === 'chase') {
+        const dx = player.x - g.x, dz = player.z - g.z, d = Math.hypot(dx, dz);
+        if (d < CG.reach) { g.state = 'pause'; g.pauseUntil = now + CG.pauseMs; game.audio.play('boo'); cb.onCaveGhostCaught && cb.onCaveGhostCaught(); }
+        else {
+          const nx = g.x + (dx / d) * CG.speed * dt, nz = g.z + (dz / d) * CG.speed * dt;
+          const c = clampInCave(nx, nz, 0.5);
+          g.x = c.x; g.z = c.z;
+          g.holder.rotation.y = Math.atan2(dx, dz);
+        }
+      }
+    } else if (g.state === 'return') {
+      const dx = cv.ghostAt.x - g.x, dz = cv.ghostAt.z - g.z, d = Math.hypot(dx, dz);
+      if (d < 0.2) { g.x = cv.ghostAt.x; g.z = cv.ghostAt.z; g.state = 'sleep'; }
+      else { g.x += (dx / d) * CG.speed * 0.8 * dt; g.z += (dz / d) * CG.speed * 0.8 * dt; g.holder.rotation.y = Math.atan2(dx, dz); }
+    }
+    g.holder.position.set(g.x, CAVE.floor, g.z);
+    g.model.update(now, { fade: 1 });
+  }
+
   // ---------- camera ----------
   function placeCamera(dt) {
     const cp = Math.cos(pitch), sp = Math.sin(pitch);
     const py = player.ground + player.y * 0.5;
     camPos.set(player.x - Math.sin(yaw) * CAM.dist * cp, py + CAM.dist * sp + 0.4, player.z - Math.cos(yaw) * CAM.dist * cp);
     if (map.inCave(player.x, player.z, 0.4)) {
-      // inside the tunnel the camera stays close and inside the walls, under the roof
+      // inside the cave the camera stays close, inside the walls and under the roof
       const d = 2.6;
       camPos.set(player.x - Math.sin(yaw) * d, player.ground + 1.7, player.z - Math.cos(yaw) * d);
-      const ax = -Math.sin(CAVE.heading), az = -Math.cos(CAVE.heading), rx = Math.cos(CAVE.heading), rz = -Math.sin(CAVE.heading);
-      const relx = camPos.x - CAVE.x, relz = camPos.z - CAVE.z;
-      const along = Math.max(-4, Math.min(CAVE.depth - 0.4, relx * ax + relz * az));
-      const lat = Math.max(-(CAVE.halfWidth - 0.4), Math.min(CAVE.halfWidth - 0.4, relx * rx + relz * rz));
-      camPos.set(CAVE.x + ax * along + rx * lat, camPos.y, CAVE.z + az * along + rz * lat);
+      const c = clampInCave(camPos.x, camPos.z, 0.45);
+      camPos.set(c.x, camPos.y, c.z);
     } else {
       const floor = groundOf(camPos.x, camPos.z) + 0.8;
       if (camPos.y < floor) camPos.y = floor;
@@ -652,6 +748,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     updateWobbles(dt);
     updateFalls(now, dt);
     updateFish(dt);
+    updateBats(now, dt);
+    updateDrips(now, dt);
+    updateCaveGhost(now, dt);
     forest.animate(now, dt, daynight.darkness);
     if (input.tap) handleTap(input.tap);
     const next = findAction(now);
@@ -723,6 +822,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     act() { doAction(); },
     tapAt(x, y) { handleTap({ x, y }); },
     get fallen() { return falls.length; },
+    get caveGhost() { return { x: caveGhost.x, z: caveGhost.z, state: caveGhost.state }; },
+    get bats() { return batsState; },
+    inCave(x, z) { return map.inCave(x, z); },
     emote,
     bite() { if (fishing && !fishing.biteUntil) fishing.until = 0; },
     spawnGhost, spawnBear,

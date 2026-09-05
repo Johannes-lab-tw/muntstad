@@ -11,14 +11,37 @@ export const LAKE = Object.freeze({ x: 68, z: 34, r: 8.5, level: 0.7 });
 export const HILL = Object.freeze({ x: 30, z: 26, r: 22, top: 13 });
 // the cave: its mouth on the hill's south-east flank, a flat tunnel `depth` metres into the hill (towards HILL),
 // a chest at the end. heading = the direction the mouth faces (local +z of the model); the tunnel runs the other way.
-export const CAVE = Object.freeze({ x: 39.5, z: 37.5, heading: Math.atan2(39.5 - 30, 37.5 - 26), depth: 5.5, halfWidth: 1.6, floor: 2.2, chestAt: 4.3 });
-/** A point `t` metres into the tunnel from the mouth. */
+// V5.2: the tunnel is a polyline (a bend halfway) that ends in a round chamber with the chest. `path` runs from the
+// mouth inwards; `depth` is its total length; the chamber is a circle of radius `chamberR` at the end.
+const CAVE_HEADING = Math.atan2(39.5 - 30, 37.5 - 26);
+const CAVE_BEND = CAVE_HEADING + 0.9;   // the second leg turns left
+const CAVE_L1 = 4.5, CAVE_L2 = 5.0;
+const cp1 = [39.5 - Math.sin(CAVE_HEADING) * CAVE_L1, 37.5 - Math.cos(CAVE_HEADING) * CAVE_L1];
+const cp2 = [cp1[0] - Math.sin(CAVE_BEND) * CAVE_L2, cp1[1] - Math.cos(CAVE_BEND) * CAVE_L2];
+export const CAVE = Object.freeze({
+  x: 39.5, z: 37.5, heading: CAVE_HEADING, bend: CAVE_BEND, floor: 2.2, halfWidth: 1.7,
+  path: Object.freeze([[39.5, 37.5], cp1, cp2]), legs: Object.freeze([CAVE_L1, CAVE_L2]), depth: CAVE_L1 + CAVE_L2,
+  chamber: Object.freeze({ x: cp2[0], z: cp2[1], r: 3.4 }), chestAt: CAVE_L1 + CAVE_L2 + 1.6,
+});
+/** A point `t` metres into the cave from the mouth, along the tunnel (beyond `depth`: straight on into the chamber). */
 export function caveInner(t) {
-  return { x: CAVE.x - Math.sin(CAVE.heading) * t, z: CAVE.z - Math.cos(CAVE.heading) * t };
+  const p = CAVE.path;
+  let rest = t;
+  for (let i = 0; i < p.length - 1; i++) {
+    const [ax, az] = p[i], [bx, bz] = p[i + 1];
+    const len = Math.hypot(bx - ax, bz - az);
+    if (rest <= len || i === p.length - 2) { const f = rest / len; return { x: ax + (bx - ax) * f, z: az + (bz - az) * f }; }
+    rest -= len;
+  }
+  return { x: p[p.length - 1][0], z: p[p.length - 1][1] };
+}
+export function inChamber(x, z, margin = 0) {
+  return Math.hypot(x - CAVE.chamber.x, z - CAVE.chamber.z) < CAVE.chamber.r + margin;
 }
 export function inCave(x, z, margin = 0) {
-  const end = caveInner(CAVE.depth);
-  return distToPath(x, z, [[CAVE.x + Math.sin(CAVE.heading) * 0.5, CAVE.z + Math.cos(CAVE.heading) * 0.5], [end.x, end.z]]) < CAVE.halfWidth + margin;
+  const [mx, mz] = CAVE.path[0];
+  const start = [mx + Math.sin(CAVE.heading) * 0.5, mz + Math.cos(CAVE.heading) * 0.5];
+  return distToPath(x, z, [start, ...CAVE.path.slice(1)]) < CAVE.halfWidth + margin || inChamber(x, z, margin);
 }
 export const PATHS = Object.freeze([
   [[48, 79], [48, 72], [48, 58]],              // pier (land end) → camp
@@ -88,8 +111,7 @@ export function baseHeight(x, z) {
   // the cave: a flat shelf at the mouth and a flat tunnel floor cut into the hill
   const dv = Math.hypot(x - CAVE.x, z - CAVE.z);
   h = h * smoothstep(1.6, 3.6, dv) + CAVE.floor * (1 - smoothstep(1.6, 3.6, dv));
-  const end = caveInner(CAVE.depth);
-  const dtun = distToPath(x, z, [[CAVE.x, CAVE.z], [end.x, end.z]]);
+  const dtun = Math.min(distToPath(x, z, CAVE.path) - 0, Math.hypot(x - CAVE.chamber.x, z - CAVE.chamber.z) - (CAVE.chamber.r - CAVE.halfWidth));
   if (dtun < CAVE.halfWidth + 1.2) h = h * smoothstep(CAVE.halfWidth, CAVE.halfWidth + 1.2, dtun) + CAVE.floor * (1 - smoothstep(CAVE.halfWidth, CAVE.halfWidth + 1.2, dtun));
   // paths are gently levelled (keeps them walkable)
   const dp = distToPaths(x, z);
@@ -144,5 +166,5 @@ export function createHeightmap() {
     const k = kindAt(x, z);
     return k !== 'sea' && k !== 'lake' && k !== 'snow';
   };
-  return { size, n, cell, h: s, heightAt, groundAt, slopeAt, kindAt, walkable, onPier, inCave, CAMP, PIER, LAKE, HILL, CAVE, PATHS };
+  return { size, n, cell, h: s, heightAt, groundAt, slopeAt, kindAt, walkable, onPier, inCave, inChamber, CAMP, PIER, LAKE, HILL, CAVE, PATHS };
 }

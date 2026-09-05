@@ -133,6 +133,10 @@ export function createAudio() {
     bird() { for (let i = 0; i < 3; i++) tone({ freq: 2200 + Math.random() * 1200, type: 'sine', start: i * 0.11, dur: 0.08, gain: 0.05, slideTo: 2800 + Math.random() * 800 }); },
     crackle() { for (let i = 0; i < 3; i++) noise({ start: Math.random() * 0.4, dur: 0.03, gain: 0.05, filter: 'highpass', freq: 3000 }); },
     splash() { noise({ dur: 0.25, gain: 0.14, filter: 'bandpass', freq: 1200, q: 1 }); tone({ freq: 500, type: 'sine', dur: 0.15, gain: 0.08, slideTo: 200 }); },
+    drip() { tone({ freq: 1800, type: 'sine', dur: 0.08, gain: 0.06, slideTo: 900 }); tone({ freq: 900, type: 'sine', start: 0.09, dur: 0.12, gain: 0.04, slideTo: 1400 }); },
+    flutter() { for (let i = 0; i < 7; i++) noise({ start: i * 0.06, dur: 0.04, gain: 0.07, filter: 'bandpass', freq: 500 + i * 120, q: 2 }); },
+    stumble() { tone({ freq: 220, type: 'triangle', dur: 0.18, gain: 0.2, slideTo: 90 }); noise({ dur: 0.12, gain: 0.1, filter: 'lowpass', freq: 500 }); },
+    munch() { for (let i = 0; i < 3; i++) noise({ start: i * 0.12, dur: 0.06, gain: 0.09, filter: 'bandpass', freq: 700, q: 2 }); },
   };
 
   // ---- ambience on the island: birds by day, an owl and the fire by night (a few soft sounds a minute) ----

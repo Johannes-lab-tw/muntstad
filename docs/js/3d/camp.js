@@ -109,38 +109,87 @@ export function createCamp(map) {
   group.add(bm);
   anim.push((t) => { bm.position.y = 0.02 + Math.sin(t / 900) * 0.06; bm.rotation.z = Math.sin(t / 1100) * 0.05; });
 
-  // ---- the cave: a tunnel into the hill (local -z), rock walls and roof, glowing crystals, a chest at the end ----
-  const D = CAVE.depth, HW = CAVE.halfWidth;
-  const cave = new Builder({ r: 0.05 });
+  // ---- the cave (V5.2): a bent tunnel into the hill that ends in a round chamber; rock walls and roofs, crystals,
+  // stalactites, bats under the ceiling, a chest at the far side of the chamber ----
+  const HW = CAVE.halfWidth, CH = 3.2;   // half width, wall height
   const wallC = '#4a4e58', wallD = '#33363f';
-  cave.add(new T.BoxGeometry(HW * 2 + 2.4, 0.9, D + 1.2).translate(0, 3.05, -D / 2 - 0.2), wallD);          // roof slab
-  cave.add(new T.BoxGeometry(1.2, 3.2, D + 1.2).translate(-HW - 0.6, 1.6, -D / 2 - 0.2), wallC);           // left wall
-  cave.add(new T.BoxGeometry(1.2, 3.2, D + 1.2).translate(HW + 0.6, 1.6, -D / 2 - 0.2), wallC);            // right wall
-  cave.add(new T.BoxGeometry(HW * 2 + 2.4, 3.2, 1.2).translate(0, 1.6, -D - 0.6), wallD);                  // back wall
-  cave.add(new T.BoxGeometry(HW * 2, 0.06, D + 0.6).translate(0, 0.02, -D / 2 - 0.1), '#2a2d36');          // dark floor
-  // boulders framing the mouth and on top, so it reads as a hole in the hill from outside
-  cave.add(new T.DodecahedronGeometry(1.3, 0).scale(1, 1.5, 1).translate(-HW - 0.9, 1.1, 0.3), '#6d717a');
-  cave.add(new T.DodecahedronGeometry(1.2, 0).scale(1, 1.4, 1).translate(HW + 0.9, 1.0, 0.2), '#7c8089');
-  cave.add(new T.DodecahedronGeometry(1.4, 0).scale(1.8, 0.9, 1).translate(0, 3.4, -0.4), '#6d717a');
-  cave.add(new T.DodecahedronGeometry(1.1, 0).scale(1.4, 0.8, 1.2).translate(-1.6, 3.6, -2.5), '#7c8089');
-  cave.add(new T.DodecahedronGeometry(1.2, 0).scale(1.5, 0.9, 1.2).translate(1.7, 3.5, -3.5), '#6d717a');
+  const cave = new Builder({ r: 0.05 });
+  const segs = [];
+  for (let i = 0; i < CAVE.path.length - 1; i++) {
+    const [ax, az] = CAVE.path[i], [bx, bz] = CAVE.path[i + 1];
+    const len = Math.hypot(bx - ax, bz - az), h = Math.atan2(bx - ax, bz - az);
+    segs.push({ ax, az, len, h });
+    // a segment lies along local +z; boxes are built at the origin then rotated/translated into place
+    const put = (geom, color) => { geom.rotateY(h); geom.translate(ax, 0, az); cave.add(geom, color); };
+    const ext = i === 0 ? 0.6 : 1.2;   // overlap at the bend so no gap shows
+    put(new T.BoxGeometry(HW * 2 + 2.4, 0.9, len + ext).translate(0, CH - 0.15, len / 2 + (i === 0 ? -0.3 : 0.2)), wallD);   // roof
+    put(new T.BoxGeometry(1.2, CH, len + ext).translate(-HW - 0.6, CH / 2, len / 2 + (i === 0 ? -0.3 : 0.2)), wallC);      // left wall
+    put(new T.BoxGeometry(1.2, CH, len + ext).translate(HW + 0.6, CH / 2, len / 2 + (i === 0 ? -0.3 : 0.2)), wallC);       // right wall
+    put(new T.BoxGeometry(HW * 2, 0.06, len).translate(0, 0.02, len / 2), '#2a2d36');                                     // dark floor
+    // wall obstacles every metre on both sides
+    for (let t = 0.6; t < (i < CAVE.path.length - 2 ? len - 1.0 : len + 0.4); t += 1.0) for (const side of [-1, 1]) {   // no wall blocks at the inside of the bend
+      obstacles.push({ x: ax + Math.sin(h) * t + Math.cos(h) * side * (HW + 0.55), z: az + Math.cos(h) * t - Math.sin(h) * side * (HW + 0.55), r: 0.75, kind: 'wall' });
+    }
+  }
+  // boulders framing the mouth and lying on top of the first leg, so it reads as a hole in the hill from outside
+  const m0 = segs[0];
+  const boulder = (lx, ly, lz, r, sx = 1, sy = 1.4, sz = 1, c = '#6d717a') => { const g = new T.DodecahedronGeometry(r, 0).scale(sx, sy, sz).translate(lx, ly, lz); g.rotateY(m0.h); g.translate(m0.ax, 0, m0.az); cave.add(g, c); };
+  boulder(-HW - 0.9, 1.1, -0.3, 1.3);
+  boulder(HW + 0.9, 1.0, -0.2, 1.2, 1, 1.4, 1, '#7c8089');
+  boulder(0, CH + 0.3, 0.4, 1.4, 1.8, 0.9, 1);
+  boulder(-1.6, CH + 0.5, 2.5, 1.1, 1.4, 0.8, 1.2, '#7c8089');
+  boulder(1.7, CH + 0.4, 3.5, 1.2, 1.5, 0.9, 1.2);
+  // the chamber: a ring of wall blocks (open where the tunnel comes in), a roof disc, stalactites
+  const ch = CAVE.chamber, R = ch.r;
+  const entry = Math.atan2(segs[1].az - ch.z, segs[1].ax - ch.x);   // angle (cos/sin) from the centre towards the tunnel
+  const NW = 16;
+  for (let i = 0; i < NW; i++) {
+    const a = (i / NW) * Math.PI * 2;
+    let da = a - entry; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
+    if (Math.abs(da) < 0.45) continue;   // the opening
+    const wx = ch.x + Math.cos(a) * (R + 0.6), wz = ch.z + Math.sin(a) * (R + 0.6);
+    const g = new T.BoxGeometry(1.5, CH + 0.8, 1.2).translate(0, (CH + 0.8) / 2, 0); g.rotateY(-a + Math.PI / 2); g.translate(wx, 0, wz);
+    cave.add(g, i % 2 ? wallC : wallD);
+    obstacles.push({ x: ch.x + Math.cos(a) * (R + 0.45), z: ch.z + Math.sin(a) * (R + 0.45), r: 0.8, kind: 'wall' });
+  }
+  cave.add(new T.CylinderGeometry(R + 1.4, R + 1.4, 0.9, 20).translate(ch.x, CH + 0.8 + 0.3, ch.z), wallD);          // roof
+  cave.add(new T.CylinderGeometry(R, R, 0.06, 20).translate(ch.x, 0.02, ch.z), '#2a2d36');                        // floor
+  for (let i = 0; i < 9; i++) {                                                                                     // stalactites
+    const a = i * 0.7 + 0.3, rr = 0.6 + (i % 3) * 0.9;
+    cave.add(new T.ConeGeometry(0.16 + (i % 2) * 0.08, 0.7 + (i % 3) * 0.4, 6).rotateX(Math.PI).translate(ch.x + Math.cos(a) * rr, CH + 0.8 - 0.35, ch.z + Math.sin(a) * rr), '#5b5f6a');
+  }
   const cm = cave.build();
-  cm.position.set(CAVE.x, CAVE.floor - 0.05, CAVE.z);
-  cm.rotation.y = CAVE.heading;
+  cm.position.y = CAVE.floor - 0.05;
   group.add(cm);
-  // crystals: three emissive spikes on the walls and a cool light so the inside is never pitch black
+  // crystals: emissive spikes along the tunnel and round the chamber, a cool light in the chamber and one at the bend
   const crystalMat = new T.MeshStandardMaterial({ color: col('#9fe8ff'), emissive: col('#4fc8ff'), emissiveIntensity: 1.4, roughness: 0.3 });
   const crystals = new T.Group();
-  for (const [x, y, z, s, rz] of [[-HW + 0.15, 0.9, -2.2, 0.55, 0.6], [HW - 0.15, 1.4, -3.4, 0.45, -0.7], [-HW + 0.3, 2.2, -4.6, 0.4, 0.9]]) {
-    const c = new T.Mesh(new T.ConeGeometry(0.16 * s, 1.2 * s, 5), crystalMat);
-    c.position.set(x, y, z); c.rotation.z = rz;
-    crystals.add(c);
+  const crystal = (x, y, z, s, rz) => { const c = new T.Mesh(new T.ConeGeometry(0.16 * s, 1.2 * s, 5), crystalMat); c.position.set(x, y, z); c.rotation.z = rz; crystals.add(c); };
+  for (const seg of segs) for (const [t, side, s] of [[1.6, -1, 0.5], [3.2, 1, 0.45]]) {
+    crystal(seg.ax + Math.sin(seg.h) * t + Math.cos(seg.h) * side * (HW - 0.15), CAVE.floor + 0.9 + s, seg.az + Math.cos(seg.h) * t - Math.sin(seg.h) * side * (HW - 0.15), s, side * 0.6);
   }
-  cm.add(crystals);
-  const crystalLight = new T.PointLight(0x7fd8ff, 6, 9, 1.5);
-  crystalLight.position.set(0, 1.8, -3.2);
-  cm.add(crystalLight);
-  // the chest at the end of the tunnel: box, lid on a hinge, gold when open
+  for (let i = 0; i < 5; i++) { const a = entry + 0.9 + i * 0.9; crystal(ch.x + Math.cos(a) * (R - 0.2), CAVE.floor + 0.7 + (i % 2) * 0.9, ch.z + Math.sin(a) * (R - 0.2), 0.55 + (i % 2) * 0.2, Math.cos(a) * 0.7); }
+  group.add(crystals);
+  const crystalLight = new T.PointLight(0x7fd8ff, 7, 12, 1.5);
+  crystalLight.position.set(ch.x, CAVE.floor + 2.2, ch.z);
+  group.add(crystalLight);
+  const bendLight = new T.PointLight(0x7fd8ff, 4, 8, 1.6);
+  bendLight.position.set(segs[1].ax, CAVE.floor + 1.8, segs[1].az);
+  group.add(bendLight);
+  // bats under the chamber ceiling: small black shapes that hang, then flap out through the tunnel (the scene animates)
+  const bats = [];
+  for (let i = 0; i < 7; i++) {
+    const b = new Builder({ r: 0.01 });
+    b.add(new T.BoxGeometry(0.34, 0.03, 0.12).rotateZ(0.45).translate(-0.15, 0, 0), '#14161c');
+    b.add(new T.BoxGeometry(0.34, 0.03, 0.12).rotateZ(-0.45).translate(0.15, 0, 0), '#14161c');
+    b.sphere(0, 0, 0, 0.07, '#14161c', 6);
+    const mesh = b.build({ shadow: false, receive: false });
+    const a = i * 0.9, rr = 0.4 + (i % 4) * 0.6;
+    mesh.position.set(ch.x + Math.cos(a) * rr, CAVE.floor + CH + 0.55, ch.z + Math.sin(a) * rr);
+    group.add(mesh);
+    bats.push({ mesh, home: mesh.position.clone(), ph: i * 1.1 });
+  }
+  // the chest at the far side of the chamber: box, lid on a hinge, gold when open
   const chestG = new T.Group();
   const cb = new Builder({ r: 0.04 });
   cb.box(-0.55, -0.35, 0, 1.1, 0.7, 0.55, '#8a5a35', { r: 0.06 });
@@ -162,18 +211,10 @@ export function createCamp(map) {
   chestG.add(goldM);
   const chestPos = caveInner(CAVE.chestAt);
   chestG.position.set(chestPos.x, CAVE.floor, chestPos.z);
-  chestG.rotation.y = CAVE.heading;   // faces the mouth
+  chestG.rotation.y = Math.atan2(ch.x - chestPos.x, ch.z - chestPos.z);   // faces the middle of the chamber
   group.add(chestG);
   let lidOpen = 0;   // 0..1 animated
   let lidTarget = 0;
-  // walls you cannot walk through: circles along both sides and the back; the mouth stays open
-  for (let t = 0.6; t <= D + 0.4; t += 1.0) {
-    for (const side of [-1, 1]) {
-      const c = caveInner(t);
-      obstacles.push({ x: c.x + Math.cos(CAVE.heading) * side * (HW + 0.55), z: c.z - Math.sin(CAVE.heading) * side * (HW + 0.55), r: 0.75, kind: 'wall' });
-    }
-  }
-  for (const side of [-1, 0, 1]) { const e = caveInner(D + 0.9); obstacles.push({ x: e.x + Math.cos(CAVE.heading) * side * 1.2, z: e.z - Math.sin(CAVE.heading) * side * 1.2, r: 0.8, kind: 'wall' }); }
   obstacles.push({ x: chestPos.x, z: chestPos.z, r: 0.75, kind: 'chest' });
   anim.push((t) => {
     lidOpen += (lidTarget - lidOpen) * 0.12;
@@ -182,6 +223,7 @@ export function createCamp(map) {
     crystalMat.emissiveIntensity = 1.2 + Math.sin(t / 700) * 0.3;
   });
   const chest = { pos: chestPos, setOpen(open) { lidTarget = open ? 1 : 0; }, get isOpen() { return lidTarget > 0; } };
+  const caveInfo = { bats, chamber: ch, entry, segs, ghostAt: { x: ch.x + Math.cos(entry + Math.PI * 0.75) * (R - 0.9), z: ch.z + Math.sin(entry + Math.PI * 0.75) * (R - 0.9) } };
 
   const fireBase = y0;
   let level = 1;   // 0 = out, 1 = a full fire (round 4: the fire wants wood)
@@ -199,5 +241,5 @@ export function createCamp(map) {
     fireLight.intensity = size * (lite ? 0.7 : 1) * (0.3 + darkness * 2.8) * (1 + Math.sin(now / 80) * 0.08 + Math.sin(now / 210) * 0.05) * 8;
     fireLight.distance = 6 + size * 18;
   }
-  return { group, update, obstacles, fireLight, chest, firePos: new T.Vector3(CAMP.x, y0, CAMP.z), setFire(l) { level = Math.max(0, Math.min(1, l)); } };
+  return { group, update, obstacles, fireLight, chest, cave: caveInfo, firePos: new T.Vector3(CAMP.x, y0, CAMP.z), setFire(l) { level = Math.max(0, Math.min(1, l)); } };
 }

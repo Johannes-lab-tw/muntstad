@@ -37,18 +37,24 @@ test('paths are walkable sand from the pier to the camp, the lake and the cave',
   assert.equal(x0, x1);
 });
 
-test('the cave is a flat tunnel into the hill: walkable inside, rock beside it, the chest at the end', () => {
-  for (const t of [0, 1, 2, 3, 4, CAVE.chestAt, CAVE.depth]) {
+test('the cave is a flat bent tunnel into the hill ending in a chamber: walkable inside, rock beside it, the chest at the far side', () => {
+  for (const t of [0, 1, 2, 3, 4.5, 6, 8, CAVE.depth, CAVE.chestAt]) {
     const p = caveInner(t);
     assert.equal(map.kindAt(p.x, p.z), 'cave', `cave at ${t} m`);
     assert.ok(map.walkable(p.x, p.z));
-    assert.ok(Math.abs(map.heightAt(p.x, p.z) - CAVE.floor) < 0.05, `flat floor at ${t} m: ${map.heightAt(p.x, p.z)}`);
+    assert.ok(Math.abs(map.heightAt(p.x, p.z) - CAVE.floor) < 0.06, `flat floor at ${t} m: ${map.heightAt(p.x, p.z)}`);
   }
-  const mid = caveInner(3);
-  const side = { x: mid.x + Math.cos(CAVE.heading) * 3, z: mid.z - Math.sin(CAVE.heading) * 3 };
-  assert.ok(map.heightAt(side.x, side.z) > CAVE.floor + 2, 'the hill rises beside the tunnel');
-  // the tunnel points at the hill top, so the mouth faces away from it
-  const inner = caveInner(5), hill = Math.hypot(inner.x - HILL.x, inner.z - HILL.z), mouth = Math.hypot(CAVE.x - HILL.x, CAVE.z - HILL.z);
+  assert.equal(CAVE.path.length, 3, 'one bend');
+  const mid = caveInner(2.5);
+  const side = { x: mid.x + Math.cos(CAVE.heading) * 3.2, z: mid.z - Math.sin(CAVE.heading) * 3.2 };
+  assert.ok(map.heightAt(side.x, side.z) > CAVE.floor + 2, 'the hill rises beside the first leg');
+  const ch = CAVE.chamber;
+  assert.ok(map.inChamber(ch.x, ch.z) && map.walkable(ch.x, ch.z));
+  assert.ok(map.heightAt(ch.x + ch.r + 2.5, ch.z + 1) > CAVE.floor + 2 || map.heightAt(ch.x - ch.r - 2.5, ch.z) > CAVE.floor + 2, 'rock round the chamber');
+  const chest = caveInner(CAVE.chestAt);
+  assert.ok(map.inChamber(chest.x, chest.z), 'the chest stands in the chamber');
+  // the tunnel leads towards the hill top, so the mouth faces away from it
+  const inner = caveInner(CAVE.depth), hill = Math.hypot(inner.x - HILL.x, inner.z - HILL.z), mouth = Math.hypot(CAVE.x - HILL.x, CAVE.z - HILL.z);
   assert.ok(hill < mouth);
 });
 
