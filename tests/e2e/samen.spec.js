@@ -8,7 +8,7 @@ const RELAY = 'ws://127.0.0.1:4174/';
 const hook = (page) => page.evaluate(() => {
   const h = window.__muntstad.avontuur;
   const s = window.__muntstad.samen;
-  return { player: h.player, remotes: h.remotes, darkness: h.darkness, forestCount: h.forestCount, camp: h.landmarks.CAMP, action: h.action, samen: { status: s.status, isHost: s.isHost, isGuest: s.isGuest, code: s.code, peers: s.peers.size, id: s.id } };
+  return { player: h.player, remotes: h.remotes, darkness: h.darkness, forestCount: h.forestCount, camp: h.landmarks.CAMP, action: h.action, down: h.down, samen: { status: s.status, isHost: s.isHost, isGuest: s.isGuest, code: s.code, peers: s.peers.size, id: s.id } };
 });
 async function openAvontuur(page) {
   await closePopups(page);   // a late "terwijl je weg was" or sticker popup would sit in front of the button
@@ -83,6 +83,19 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
   await b.locator('#av-stook').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await expect.poll(async () => (await state(b)).eiland.bag.hout, { timeout: 30000 }).toBe(0);
   await expect.poll(async () => (await state(a)).nacht.fire, { timeout: 30000 }).toBeGreaterThan(hostFire + 2);
+  // V6.2 WEK: the guest faints (empty stomach in the dark) and lies down; the host walks up, presses WEK, the guest keeps its things
+  await b.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 14), hb.camp);
+  await a.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 14.5), ha.camp);
+  await b.evaluate(() => { window.__muntstad.state.eiland.bag.schelp = 4; window.__muntstad.state.eiland.honger = 0; });
+  await expect.poll(async () => (await hook(b)).down, { timeout: 30000 }).toBe(true);
+  await expect(b.locator('#av-flauw')).toHaveClass(/down/);
+  await expect.poll(async () => ((await hook(a)).remotes[0] || {}).down, { timeout: 30000 }).toBe(true);
+  await expect.poll(async () => (await hook(a)).action?.label, { timeout: 30000 }).toBe('WEK');
+  await a.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => (await hook(b)).down, { timeout: 30000 }).toBe(false);
+  expect((await state(b)).eiland.bag.schelp).toBe(4);   // nothing lost
+  expect((await state(b)).eiland.honger).toBeGreaterThan(30);
+  await expect.poll(() => b.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('wakker'))), { timeout: 20000 }).toBe(true);
   await a.evaluate(() => window.__muntstad.avontuur.setPhase(null));
 
   // the guest leaves: the host's island is quiet again

@@ -214,9 +214,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     samen.on('stoke', (d) => { if (samen.isHost && cb.onRemoteStoke) cb.onRemoteStoke(Math.max(0, Math.min(10, Number(d?.n) || 0))); });
     samen.on('boe', () => { if (samen.isHost && bear) doScare(); });
     samen.on('sleep', () => { if (samen.isHost && cb.onSleep) cb.onSleep(); });
+    samen.on('down', (d, from) => { const r = ensureRemote(from); r.down = true; });
+    samen.on('up', (d, from) => { const r = remotes.get(from); if (r) r.down = false; });
     samen.on('change', () => { if (!samen.active) { for (const id of [...remotes.keys()]) dropRemote(id); remoteWorld = null; daynight.setOverride(phaseOverride); } });
   }
-  let myEmote = null, myEmoteUntil = 0;
+  let myEmote = null, myEmoteUntil = 0, down = false;   // down: fainted with friends around, waiting for a WEK (V6.2)
   function emote(e) {
     if (e !== 'wave' && e !== 'dance') return;
     myEmote = e; myEmoteUntil = performance.now() + 2500;
@@ -231,8 +233,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       const ground = map.onPier(r.x, r.z) ? PIER.deck : g;
       r.model.group.position.set(r.x, 0, r.z);
       r.model.group.rotation.y = r.h;
-      const pose = r.emoteUntil > now ? r.emote : r.pose;
-      r.model.update(now, pose, { z: ground + r.y });
+      const lying = r.down || r.pose === 'down';
+      const pose = lying ? 'idle' : r.emoteUntil > now ? r.emote : r.pose;
+      r.model.group.rotation.z = lying ? Math.PI / 2 : 0;   // on its side
+      r.model.update(now, pose, { z: ground + r.y + (lying ? 0.35 : 0) });
       r.tag.position.set(r.x, ground + r.y + 2.05, r.z);
       r.tag.quaternion.copy(camera.quaternion);
     }
@@ -585,6 +589,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   function findAction(now) {
     const px = player.x, pz = player.z;
     if (fishing) return { type: fishing.biteUntil ? 'trek' : 'vis', label: fishing.biteUntil ? 'TREK' : 'WACHT', target: null };
+    for (const [id, r] of remotes) if ((r.down || r.pose === 'down') && Math.hypot(px - r.x, pz - r.z) < 2.6) return { type: 'wek', label: 'WEK', target: id };   // a fainted friend (V6.2)
     if (bearNear() || wolfNear()) return { type: 'boe', label: 'BOE', target: null };
     if (gear.tent && daynight.darkness > 0.5 && Math.hypot(px - TENT_AT.x, pz - TENT_AT.z) < REACH.tent) return { type: 'slaap', label: 'SLAAP', target: null };
     if (Math.hypot(px - camp.chest.pos.x, pz - camp.chest.pos.z) < 1.9) return { type: 'kist', label: camp.chest.isOpen ? 'LEEG' : 'OPEN', target: null };
@@ -641,6 +646,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
         return;
       }
       case 'stook': cb.onStoke && cb.onStoke(); return;
+      case 'wek':
+        if (samen && samen.active) samen.send('wake', {}, action.target);
+        game.audio.play('unlock');
+        cb.onSay && cb.onSay('lines.wekt');
+        return;
       case 'kook': cb.onCook && cb.onCook(); return;
       case 'slaap':
         if (samen && samen.isGuest) { samen.send('sleep', {}); cb.onSay && cb.onSay('lines.sleep'); }
@@ -928,8 +938,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
 
     avatar.group.position.set(player.x, 0, player.z);
     avatar.group.rotation.y = player.heading;
-    const pose = !player.grounded ? 'jump' : hakUntil > now ? 'hak' : fishing ? 'vis' : myEmoteUntil > now ? myEmote : player.moving ? 'walk' : 'idle';
-    avatar.update(player.running && player.grounded ? now * 1.45 : now, pose, { z: player.ground + player.y });
+    const pose = down ? 'down' : !player.grounded ? 'jump' : hakUntil > now ? 'hak' : fishing ? 'vis' : myEmoteUntil > now ? myEmote : player.moving ? 'walk' : 'idle';
+    avatar.group.rotation.z = down ? Math.PI / 2 : 0;   // fainted: on your side
+    avatar.update(player.running && player.grounded ? now * 1.45 : now, down ? 'idle' : pose, { z: player.ground + player.y + (down ? 0.35 : 0) });
     if (pet) {
       pet.group.position.set(dog.x, dog.ground, dog.z);
       pet.group.rotation.y = dog.heading;
@@ -972,7 +983,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get ghosts() { return (samen && samen.isGuest ? remoteGhosts.map((rg) => ({ x: rg.holder.position.x, z: rg.holder.position.z, state: 'remote' })) : ghosts.map((gh) => ({ x: gh.g.x, z: gh.g.z, state: gh.g.state }))); },
     get bear() { return bear ? { x: bear.b.x, z: bear.b.z, state: bear.b.state, scared: bear.b.scared } : null; },
     get lights() { return state ? lightsNow() : []; },
-    get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, tag: r.key })); },
+    get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
+    setDown(v) { down = !!v; },
+    get down() { return down; },
     onLand(x, z) { return map.walkable(x, z); },
     kindAt(x, z) { return map.kindAt(x, z); },
     landmarks: { CAMP, PIER, LAKE, TENT: TENT_AT, CHEST: camp.chest.pos, CAVE },

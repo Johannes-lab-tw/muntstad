@@ -7,6 +7,8 @@ import * as T from '../../vendor/three.module.min.js';
 import { createControls } from '../3d/controls.js';
 import { createEilandScene } from '../3d/scene-eiland.js';
 import { createKamp } from './kamp.js';
+import { createMinimap } from './minimap.js';
+import { fireRadius } from '../nacht.js';
 import { setFlag, formatCoins } from '../economy.js';
 import { collect, bagCount, openChest, chestOpenedToday, todayKey } from '../eiland.js';
 import { KETENS } from '../../content/ketens.js';
@@ -58,6 +60,11 @@ export function createAvontuur(game) {
   stookBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); if (scene3) scene3.hook.stoke(); });
   const nachtEl = document.getElementById('av-nacht');
   const flauwEl = document.getElementById('av-flauw');
+  const flauwTekst = document.getElementById('av-flauw-tekst');
+  const mapEl = document.getElementById('av-map');
+  const vignetteEl = document.getElementById('av-vignette');
+  let minimap = null;   // V6.2e: drawn the first time the island shows
+  game.on('samenpad', (open) => { if (visible) controls.setEnabled(!open); });   // the SAMEN pad covers the stick
   eetBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); onEat(); });
   document.getElementById('av-zwaai').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('wave'); });
   document.getElementById('av-dans').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('dance'); });
@@ -140,6 +147,11 @@ export function createAvontuur(game) {
       + `<span class="warm" title="Warmte">🌡️<i class="warm-bar${warm < game.config.kou.slowBelow ? ' low' : ''}"><b style="width:${warm}%"></b></i></span>`;
     eetBtn.hidden = !canEat(e);
     syncStook(state);
+    // the dark rim closes in as you get cold (blue) or hungry (red)
+    const coldF = Math.max(0, 1 - warm / game.config.kou.warnBelow), hungerF = Math.max(0, 1 - honger / game.config.honger.warnBelow);
+    const f = Math.max(coldF, hungerF);
+    vignetteEl.classList.toggle('on', f > 0);
+    vignetteEl.style.setProperty('--vig', coldF >= hungerF ? `rgba(30, 60, 160, ${0.5 + f * 0.45})` : `rgba(150, 20, 20, ${0.5 + f * 0.45})`);
     nachtEl.textContent = lastDark ? `🌙 Nacht ${nights + 1}` : `☀️ Dag ${nights + 1}`;
     nachtEl.classList.toggle('night', !!lastDark);
     // the chain card: the title, done steps ticked, the current step with its count, the rest greyed
@@ -217,6 +229,42 @@ export function createAvontuur(game) {
   function doFaint(why = 'honger') {
     fainting = true;
     game.audio.play('stumble');
+    if (samen && samen.active && samen.peers.size > 0) { goDown(why); return; }
+    fallDown(why);
+  }
+  // V6.2: with friends around you first lie down; a friend who reaches you in time presses WEK and you keep your things
+  let downTimer = 0, downWhy = 'honger';
+  function goDown(why) {
+    downWhy = why;
+    flauwEl.hidden = false;
+    flauwEl.classList.add('down');
+    requestAnimationFrame(() => flauwEl.classList.add('on'));
+    controls.setEnabled(false);
+    scene3.hook.setDown(true);
+    samen.send('down', { w: why === 'kou' ? 1 : 0 });
+    game.mentor.say('lines.down', {}, { kind: 'reaction' });
+    let left = Math.round(game.config.net.wekMs / 1000);
+    const tick = () => { flauwTekst.textContent = `${game.T.lines.downText} ${left}`; };
+    tick();
+    downTimer = setInterval(() => { left--; tick(); if (left <= 0) endDown(false); }, 1000);
+  }
+  function endDown(woken) {
+    if (downTimer) { clearInterval(downTimer); downTimer = 0; }
+    flauwTekst.textContent = '';
+    scene3.hook.setDown(false);
+    if (samen && samen.active) samen.send('up', {});
+    if (woken) {
+      const c = game.config;
+      game.update((s) => ({ ...s, eiland: { ...s.eiland, honger: Math.max(s.eiland.honger ?? 100, c.honger.afterFaint) }, nacht: { ...s.nacht, warm: Math.max(s.nacht.warm ?? 100, c.kou.afterFaint) } }));
+      game.save();
+      game.audio.play('upgrade');
+      game.mentor.say('lines.woken', {}, { kind: 'reaction' });
+      flauwEl.classList.remove('on', 'down');
+      controls.setEnabled(visible);
+      setTimeout(() => { flauwEl.hidden = true; fainting = false; }, 700);
+    } else { flauwEl.classList.remove('down'); fallDown(downWhy); }
+  }
+  function fallDown(why) {
     flauwEl.hidden = false;
     requestAnimationFrame(() => flauwEl.classList.add('on'));
     setTimeout(() => {
@@ -225,6 +273,7 @@ export function createAvontuur(game) {
       scene3.hook.teleport(scene3.hook.landmarks.CAMP.x, scene3.hook.landmarks.CAMP.z + 2.4);
       game.mentor.say(why === 'kou' ? 'lines.frozen' : 'lines.fainted', {}, { kind: 'reaction' });
       flauwEl.classList.remove('on');
+      controls.setEnabled(visible);
       setTimeout(() => { flauwEl.hidden = true; fainting = false; }, 700);
     }, 900);
   }
@@ -346,11 +395,15 @@ export function createAvontuur(game) {
     samen.on('peer', () => { if (visible) game.mentor.say('lines.peerJoined', {}, { kind: 'reaction' }); hudKey = ''; if (visible) renderHud(game.state); });
     samen.on('left', () => { if (visible) game.mentor.say('lines.peerLeft', {}, { kind: 'reaction' }); hudKey = ''; if (visible) renderHud(game.state); });
     samen.on('change', () => { hudKey = ''; if (visible) renderHud(game.state); });
+    samen.on('wake', () => { if (fainting && downTimer) endDown(true); });
+    samen.on('down', () => { if (visible) game.mentor.say('lines.friendDown', {}, { kind: 'reaction' }); });
   }
 
   function loop(now) {
     if (!visible) return;
     scene3.render(now);
+    if (!minimap) minimap = createMinimap(mapEl);
+    minimap.update(scene3.hook.player, scene3.hook.remotes, scene3.hook.darkness, { fireR: fireRadius(game.state.nacht, game.config) }, now);
     raf = requestAnimationFrame(loop);
   }
   window.addEventListener('resize', () => { if (visible && scene3) scene3.resize(); });

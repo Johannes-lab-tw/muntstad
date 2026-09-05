@@ -83,14 +83,34 @@
           <div class="av-quest panel-mini" id="av-quest" hidden></div>
         </div>
       </div>
-      <div class="av-peers panel-mini" id="av-peers" hidden></div>
+      <div class="av-top-right">
+        <div class="av-peers panel-mini" id="av-peers" hidden></div>
+        <button class="btn btn-purple btn-emote av-samen" id="av-samen" type="button">SAMEN</button>
+      </div>
+      <canvas class="av-map" id="av-map" width="144" height="144" aria-label="Kaart van het eiland"></canvas>
+      <div class="av-vignette" id="av-vignette" aria-hidden="true"></div>
+      <div class="overlay samen-overlay" id="av-samen-pad" hidden>
+        <div class="panel popup samen-panel" role="dialog">
+          <h2 class="popup-title">Samen op het eiland</h2>
+          <div class="samen-code av-samen-code" id="av-samen-code"></div>
+          <div class="samen-slots" id="av-samen-slots"></div>
+          <div class="samen-keys" id="av-samen-keys"></div>
+          <p class="popup-text" id="av-samen-status"></p>
+          <div class="row">
+            <button class="btn btn-purple btn-lg" id="av-samen-kamer" type="button">KAMER</button>
+            <button class="btn btn-secondary btn-lg" id="av-samen-wis" type="button">WIS</button>
+            <button class="btn btn-danger btn-lg" id="av-samen-stop" type="button" hidden>STOP</button>
+            <button class="btn btn-grey btn-lg" id="av-samen-terug" type="button">TERUG</button>
+          </div>
+        </div>
+      </div>
       <div class="av-emotes">
         <button class="btn btn-purple btn-emote" id="av-zwaai" type="button">ZWAAI</button>
         <button class="btn btn-orange btn-emote" id="av-dans" type="button">DANS</button>
         <button class="btn btn-success btn-emote" id="av-eet" type="button" hidden>EET</button>
         <button class="btn btn-primary btn-emote" id="av-stook" type="button" hidden>STOOK</button>
       </div>
-      <div class="av-flauw" id="av-flauw" hidden></div>
+      <div class="av-flauw" id="av-flauw" hidden><p class="av-flauw-tekst" id="av-flauw-tekst"></p></div>
       <div class="av-buttons">
         <button class="btn btn-secondary btn-lg" id="av-dorp" type="button">⛵ DORP</button>
         <button class="btn btn-primary btn-actie" id="av-actie" type="button" hidden>PAK</button>

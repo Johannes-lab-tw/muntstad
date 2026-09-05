@@ -192,6 +192,7 @@ export const CONFIG = Object.freeze({
 
   // SAMEN SPELEN (PLAN-V4 R5): our own relay only (address set by a parent on PAPA), positions 8×/s, the host's world 4×/s.
   net: {
+    wekMs: 30000,                     // V6.2: fainted with friends around, you lie down this long for a WEK before the bag halves
     posMs: 125,
     worldMs: 250,
     maxPlayers: 6,

@@ -34,7 +34,7 @@ export function createSamen(game) {
     emit('look', from);
     emit('change');
   });
-  for (const k of ['pos', 'world', 'stoke', 'steal', 'emote', 'boe', 'sleep']) relay.on(k, (d, from) => emit(k, d, from));
+  for (const k of ['pos', 'world', 'stoke', 'steal', 'emote', 'boe', 'sleep', 'down', 'up', 'wake']) relay.on(k, (d, from) => emit(k, d, from));
 
   return {
     /** The host opens a room: a fresh code of four pictures. Returns the code or null (no relay URL set). */

@@ -19,7 +19,7 @@ export function isRoomCode(code) {
   return /^[0-7]{4}$/.test(String(code));
 }
 /** Only these leave the device, and only with numbers/short ids in them. */
-export const TYPES = new Set(['pos', 'hello', 'world', 'stoke', 'steal', 'emote', 'boe', 'sleep', 'bye']);
+export const TYPES = new Set(['pos', 'hello', 'world', 'stoke', 'steal', 'emote', 'boe', 'sleep', 'bye', 'down', 'up', 'wake']);   // down/up/wake: V6.2 WEK
 
 export function createRelay() {
   let ws = null, id = 0, hostId = 0, url = '', code = '';

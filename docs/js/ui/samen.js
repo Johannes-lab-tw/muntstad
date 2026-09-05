@@ -92,5 +92,54 @@ export function createSamenUi(game) {
     game.emit('samen', samen.status);
   });
 
-  return { renderPapa, statusText };
+  // ---- the island (V6.2): SAMEN on the island itself. KAMER opens a room (you are the host, your friend taps your four
+  // pictures); tapping four pictures joins a friend's room. The pad covers the stick, so walking pauses while it is open.
+  const avBtn = document.getElementById('av-samen');
+  const avPad = document.getElementById('av-samen-pad');
+  const avSlots = document.getElementById('av-samen-slots');
+  const avKeys = document.getElementById('av-samen-keys');
+  const avStatus = document.getElementById('av-samen-status');
+  const avCode = document.getElementById('av-samen-code');
+  const avKamer = document.getElementById('av-samen-kamer');
+  const avStop = document.getElementById('av-samen-stop');
+  const avWis = document.getElementById('av-samen-wis');
+  let avEntry = '';
+  for (let i = 0; i < PICTURES.length; i++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn btn-pic';
+    b.dataset.pic = String(i);
+    b.textContent = PICTURES[i];
+    b.addEventListener('click', () => {
+      if (avEntry.length >= 4 || samen.status !== 'off') return;
+      game.audio.play('tap');
+      avEntry += String(i);
+      renderAv();
+      if (avEntry.length === 4) { if (samen.hasRelay) { samen.joinRoom(avEntry); avStatus.textContent = T.samen.connecting; } else avStatus.textContent = T.samen.askPapa; }
+    });
+    avKeys.appendChild(b);
+  }
+  function showAv(open) { avPad.hidden = !open; game.emit('samenpad', open); if (open) renderAv(); }
+  avBtn.addEventListener('click', () => { game.audio.play('tap'); avEntry = ''; showAv(true); });
+  avWis.addEventListener('click', () => { game.audio.play('tap'); avEntry = ''; renderAv(); });
+  document.getElementById('av-samen-terug').addEventListener('click', () => { game.audio.play('tap'); showAv(false); });
+  avKamer.addEventListener('click', () => { game.audio.play('tap'); if (!samen.openRoom()) avStatus.textContent = T.samen.noRelay; renderAv(); });
+  avStop.addEventListener('click', () => { game.audio.play('tap'); samen.leave(); avEntry = ''; renderAv(); });
+  function renderAv() {
+    const on = samen.status !== 'off';
+    avKamer.hidden = on;
+    avWis.hidden = on;
+    avStop.hidden = !on;
+    avCode.textContent = on && samen.code ? codeToPictures(samen.code) : '';
+    avSlots.hidden = on;
+    avKeys.hidden = on;
+    if (!on) avSlots.innerHTML = [0, 1, 2, 3].map((i) => `<span class="samen-slot">${avEntry[i] != null ? PICTURES[Number(avEntry[i])] : '·'}</span>`).join('');
+    avStatus.textContent = !samen.hasRelay ? T.samen.askPapa : on ? statusText() : avEntry.length ? T.samen.tapPictures : T.samen.islandHelp;
+  }
+  samen.on('change', () => {
+    if (!avPad.hidden) renderAv();
+    if (samen.active && !avPad.hidden && samen.peers.size > 0) setTimeout(() => { if (samen.active) showAv(false); }, 1200);   // a friend is in: back to the island
+  });
+
+  return { renderPapa, statusText, renderAv };
 }

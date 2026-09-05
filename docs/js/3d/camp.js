@@ -99,6 +99,20 @@ export function createCamp(map) {
   const fireLight = new T.PointLight(0xffa040, 0, 24, 1.5);
   fireLight.position.set(CAMP.x, y0 + 1.2, CAMP.z);
   group.add(fireLight);
+  // V6.2e: sparks that rise from the fire (more and higher per level) and a warm glow disc on the ground
+  const SPARKS = 40;
+  const sparkPos = new Float32Array(SPARKS * 3);
+  const sparkLife = new Float32Array(SPARKS);
+  for (let i = 0; i < SPARKS; i++) sparkLife[i] = Math.random();
+  const sparkGeom = new T.BufferGeometry();
+  sparkGeom.setAttribute('position', new T.BufferAttribute(sparkPos, 3));
+  const sparks = new T.Points(sparkGeom, new T.PointsMaterial({ color: 0xffb340, size: 0.14, transparent: true, opacity: 0.95, sizeAttenuation: true, depthWrite: false }));
+  sparks.frustumCulled = false;
+  group.add(sparks);
+  const glow = new T.Mesh(new T.CircleGeometry(2.2, 24), new T.MeshBasicMaterial({ color: 0xff9a2e, transparent: true, opacity: 0.22, depthWrite: false }));
+  glow.rotation.x = -Math.PI / 2;
+  glow.position.set(CAMP.x, y0 + 0.03, CAMP.z);
+  group.add(glow);
   obstacles.push({ x: CAMP.x, z: CAMP.z, r: 1.15, kind: 'fire' });
 
   // ---- log seats round the fire ----
@@ -285,6 +299,24 @@ export function createCamp(map) {
     // the fire is the light of the night: warm, flickering, strong in the dark and a soft glow by day
     fireLight.intensity = size * (lite ? 0.7 : 1) * (0.3 + darkness * 2.8) * (1 + Math.sin(now / 80) * 0.08 + Math.sin(now / 210) * 0.05) * 8;
     fireLight.distance = 4 + size * 12;
+    // sparks: each one climbs, drifts and starts over; the number that show grows with the level
+    const alive = level <= 0 ? 0 : Math.min(SPARKS, 6 + level * 7);
+    const dt = Math.min(0.05, (now - (sparks.userData.t || now)) / 1000);
+    sparks.userData.t = now;
+    for (let i = 0; i < SPARKS; i++) {
+      if (i >= alive) { sparkPos[i * 3 + 1] = -100; continue; }
+      sparkLife[i] += dt * (0.35 + (i % 5) * 0.08);
+      if (sparkLife[i] > 1) sparkLife[i] -= 1;
+      const l = sparkLife[i], a = i * 2.4 + now / 900;
+      const rr = 0.15 + l * 0.5 + (i % 3) * 0.1;
+      sparkPos[i * 3] = CAMP.x + Math.cos(a) * rr;
+      sparkPos[i * 3 + 1] = fireBase + 0.6 + l * (1.2 + size * 1.4);
+      sparkPos[i * 3 + 2] = CAMP.z + Math.sin(a) * rr;
+    }
+    sparkGeom.attributes.position.needsUpdate = true;
+    sparks.material.opacity = alive ? 0.6 + darkness * 0.35 : 0;
+    glow.material.opacity = level <= 0 ? 0 : (0.08 + darkness * 0.22) * Math.min(1, 0.5 + level * 0.15);
+    glow.scale.setScalar(0.6 + size * 0.6);
   }
   /** The second hut (V5.3 upgrade): built when bought. Returns its obstacle. */
   function addHut(x, z, rot, roof) {
