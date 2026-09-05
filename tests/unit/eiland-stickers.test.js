@@ -34,6 +34,8 @@ test('PAPA stats include the island', () => {
   assert.equal(st.islandEarned, 77);
   assert.equal(st.questsDone, 4);
   assert.equal(st.tools, 2);
-  for (const k of ['nights', 'islandEarned', 'questsDone', 'stolen', 'tools']) assert.ok(T.papa.stats[k], k);
+  for (const k of ['nights', 'islandEarned', 'questsDone', 'stolen', 'tools', 'fainted', 'bumped', 'honger']) assert.ok(T.papa.stats[k], k);
+  assert.equal(st.fainted, 0);
+  assert.equal(st.honger, 100);
   assert.ok(T.papa.busy.includes('{naam}'));
 });

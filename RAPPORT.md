@@ -2,7 +2,22 @@
 
 **Live:** https://johannes-lab-tw.github.io/muntstad/
 
-## 0. Vierde ronde: Muntstad Avontuur (3 tot 5 september 2026)
+## 0. Vijfde ronde: spannender, wat je zoon vroeg (5 september 2026)
+
+Na jullie iPad-test van 5 september noemde je zoon zes dingen; die zijn alle zes gebouwd (PLAN-V5.md), plus twee open punten uit §7.
+
+1. **De grot** is nu een gang met een bocht die uitkomt in een ronde kamer met stalactieten en kristallen. Vleermuizen vliegen op als je binnenkomt, er druppelt water, en naast de schatkist slaapt een grotspook: pak je de schat, dan wordt het wakker en jaagt het je naar buiten. Haalt het je in, dan pakt het schelpen. Buiten is het weg.
+2. **Bomen vallen om** na het laatste stuk hout, van je af, met een plof en twee stukken hout extra; er blijft een stronk, na anderhalve minuut groeit er een nieuwe boom.
+3. **Uitdagender.** Een etenmeter (appel) loopt leeg; bessen en vis eten met EET. Onder een kwart loop je traag, en met een lege maag in het donker val je flauw: je wordt wakker bij het vuur en de helft van je rugzak is weg. Vanaf de tweede nacht komt het **Nachthert**: het rent in het donker op je af en duwt je omver, je spullen liggen om je heen (snel oprapen). Licht en het hek houden het weg; met rennen ontsnap je net, met de snelle schoenen zeker. Elke nacht komen er meer en snellere spoken, de beer komt later vaker. Bij het vuur zijn zeven nieuwe spullen te koop: grote rugzak, snelle schoenen, hengel, trommel, vuurkuil, hoog hek, tweede hut. Ouderpagina: flauwgevallen, omvergeduwd, maag.
+4. **De wasstraat** in WERK groeit mee met het level van de geldmaker: vlaggen, neon, extra borstels, schuimkanon, luifel met lampjes, en op level 5 een paleis met toren en fontein.
+5. **Het dorp** is groter (20 bij 14) met twee nieuwe geldmakers: de IJssalon (1 000 munten) en het Pretpark (40 000) met een draaiend reuzenrad. De les blijft kloppen: de simulator en de balanstest zijn groen. In de winkel staan de geldmakers nu vier per pagina.
+6. **Stem en muziek.** Muntje kiest de levendigste Nederlandse stem op de iPad en praat met toonverschil per zin; de muziek is luider en heeft twee deuntjes (dorp en eiland) met een drum, en de nacht klinkt trager, lager en met wind.
+
+Ook: tikken op een boom, schelp of struik doet wat de knop doet. Bewaar-codes van vóór deze ronde blijven laden.
+
+Wil je een stem downloaden voor Muntje: Instellingen → Toegankelijkheid → Gesproken materiaal → Stemmen → Nederlands, kies Claire of Xander (verbeterd). Het spel pakt hem vanzelf.
+
+## 0-vorig. Vierde ronde: Muntstad Avontuur (3 tot 5 september 2026)
 
 Je besluit van 3 september: doorbouwen in de eigen app, richting 99 Nights in the Forest. Dat staat er nu, in zes rondes uit PLAN-V4.md, elk met een commit en tests in de cloud.
 
@@ -194,7 +209,7 @@ Volgende versie (bewust weggelaten voor een afgemaakte versie):
 - Seizoensdingen (sneeuw, Sinterklaas) in de tuin.
 - Dag-en-nacht ook in het dorp (lampen aan, ramen verlicht); op het Avontuureiland is het er al.
 - Een tweede eiland per boot (de vuurtoren), meer dieren, en spoken die ook bij gasten in de kamer stelen.
-- Tikken op dingen in de wereld naast de contextknop.
+- Kampupgrades die je ziet vanuit het dorp, en een boot die echt vaart.
 - Een echte iPad-meting van de framerate op het eiland (nu alleen Chromium).
 
 ## 8. Later iets veranderen

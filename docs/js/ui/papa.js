@@ -97,6 +97,9 @@ export function createPapa(game) {
       [L.questsDone, `${s.questsDone}`],
       [L.stolen, `${s.stolen}×`],
       [L.tools, `${s.tools} / ${game.config.eiland.tools.length}`],
+      [L.fainted, `${s.fainted}×`],
+      [L.bumped, `${s.bumped}×`],
+      [L.honger, `${s.honger}`],
     ];
     // one line for a parent who asks "what was he up to?"
     const busy = document.getElementById('papa-busy');
