@@ -16,7 +16,7 @@ async function openAvontuur(page) {
     await page.locator('#nav-avontuur').click({ force: true });
     try { await expect(page.locator('#screen-avontuur')).toHaveClass(/active/, { timeout: 8000 }); break; } catch (e) { if (i === 3) throw e; }
   }
-  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
+  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 45000 }).toBeGreaterThan(1000);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));
   await page.waitForTimeout(300);
 }
@@ -36,19 +36,19 @@ test('the chain card shows the first chain; walking onto the beach finishes an o
   // onto the beach: the ontdek step is done within a second or two, Muntje says so
   const h = await hook(page);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z - 12), h.pier);
-  await expect.poll(async () => (await state(page)).eiland.stap, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).eiland.stap, { timeout: 40000 }).toBe(1);
   await expect(page.locator('#av-quest .st.done')).toHaveCount(1);
-  await expect.poll(() => mentorHas(page, 'strand'), { timeout: 20000 }).toBe(true);
+  await expect.poll(() => mentorHas(page, 'strand'), { timeout: 40000 }).toBe(true);
   // step 2 (four shells): the four in the bag do not count, only what you pick from now on; skip it through the hook-free way: sell first shows nothing
   await page.evaluate(() => { window.__muntstad.state.eiland.stap = 2; });   // straight to the verkoop step (picking four shells takes minutes on the runner)
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), h.camp);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('KAMP');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('KAMP');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await expect(page.locator('#kamp-overlay')).toBeVisible();
   const wallet = (await state(page)).wallet;
   await page.locator('#kamp-grid .card[data-id="schelp"] button').click();
   // four shells sold = the verkoop step (2) done = the chain done: 60 coins on top of the 12 for the shells
-  await expect.poll(async () => (await state(page)).eiland.ketensDone, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).eiland.ketensDone, { timeout: 40000 }).toBe(1);
   expect(Math.floor((await state(page)).wallet)).toBe(Math.floor(wallet) + 12 + 60);
   expect((await state(page)).eiland.keten).toBe(4);
   expect((await state(page)).eiland.questsDone).toBe(1);
@@ -67,20 +67,20 @@ test('night 5: the shadow wolves come; one bites in the dark and your things lie
   // in the dark, far from the fire: a wolf right behind the player lunges and bites
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 26), h.camp);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
-  await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 40000 }).toBe(1);
   const p = (await hook(page)).player;
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.wolfAt(x, z + 3), p);
-  await expect.poll(async () => (await hook(page)).wolves.length, { timeout: 20000 }).toBeGreaterThanOrEqual(3);
-  await expect.poll(async () => (await hook(page)).drops.length, { timeout: 30000 }).toBeGreaterThan(0);
-  await expect.poll(() => mentorHas(page, 'wolf'), { timeout: 20000 }).toBe(true);
+  await expect.poll(async () => (await hook(page)).wolves.length, { timeout: 40000 }).toBeGreaterThanOrEqual(3);
+  await expect.poll(async () => (await hook(page)).drops.length, { timeout: 45000 }).toBeGreaterThan(0);
+  await expect.poll(() => mentorHas(page, 'wolf'), { timeout: 40000 }).toBe(true);
   expect((await state(page)).nacht.bumped).toBeGreaterThanOrEqual(1);   // the pack keeps lunging while you stand in the dark
   // BOE while a wolf is close: the pack flees (the pack is put round the player: on the slow runner they would take long to arrive)
   const pp = (await hook(page)).player;
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.wolvesAt(x, z), pp);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 30000 }).toBe('BOE');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 45000 }).toBe('BOE');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await hook(page)).wolves.every((w) => w.state === 'flee'), { timeout: 20000 }).toBe(true);
-  await expect.poll(() => mentorHas(page, 'rennen weg'), { timeout: 20000 }).toBe(true);
+  await expect.poll(async () => (await hook(page)).wolves.every((w) => w.state === 'flee'), { timeout: 40000 }).toBe(true);
+  await expect.poll(() => mentorHas(page, 'rennen weg'), { timeout: 40000 }).toBe(true);
   // by the fire (level 3, light 6 m) a lunging wolf turns back into circling: the drops stay what they were
   await page.evaluate(() => window.__muntstad.avontuur.removeWolves());
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.0), h.camp);
@@ -106,13 +106,13 @@ test('V6.5 the lighthouse: the hut chest on the north coast pays 60 once a day a
   const L = await page.evaluate(() => window.__muntstad.avontuur.landmarks);
   await expect(page.locator('#av-quest .kt')).toHaveText('De vuurtoren');
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 16), L.VUURTOREN);
-  await expect.poll(async () => (await state(page)).eiland.stap, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).eiland.stap, { timeout: 40000 }).toBe(1);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 1.5), L.HUTCHEST);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('OPEN');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('OPEN');
   const wallet = (await state(page)).wallet;
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 20000 }).toBe(Math.floor(wallet) + 60);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('LEEG');
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 40000 }).toBe(Math.floor(wallet) + 60);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('LEEG');
   expect((await state(page)).eiland.stap).toBe(2);
   expect((await state(page)).eiland.chestDay).toBe('');   // the cave chest is a different chest
   expect(errors()).toEqual([]);

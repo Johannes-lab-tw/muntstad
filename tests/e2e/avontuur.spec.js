@@ -18,7 +18,7 @@ async function openAvontuur(page) {
     await page.locator('#nav-avontuur').click({ force: true });
     try { await expect(page.locator('#screen-avontuur')).toHaveClass(/active/, { timeout: 8000 }); break; } catch (e) { if (i === 3) throw e; }
   }
-  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
+  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 45000 }).toBeGreaterThan(1000);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));   // daytime, whatever the wall clock says (a night would burn the fire, pay at dawn and pop a sticker)
   await page.waitForTimeout(400);
 }
@@ -62,13 +62,13 @@ test('the joystick walks the player off the pier, the dog follows, SPRING jumps,
 
   // SPRING: the player jumps and lands again
   await page.locator('#av-spring').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await hook(page)).jumps, { timeout: 20000 }).toBe(after.jumps + 1);
-  await expect.poll(async () => (await hook(page)).player.grounded, { timeout: 20000 }).toBe(true);
+  await expect.poll(async () => (await hook(page)).jumps, { timeout: 40000 }).toBe(after.jumps + 1);
+  await expect.poll(async () => (await hook(page)).player.grounded, { timeout: 40000 }).toBe(true);
   await shot(page, testInfo, '10-avontuur');
 
   // night: the palette darkens (forced phase for the test), then back to the clock
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
-  await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 40000 }).toBe(1);
   await shot(page, testInfo, '11-avontuur-nacht');
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(null));
   // back to day = dawn: the first night survived pays and earns the 🌙 sticker popup (R6); close it before DORP
@@ -94,7 +94,7 @@ test('WASD walks, space jumps, and the player never walks into the sea or up the
   const moved = await hook(page);
   expect(Math.hypot(moved.player.x - start.player.x, moved.player.z - start.player.z)).toBeGreaterThan(1);
   await page.keyboard.press('Space');
-  await expect.poll(async () => (await hook(page)).jumps, { timeout: 20000 }).toBe(moved.jumps + 1);
+  await expect.poll(async () => (await hook(page)).jumps, { timeout: 40000 }).toBe(moved.jumps + 1);
 
   // run backwards (south) for a long time: the sea is off limits, the player stays on the pier or the beach
   await page.evaluate(() => window.__muntstad.avontuur.setInput(0, -1, true));

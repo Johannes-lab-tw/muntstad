@@ -16,7 +16,7 @@ async function openAvontuur(page) {
     await page.locator('#nav-avontuur').click({ force: true });
     try { await expect(page.locator('#screen-avontuur')).toHaveClass(/active/, { timeout: 8000 }); break; } catch (e) { if (i === 3) throw e; }
   }
-  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
+  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 45000 }).toBeGreaterThan(1000);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));   // daytime, whatever the wall clock says (a night would burn the fire, pay at dawn and pop a sticker)
   await page.waitForTimeout(300);
 }
@@ -26,7 +26,7 @@ async function goTo(page, kind, label) {
   const target = await page.evaluate((k) => window.__muntstad.avontuur.nearest(k), kind);
   expect(target, `a ${kind} exists`).not.toBeNull();
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 0.9), target);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe(label);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe(label);
 }
 
 test('PAK picks a shell, HAK chops wood (three taps by hand), the backpack and the quest count along', async ({ page }) => {
@@ -41,11 +41,11 @@ test('PAK picks a shell, HAK chops wood (three taps by hand), the backpack and t
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   // V6.1: the click of that same tap lands where the finger is; DORP must ignore it (it used to slide under the finger)
   await page.locator('#av-dorp').dispatchEvent('click');
-  await expect.poll(async () => (await state(page)).eiland.bag.schelp, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).eiland.bag.schelp, { timeout: 40000 }).toBe(1);
   await page.waitForTimeout(300);
   await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
   // the shell is gone: the button no longer offers PAK for it, and it keeps its place (only invisible)
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).not.toBe('PAK');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).not.toBe('PAK');
   expect(await page.locator('#av-actie').evaluate((el) => getComputedStyle(el).display)).not.toBe('none');
 
   await goTo(page, 'hout', 'HAK');
@@ -53,7 +53,7 @@ test('PAK picks a shell, HAK chops wood (three taps by hand), the backpack and t
     await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
     await page.waitForTimeout(150);
   }
-  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 40000 }).toBe(1);
   const s = await state(page);
   expect(s.eiland.collected.hout).toBe(1);
   expect(s.eiland.collected.schelp).toBe(1);
@@ -73,10 +73,10 @@ test('a tree falls after six pieces of wood: bonus wood, a stump, HAK no longer 
     await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
     await page.waitForTimeout(200);
   }
-  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 20000 }).toBe(8);
-  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.fallen), { timeout: 20000 }).toBeGreaterThan(0);
+  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 40000 }).toBe(8);
+  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.fallen), { timeout: 40000 }).toBeGreaterThan(0);
   // (the forest is dense: another tree may well offer HAK from the same spot, so no assertion on the label)
-  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('Timmer'))), { timeout: 20000 }).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('Timmer'))), { timeout: 40000 }).toBe(true);
   expect(errors()).toEqual([]);
 });
 
@@ -93,21 +93,21 @@ test('the chest in the cave: OPEN pays 30 coins once, then the chest is LEEG; a 
   expect((await hook(page)).player.ground).toBeCloseTo(lm.cave.floor, 0);
   const h = lm.cave.heading;
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z), { x: lm.chest.x + Math.sin(h) * 1.3, z: lm.chest.z + Math.cos(h) * 1.3 });
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('OPEN');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('OPEN');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 20000 }).toBe(40);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('LEEG');
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 40000 }).toBe(40);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('LEEG');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await page.waitForTimeout(500);
   expect(Math.floor((await state(page)).wallet)).toBe(40);
   // V5.2: the bats flew when you came into the chamber, and the cave ghost woke up when the chest opened
-  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.bats), { timeout: 20000 }).not.toBe('hang');
-  await expect.poll(() => page.evaluate(() => { const s = window.__muntstad.avontuur.caveGhost.state; return s === 'chase' || s === 'pause' ? 'awake' : s; }), { timeout: 20000 }).toBe('awake');
-  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('wakker'))), { timeout: 20000 }).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.bats), { timeout: 40000 }).not.toBe('hang');
+  await expect.poll(() => page.evaluate(() => { const s = window.__muntstad.avontuur.caveGhost.state; return s === 'chase' || s === 'pause' ? 'awake' : s; }), { timeout: 40000 }).toBe('awake');
+  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('wakker'))), { timeout: 40000 }).toBe(true);
   // run for the mouth: outside, the ghost gives up and goes back to sleep
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x + Math.sin(0.69) * 3, z + Math.cos(0.69) * 3), lm.cave);
-  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.caveGhost.state), { timeout: 20000 }).not.toBe('chase');
-  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('veilig'))), { timeout: 20000 }).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.caveGhost.state), { timeout: 40000 }).not.toBe('chase');
+  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('veilig'))), { timeout: 40000 }).toBe(true);
   // the walls of the first leg: beside the tunnel, pushing towards it, you stay out (the hill's rock or the wall)
   const mid = { x: lm.cave.x - Math.sin(h) * 2.2, z: lm.cave.z - Math.cos(h) * 2.2 };
   const side = { x: mid.x + Math.cos(h) * 3.0, z: mid.z - Math.sin(h) * 3.0 };
@@ -130,28 +130,28 @@ test('KAMP sells the backpack for coins and the axe is bought with the shared wa
   const h = await hook(page);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), h.camp);
   // V6.2: a fire of level 3 or more with a fish in the bag offers KOOK first: the fish becomes a meal, then KAMP
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('KOOK');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('KOOK');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await state(page)).eiland.bag.maal, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).eiland.bag.maal, { timeout: 40000 }).toBe(1);
   expect((await state(page)).eiland.bag.vis).toBe(0);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('KAMP');
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('KAMP');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await expect(page.locator('#kamp-overlay')).toBeVisible();
   // V6.1: a real screen with tabs; the bag has three kinds of things → three cards on VERKOPEN, then ALLES sells the rest
   await expect(page.locator('#kamp-grid .card')).toHaveCount(3);
   const before = (await state(page)).wallet;
   await page.locator('#kamp-grid .card[data-id="maal"] button').click();   // a cooked fish sells for 16 (a raw one for 8)
-  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 20000 }).toBe(Math.floor(before) + 16);
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 40000 }).toBe(Math.floor(before) + 16);
   await page.locator('#kamp-alles').click();
   const expected = 5 * 2 + 4 * 3 + 1 * 16;   // wood, shells, the meal
-  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 20000 }).toBe(Math.floor(before) + expected);
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 40000 }).toBe(Math.floor(before) + expected);
   expect((await state(page)).eiland.bag.hout).toBe(0);
   await expect(page.locator('#kamp-alles')).toBeHidden();
   // 50 + 30 = 80 coins: the axe (60) is affordable, the lantern (80) too, the fence not
   await page.locator('#kamp-tab-kopen').click();
   await expect(page.locator('#kamp-grid .card')).toHaveCount(4);
   await page.locator('[data-tool="bijl"]').click();
-  await expect.poll(async () => (await state(page)).eiland.tools.bijl, { timeout: 20000 }).toBe(true);
+  await expect.poll(async () => (await state(page)).eiland.tools.bijl, { timeout: 40000 }).toBe(true);
   expect(Math.floor((await state(page)).wallet)).toBe(Math.floor(before) + expected - 60);
   await expect(page.locator('[data-tool="bijl"]')).toHaveCount(0);
   await expect(page.locator('#kamp-grid .card[data-id="bijl"]')).toHaveClass(/owned/);

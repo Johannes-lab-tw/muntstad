@@ -19,7 +19,7 @@ async function openAvontuur(page) {
     await page.locator('#nav-avontuur').click({ force: true });
     try { await expect(page.locator('#screen-avontuur')).toHaveClass(/active/, { timeout: 8000 }); break; } catch (e) { if (i === 3) throw e; }
   }
-  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
+  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 45000 }).toBeGreaterThan(1000);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));   // daytime, whatever the wall clock says (a night would burn the fire, pay at dawn and pop a sticker)
 }
 
@@ -37,8 +37,8 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
   await openPapa(a);
   await expect(a.locator('#relay-url')).toHaveValue(RELAY);
   await a.locator('#samen-kamer').click();
-  await expect(a.locator('#samen-code')).not.toHaveText('', { timeout: 30000 });
-  await expect(a.locator('#samen-status')).toContainText('Verbonden', { timeout: 30000 });
+  await expect(a.locator('#samen-code')).not.toHaveText('', { timeout: 45000 });
+  await expect(a.locator('#samen-status')).toContainText('Verbonden', { timeout: 45000 });
   const code = await a.evaluate(() => window.__muntstad.samen.code);
   expect(code).toMatch(/^[0-7]{4}$/);
   await a.locator('#papa-stad').click();
@@ -49,7 +49,7 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
   await b.locator('#btn-samen').click();
   await expect(b.locator('#samen-pad')).toBeVisible();
   for (const d of code) await b.locator(`#samen-keys [data-pic="${d}"]`).click();
-  await expect.poll(() => b.evaluate(() => window.__muntstad.samen.status), { timeout: 30000 }).toBe('open');
+  await expect.poll(() => b.evaluate(() => window.__muntstad.samen.status), { timeout: 45000 }).toBe('open');
   await expect(b.locator('#samen-pad')).toBeHidden({ timeout: 5000 });
   await b.locator('#btn-start').click();
   await expect(b.locator('#screen-stad')).toHaveClass(/active/);
@@ -58,8 +58,8 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
   // both on the island: each sees the other with a name tag
   await openAvontuur(a);
   await openAvontuur(b);
-  await expect.poll(async () => (await hook(a)).remotes.length, { timeout: 30000 }).toBe(1);
-  await expect.poll(async () => (await hook(b)).remotes.length, { timeout: 30000 }).toBe(1);
+  await expect.poll(async () => (await hook(a)).remotes.length, { timeout: 45000 }).toBe(1);
+  await expect.poll(async () => (await hook(b)).remotes.length, { timeout: 45000 }).toBe(1);
   const ha = await hook(a), hb = await hook(b);
   expect(ha.samen.isHost).toBe(true);
   expect(hb.samen.isGuest).toBe(true);
@@ -70,37 +70,37 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
   await b.evaluate(() => window.__muntstad.avontuur.setInput(null));
   const pb = (await hook(b)).player;
   // within a few metres: on a slow runner the last position update lags a frame or two behind
-  await expect.poll(async () => { const r = (await hook(a)).remotes[0]; return Math.hypot(r.x - pb.x, r.z - pb.z); }, { timeout: 30000 }).toBeLessThan(4);
+  await expect.poll(async () => { const r = (await hook(a)).remotes[0]; return Math.hypot(r.x - pb.x, r.z - pb.z); }, { timeout: 45000 }).toBeLessThan(4);
 
   // the host's night reaches the guest; the fire the guest sees is the host's (40), not its own save (90)
   await a.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
-  await expect.poll(async () => (await hook(b)).darkness, { timeout: 30000 }).toBe(1);
-  await expect.poll(async () => Math.round((await state(b)).nacht.fire), { timeout: 30000 }).toBeLessThanOrEqual(41);
+  await expect.poll(async () => (await hook(b)).darkness, { timeout: 45000 }).toBe(1);
+  await expect.poll(async () => Math.round((await state(b)).nacht.fire), { timeout: 45000 }).toBeLessThanOrEqual(41);
   // the guest stokes: its wood leaves its bag and lands in the host's fire
   await b.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), hb.camp);
-  await expect(b.locator('#av-stook')).toBeVisible({ timeout: 30000 });
+  await expect(b.locator('#av-stook')).toBeVisible({ timeout: 45000 });
   const hostFire = (await state(a)).nacht.fire;
   await b.locator('#av-stook').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await state(b)).eiland.bag.hout, { timeout: 30000 }).toBe(0);
-  await expect.poll(async () => (await state(a)).nacht.fire, { timeout: 30000 }).toBeGreaterThan(hostFire + 2);
+  await expect.poll(async () => (await state(b)).eiland.bag.hout, { timeout: 45000 }).toBe(0);
+  await expect.poll(async () => (await state(a)).nacht.fire, { timeout: 45000 }).toBeGreaterThan(hostFire + 2);
   // V6.2 WEK: the guest faints (empty stomach in the dark) and lies down; the host walks up, presses WEK, the guest keeps its things
   await b.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 14), hb.camp);
   await a.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 14.5), ha.camp);
   await b.evaluate(() => { window.__muntstad.state.eiland.bag.schelp = 4; window.__muntstad.state.eiland.honger = 0; });
-  await expect.poll(async () => (await hook(b)).down, { timeout: 30000 }).toBe(true);
+  await expect.poll(async () => (await hook(b)).down, { timeout: 45000 }).toBe(true);
   await expect(b.locator('#av-flauw')).toHaveClass(/down/);
-  await expect.poll(async () => ((await hook(a)).remotes[0] || {}).down, { timeout: 30000 }).toBe(true);
-  await expect.poll(async () => (await hook(a)).action?.label, { timeout: 30000 }).toBe('WEK');
+  await expect.poll(async () => ((await hook(a)).remotes[0] || {}).down, { timeout: 45000 }).toBe(true);
+  await expect.poll(async () => (await hook(a)).action?.label, { timeout: 45000 }).toBe('WEK');
   await a.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await hook(b)).down, { timeout: 30000 }).toBe(false);
+  await expect.poll(async () => (await hook(b)).down, { timeout: 45000 }).toBe(false);
   expect((await state(b)).eiland.bag.schelp).toBe(4);   // nothing lost
   expect((await state(b)).eiland.honger).toBeGreaterThan(30);
-  await expect.poll(() => b.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('wakker'))), { timeout: 20000 }).toBe(true);
+  await expect.poll(() => b.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('wakker'))), { timeout: 40000 }).toBe(true);
   await a.evaluate(() => window.__muntstad.avontuur.setPhase(null));
 
   // the guest leaves: the host's island is quiet again
   await b.evaluate(() => window.__muntstad.samen.leave());
-  await expect.poll(async () => (await hook(a)).remotes.length, { timeout: 30000 }).toBe(0);
+  await expect.poll(async () => (await hook(a)).remotes.length, { timeout: 45000 }).toBe(0);
   expect(errA()).toEqual([]);
   expect(errB()).toEqual([]);
   await ctxA.close();

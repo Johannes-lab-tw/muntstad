@@ -11,7 +11,7 @@ import { createGrid } from './player.js';
 const RING = 1;          // tiles kept around the player's tile (1 = 3 × 3)
 const PREFETCH = 2;      // tiles prepared (not yet shown) further out
 
-export function createTiles(map, { statics = [] } = {}) {
+export function createTiles(map, { statics = [], isLite = () => false } = {}) {
   const group = new T.Group();
   const tiles = new Map();   // key → { tx, tz, group, terrain, forest, obstacles, shells, bushes }
   let near = createGrid(statics, 4), nearShells = createGrid([], 4), nearBushes = createGrid([], 4);
@@ -24,7 +24,7 @@ export function createTiles(map, { statics = [] } = {}) {
     if (tiles.has(key)) return tiles.get(key);
     const bounds = { x0: tx * map.tile, z0: tz * map.tile, x1: (tx + 1) * map.tile, z1: (tz + 1) * map.tile };
     const g = new T.Group();
-    const terrain = tileTerrain(map, bounds);
+    const terrain = tileTerrain(map, bounds, isLite() ? 1.0 : 0.5);
     g.add(terrain);
     const placements = placeForest(map, 7, bounds);
     const forest = buildForest(placements);
@@ -81,7 +81,7 @@ export function createTiles(map, { statics = [] } = {}) {
     }
     if (dirty) rebuildGrids();
   }
-  /** Build everything within the ring at once (prebuild while the town is on screen). */
+  /** Build everything within the ring at once (prebuild, and after a teleport: the ground must exist this frame). */
   function warm(px, pz) { for (let i = 0; i < 9; i++) update(px, pz); }
 
   function meshesOf(kind) {

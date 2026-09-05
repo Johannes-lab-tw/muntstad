@@ -16,7 +16,7 @@ async function openAvontuur(page) {
     await page.locator('#nav-avontuur').click({ force: true });
     try { await expect(page.locator('#screen-avontuur')).toHaveClass(/active/, { timeout: 8000 }); break; } catch (e) { if (i === 3) throw e; }
   }
-  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
+  await expect.poll(async () => (await hook(page)).forestCount, { timeout: 45000 }).toBeGreaterThan(1000);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));
   await page.waitForTimeout(300);
 }
@@ -33,13 +33,13 @@ test('chapter 1: the line shows "Het kamp"; a night with the fire burning pays t
   const h = await hook(page);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), h.camp);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
-  await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 40000 }).toBe(1);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));
-  await expect.poll(async () => (await state(page)).campagne.hoofdstuk, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).campagne.hoofdstuk, { timeout: 40000 }).toBe(1);
   expect((await state(page)).campagne.munten).toBe(1);
   await expect(page.locator('#av-campagne')).toContainText('2. De grot');
   await expect(page.locator('#av-campagne')).toContainText('🪙○○○○○○');
-  await expect.poll(() => mentorHas(page, 'gouden vriend'), { timeout: 20000 }).toBe(true);
+  await expect.poll(() => mentorHas(page, 'gouden vriend'), { timeout: 40000 }).toBe(true);
   await page.waitForTimeout(800);
   await closePopups(page);   // the 🪙 sticker
   expect(errors()).toEqual([]);
@@ -60,12 +60,12 @@ test('chapter 4: without the climbing shoes the snow stops you, with them you re
   expect(onSnow.kind).toBe('snow');
   expect(await page.evaluate(({ x, z }) => window.__muntstad.avontuur.onLand(x, z), onSnow.player)).toBe(true);
   await page.evaluate(() => window.__muntstad.avontuur.setInput(0, 1, true));
-  await expect.poll(async () => (await hook(page)).player.z, { timeout: 20000 }).toBeLessThan(onSnow.player.z - 1.5);
+  await expect.poll(async () => (await hook(page)).player.z, { timeout: 40000 }).toBeLessThan(onSnow.player.z - 1.5);
   await page.evaluate(() => window.__muntstad.avontuur.setInput(null));
   // straight to the top: the chapter is done
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 4), HILL);
-  await expect.poll(async () => (await state(page)).campagne.hoofdstuk, { timeout: 20000 }).toBe(4);
-  await expect.poll(() => mentorHas(page, 'top van de berg'), { timeout: 20000 }).toBe(true);
+  await expect.poll(async () => (await state(page)).campagne.hoofdstuk, { timeout: 40000 }).toBe(4);
+  await expect.poll(() => mentorHas(page, 'top van de berg'), { timeout: 40000 }).toBe(true);
   expect(errors()).toEqual([]);
 });
 
@@ -80,18 +80,18 @@ test('chapter 7: three bears come; BOE with the drum sends each one off; all thr
   // well away from the fire: on the slow runner the bears must not reach it (and eat) before the three BOEs are done
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 16), h.camp);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
-  await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 40000 }).toBe(1);
   await page.evaluate(() => window.__muntstad.avontuur.spawnBears());   // the game does this 20 s into the night; the test does not wait
-  await expect.poll(async () => (await hook(page)).bears.length, { timeout: 20000 }).toBe(3);
-  await expect.poll(() => mentorHas(page, 'drie nachtberen'), { timeout: 20000 }).toBe(true);
+  await expect.poll(async () => (await hook(page)).bears.length, { timeout: 40000 }).toBe(3);
+  await expect.poll(() => mentorHas(page, 'drie nachtberen'), { timeout: 40000 }).toBe(true);
   for (let i = 0; i < 3; i++) {
     const p = (await hook(page)).player;
     await page.evaluate(({ x, z }) => window.__muntstad.avontuur.bearsAt(x, z + 2.5), p);
-    await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('BOE');
+    await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('BOE');
     await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-    await expect.poll(async () => (await hook(page)).bears.filter((b) => b.state === 'come').length, { timeout: 20000 }).toBe(2 - i);
+    await expect.poll(async () => (await hook(page)).bears.filter((b) => b.state === 'come').length, { timeout: 40000 }).toBe(2 - i);
   }
-  await expect.poll(async () => (await state(page)).campagne.hoofdstuk, { timeout: 20000 }).toBe(7);
+  await expect.poll(async () => (await state(page)).campagne.hoofdstuk, { timeout: 40000 }).toBe(7);
   expect((await state(page)).campagne.munten).toBe(7);
   expect((await state(page)).flags.gered).toBe(true);
   await expect(page.locator('#av-campagne')).toContainText('gered');

@@ -13,8 +13,7 @@ const COL = {
 };
 
 /** The ground of one tile: half-metre vertices interpolated from the metre cache, coloured by kind. */
-export function tileTerrain(map, bounds) {
-  const cell = 0.5;
+export function tileTerrain(map, bounds, cell = 0.5) {   // lite tier (software renderer, old iPad): 1 m cells, a quarter of the vertices
   const n = Math.round((bounds.x1 - bounds.x0) / cell);
   const verts = (n + 1) * (n + 1);
   const pos = new Float32Array(verts * 3);

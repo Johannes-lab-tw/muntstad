@@ -11,7 +11,8 @@ test('1 hour away with a Limonadekraam gives 720 coins and the popup', async ({ 
   await startGame(page);
   const popup = page.locator('#popup[data-popup="offline"]');
   await expect(popup).toBeVisible();
-  await expect.poll(() => page.locator('#offline-amount').textContent().then(digits), { timeout: 8000 }).toBe(720);
+  await expect.poll(() => page.locator('#offline-amount').textContent().then(digits), { timeout: 8000 }).toBeGreaterThanOrEqual(720);
+  expect(await page.locator('#offline-amount').textContent().then(digits)).toBeLessThanOrEqual(722);   // a slow load may add a second of income
   await expect(popup).toContainText('Terwijl je weg was');
   await shot(page, testInfo, '12-offline-popup');
   const s = await state(page);

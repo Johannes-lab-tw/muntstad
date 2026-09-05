@@ -44,7 +44,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   const vuurtoren = createVuurtoren(map);   // V6.5: the lighthouse and the hut on the north coast
   scene.add(vuurtoren.group);
   // V6.2: the island in tiles round the player; the camp's things are the static obstacles every tile shares
-  const tiles = createTiles(map, { statics: [...camp.obstacles, ...vuurtoren.obstacles] });
+  const tiles = createTiles(map, { statics: [...camp.obstacles, ...vuurtoren.obstacles], isLite: () => engine.tier >= 2 });
   scene.add(tiles.group);
   const lights = addLights(scene, new T.Vector3(CAMP.x, 1, CAMP.z), 20, engine.tier);
   engine.onTier((t) => {
@@ -370,6 +370,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   }
   /** The last chapter (V6.7): three bears at once; the night is won when all three ran, lost when they all ate or the fire died. */
   function spawnBears(n) {
+    if (bears.length) return;   // once a night (the test may call it before the game's own timer)
     for (let i = 0; i < n; i++) spawnBear(28 + i * 4);
     berenNacht = { gone: 0, ate: 0 };
     game.audio.play('growl');
@@ -1007,6 +1008,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   function reset() {
     Object.assign(player, createPlayer(START.x, START.z, START.heading));
     player.ground = map.groundAt(player.x, player.z);
+    tiles.warm(player.x, player.z);
     yaw = START.heading;
     firstFrame = true;
     lastTime = 0;
@@ -1051,7 +1053,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     setInput(x, y, run = false) { controls.setOverride(x == null ? null : { x, y, run }); },
     jump() { controls.pressJump(); },
     setPhase(p) { phaseOverride = p; daynight.setOverride(p); },
-    teleport(x, z) { player.x = x; player.z = z; player.ground = map.groundAt(x, z); firstFrame = true; },
+    teleport(x, z) { player.x = x; player.z = z; player.ground = map.groundAt(x, z); firstFrame = true; tiles.warm(x, z); },
     get camera() { return { x: camera.position.x, y: camera.position.y, z: camera.position.z, ground: player.ground, h: map.heightAt(camera.position.x, camera.position.z) }; },
     get debug() { return { scene, camera }; },
     act() { doAction(); },
