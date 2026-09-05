@@ -6,7 +6,7 @@ import * as T from '../../vendor/three.module.min.js';
 import { addLights, createCamera } from '../3d/engine.js';
 import { Builder, shade, col, textPlane, meshSphere } from '../3d/build.js';
 import { cushionMesh, createSea, WATER_Y } from '../3d/world.js';
-import { startWork, endWork, washCar, setFlag } from '../economy.js';
+import { startWork, endWork, washCar, setFlag, makerLevel } from '../economy.js';
 
 const CAR_COLORS = ['#ff5f5f', '#45b6ff', '#45d65c', '#ffc21c', '#b76cff', '#ff6fae', '#2dd4bf', '#ff9f2e'];
 const CAR_TYPES = ['sedan', 'van', 'pickup', 'sedan'];
@@ -173,6 +173,86 @@ export function createWerk(game) {
   const spray = [];
   for (let i = 0; i < 6; i++) { const s = meshSphere(0.07, '#dff4ff', 6, { transparent: true, opacity: 0.9 }); s.castShadow = false; scene.add(s); spray.push(s); }
 
+  // ---------- V5.4: the wash bay grows with the level of the Wasstraat coin-maker (1 flags … 5 a palace) ----------
+  const upgrade = new T.Group();
+  scene.add(upgrade);
+  const extraBrushes = [];
+  const flags = [];
+  const bulbs = [];
+  let hallLevel = -1;
+  const bulbMat = new T.MeshStandardMaterial({ color: col('#fff3b0'), emissive: col('#ffd23f'), emissiveIntensity: 1.2 });
+  const neonMat = new T.MeshStandardMaterial({ color: col('#ff5fae'), emissive: col('#ff2d95'), emissiveIntensity: 1.6 });
+  function flagAt(x, y, z, color) {
+    const pole = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 1.1, 6), new T.MeshStandardMaterial({ color: col('#dcd7cb') }));
+    pole.position.set(x, y + 0.55, z);
+    upgrade.add(pole);
+    const cloth = new T.Mesh(new T.PlaneGeometry(0.5, 0.3).translate(0.25, 0, 0), new T.MeshStandardMaterial({ color: col(color), side: T.DoubleSide }));
+    cloth.position.set(x, y + 0.95, z);
+    upgrade.add(cloth);
+    flags.push(cloth);
+  }
+  function buildUpgrade(level) {
+    while (upgrade.children.length) upgrade.remove(upgrade.children[0]);
+    extraBrushes.length = 0; flags.length = 0; bulbs.length = 0;
+    if (level <= 0) return;
+    const b = new Builder({ r: 0.04 });
+    // level 1: flags on the roof corners
+    flagAt(hx + 0.2, hh + 0.4, hy + 0.2, '#ff5f5f');
+    flagAt(hx + hw - 0.2, hh + 0.4, hy + 0.2, '#ffe94d');
+    if (level >= 2) {
+      // neon strip along the roof edge and a glowing frame round the sign
+      const strip = new T.Mesh(new T.BoxGeometry(hw + 0.3, 0.08, 0.08), neonMat);
+      strip.position.set(hx + hw / 2, hh + 0.36, hy + hd + 0.12);
+      upgrade.add(strip);
+      const frame = new T.Mesh(new T.BoxGeometry(4.1, 0.06, 0.06), neonMat);
+      frame.position.set(hx + 3.2, hh + 1.28, hy + 0.06);
+      upgrade.add(frame);
+      b.box(hx, hy - 0.02, 0.06 + 0.5, hw, 0.04, 0.22, '#ffe94d', { r: 0.01 });   // a yellow stripe on the front
+    }
+    if (level >= 3) {
+      // a second pair of brushes in front of the hall, a foam cannon, two palms
+      for (const bx of [hx + 3.2, hx + 5.9]) {
+        const roller = new T.Mesh(new T.CylinderGeometry(0.22, 0.22, 1.6, 14), new T.MeshStandardMaterial({ color: col('#45b6ff'), roughness: 0.7 }));
+        roller.position.set(bx, 0.06 + 0.8, hy + hd + 0.9);
+        roller.castShadow = true;
+        upgrade.add(roller);
+        extraBrushes.push(roller);
+      }
+      b.cyl(-4.1, -2.4, 0.06, 0.12, 0.9, '#9aa3b2', 8);
+      b.box(-4.5, -2.7, 0.9, 0.8, 0.5, 0.4, '#45b6ff', { r: 0.08 });
+      b.cone(-3.7, -2.45, 1.05, 0.14, 0.5, '#dff4ff', 8);   // the foam cannon's nozzle
+      for (const [px, py] of [[-4.2, 2.6], [4.4, 2.7]]) { b.cyl(px, py, 0.06, 0.12, 1.8, '#8a5a35', 8); b.puff(px, py, 1.9, 0.5, '#3fbf5a', 1); b.puff(px + 0.3, py - 0.2, 1.75, 0.35, '#46c95f', 1); }
+    }
+    if (level >= 4) {
+      // a canopy over the wash area with a string of lights, two lamp posts
+      for (const [px, py] of [[-3.0, 2.0], [3.0, 2.0], [-3.0, -1.2], [3.0, -1.2]]) b.cyl(px, py, 0.06, 0.09, 3.0, '#dcd7cb', 8);
+      b.box(-3.3, -1.5, 3.05, 6.6, 3.8, 0.14, shade('#4fb6ff', -0.2), { r: 0.06 });
+      for (let i = 0; i < 9; i++) {
+        const bulb = new T.Mesh(new T.SphereGeometry(0.09, 7, 6), bulbMat.clone());
+        bulb.position.set(-3.0 + i * 0.75, 2.95, 2.0);
+        upgrade.add(bulb);
+        bulbs.push(bulb);
+      }
+      for (const [px, py] of [[-4.3, 0.2], [4.3, -1.6]]) { b.cyl(px, py, 0.06, 0.07, 2.2, '#8a8f99', 8); b.sphere(px, py, 2.35, 0.16, '#fff3b0', 8); }
+    }
+    if (level >= 5) {
+      // the palace: golden trim, a tower with a dome and a star, a fountain, bunting
+      b.box(hx - 0.15, hy - 0.15, hh + 0.32, hw + 0.3, hd + 0.3, 0.1, '#ffc21c', { r: 0.03 });
+      b.box(hx + hw - 1.4, hy + 0.3, hh + 0.4, 1.2, 1.2, 1.6, '#ffffff', { r: 0.06 });
+      b.sphere(hx + hw - 0.8, hy + 0.9, hh + 2.0, 0.7, '#ffc21c', 12);
+      b.cone(hx + hw - 0.8, hy + 0.9, hh + 2.6, 0.12, 0.5, '#ffe94d', 5);
+      b.disc(0, 1.5, 0.065, 0.85, '#1a7ad6', 0.12, 20);
+      b.cyl(0, 1.5, 0.15, 0.12, 0.7, '#e9e2cf', 10);
+      b.disc(0, 1.5, 0.85, 0.35, '#e9e2cf', 0.08, 14);
+      for (let i = 0; i < 12; i++) b.box(-3.0 + i * 0.55, -1.25, 2.85 - (i % 2) * 0.08, 0.25, 0.03, 0.22, ['#ff5f5f', '#ffe94d', '#45d65c', '#45b6ff'][i % 4], { r: 0.01 });
+    }
+    upgrade.add(b.build());
+  }
+  function syncHall() {
+    const level = makerLevel(game.state, 'wasstraat');
+    if (level !== hallLevel) { hallLevel = level; buildUpgrade(level); }
+  }
+
   // ---------- layout ----------
   function resize() {
     if (!engine) return;
@@ -211,6 +291,9 @@ export function createWerk(game) {
     if (lastTime) engine.trackFrame(now - lastTime, now);
     lastTime = now;
     for (const b of brushes) b.rotation.y = now / 120;
+    for (const b of extraBrushes) b.rotation.y = -now / 100;
+    for (let i = 0; i < flags.length; i++) flags[i].rotation.y = Math.sin(now / 260 + i) * 0.35;
+    for (let i = 0; i < bulbs.length; i++) bulbs[i].material.emissiveIntensity = 0.6 + Math.max(0, Math.sin(now / 250 + i * 1.3)) * 1.4;
     for (const m of muds.values()) { const s = 1 + Math.sin(now / 260 + m.position.x * 3) * 0.06; m.scale.setScalar(s).multiply(m.userData.base || (m.userData.base = m.scale.clone())); }
     for (let i = 0; i < spray.length; i++) {
       const f = ((now / 900) + i / spray.length) % 1;
@@ -440,6 +523,7 @@ export function createWerk(game) {
   return {
     show() {
       visible = true;
+      syncHall();   // V5.4: the bay looks like its level
       sessionCars = 0;
       countEl.querySelector('span').textContent = '0';
       resize();
