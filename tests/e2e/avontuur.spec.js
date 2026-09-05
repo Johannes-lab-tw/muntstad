@@ -11,8 +11,13 @@ const hook = (page) => page.evaluate(() => {
 });
 
 async function openAvontuur(page) {
-  await page.locator('#nav-avontuur').click({ force: true });   // force: the 3D screen behind it renders at ~1 fps on CI, so Playwright's "stable" check never settles
-  await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
+  // force: the 3D screen behind it renders at ~1 fps on CI, so Playwright's "stable" check never settles; a click that lands
+  // during the screen animation or under a late popup is simply repeated
+  for (let i = 0; i < 4; i++) {
+    await closePopups(page);
+    await page.locator('#nav-avontuur').click({ force: true });
+    try { await expect(page.locator('#screen-avontuur')).toHaveClass(/active/, { timeout: 8000 }); break; } catch (e) { if (i === 3) throw e; }
+  }
   await expect.poll(async () => (await hook(page)).forestCount, { timeout: 30000 }).toBeGreaterThan(1000);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));   // daytime, whatever the wall clock says (a night would burn the fire, pay at dawn and pop a sticker)
   await page.waitForTimeout(400);

@@ -925,6 +925,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get drops() { return drops.map((d) => ({ item: d.item, x: d.x, z: d.z })); },
     get speedMul() { return env.speedMul; },
     spawnDeer,
+    removeDeer: clearDeer,
     /** Put the deer right behind the player in charge mode (tests). */
     deerAt(x, z) { spawnDeer(); deer.d.x = x; deer.d.z = z; deer.d.state = 'charge'; },
     get bats() { return batsState; },
