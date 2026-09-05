@@ -414,7 +414,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       if (playerSafe || dist > D.sight * 1.5) { d.state = 'flee'; d.heading = Math.atan2(d.x - player.x, d.z - player.z); d.until = now + 2500; }
       else {
         d.heading = Math.atan2(player.x - d.x, player.z - d.z);
-        const nx = d.x + Math.sin(d.heading) * D.speed * dt, nz = d.z + Math.cos(d.heading) * D.speed * dt;
+        const step = Math.min(D.speed * dt, Math.max(0, dist - D.reach * 0.5));   // never overshoot the player on a long frame
+        const nx = d.x + Math.sin(d.heading) * step, nz = d.z + Math.cos(d.heading) * step;
         if (map.walkable(nx, nz)) { d.x = nx; d.z = nz; }
         if (dist < D.reach) {
           // the bump: you are shoved, the bag falls open, the deer runs off
@@ -871,7 +872,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const lite = engine.tier >= 2;
     terrain.update(now, lite);
     camp.update(now, daynight.darkness, lite);
-    updateNight(now, dt);
+    // the night bookkeeping (fire, hunger, ghosts, bear, deer) runs on real elapsed time, up to a second per frame,
+    // so a slow frame rate (CI, an old iPad) does not slow the world down
+    updateNight(now, Math.min(1.0, (now - prevNow) / 1000));
     engine.render(scene, camera);
   }
 

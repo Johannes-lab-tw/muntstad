@@ -47,7 +47,8 @@ export function stepGhost(g, ctx, config) {
   }
   const dx = ctx.target.x - g.x, dz = ctx.target.z - g.z;
   const d = Math.hypot(dx, dz);
-  const nx = g.x + (dx / Math.max(1e-6, d)) * speed * dt, nz = g.z + (dz / Math.max(1e-6, d)) * speed * dt;
+  const step = Math.min(speed * dt, d);   // a long frame never overshoots the target
+  const nx = g.x + (dx / Math.max(1e-6, d)) * step, nz = g.z + (dz / Math.max(1e-6, d)) * step;
   // light and the fence keep it out: it hovers at the edge, wobbling sideways
   const blocked = isLit(nx, nz, ctx.lights) || (ctx.fence && Math.hypot(nx - ctx.fence.x, nz - ctx.fence.z) < ctx.fence.r);
   if (blocked) {
@@ -96,8 +97,9 @@ export function stepBear(b, ctx, config) {
   const d = Math.hypot(dx, dz);
   b.heading = Math.atan2(dx, dz);
   if (d < config.nacht.bearReach) { b.state = 'flee'; b.heading += Math.PI; b.life = 6; return 'eat'; }
-  b.x += (dx / d) * config.nacht.bearSpeed * dt;
-  b.z += (dz / d) * config.nacht.bearSpeed * dt;
+  const step = Math.min(config.nacht.bearSpeed * dt, d);
+  b.x += (dx / d) * step;
+  b.z += (dz / d) * step;
   return null;
 }
 export function scareBear(b, config, scares = config.nacht.bearScares) {
