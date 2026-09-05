@@ -8,11 +8,11 @@
 import * as T from '../../vendor/three.module.min.js';
 import { avatarModel, lookKey } from './avatar.js';
 import { petModel } from './pets.js';
-import { createPlayer, createFollower, stepPlayer, stepFollower, turnTowards, createGrid } from './player.js';
+import { createPlayer, createFollower, stepPlayer, stepFollower, turnTowards } from './player.js';
 import { addLights } from './engine.js';
 import { createHeightmap, PIER, CAMP, LAKE, CAVE, caveInner } from './heightmap.js';
-import { createTerrain } from './terrain.js';
-import { placeForest, buildForest } from './forest.js';
+import { createWater } from './terrain.js';
+import { createTiles } from './tiles.js';
 import { createCamp } from './camp.js';
 import { createDayNight } from './daynight.js';
 import { ghostModel, bearModel, tentModel, torchModel, fenceModel, deerModel, dropModel } from './spoken.js';
@@ -35,34 +35,31 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   const samen = game.samen;
   const scene = new T.Scene();
   const map = createHeightmap();
-  const terrain = createTerrain(map);
-  scene.add(terrain.group);
-  const forest = buildForest(placeForest(map));
-  scene.add(forest.group);
+  const water = createWater(map);
+  scene.add(water.group);
   const camp = createCamp(map);
   scene.add(camp.group);
+  // V6.2: the island in tiles round the player; the camp's things are the static obstacles every tile shares
+  const tiles = createTiles(map, { statics: camp.obstacles });
+  scene.add(tiles.group);
   const lights = addLights(scene, new T.Vector3(CAMP.x, 1, CAMP.z), 20, engine.tier);
   engine.onTier((t) => {
     lights.setTier(t);
     // lite tier (slow iPad / software renderer): the two biggest instanced kinds (grass tufts, flowers) are pure decoration
-    for (const k of ['grass', 'flower']) if (forest.meshes[k]) forest.meshes[k].visible = t < 2;
+    tiles.setLite(t >= 2);
     if (scene.fog) scene.fog.far = t >= 2 ? 70 : 95;   // the fog exists once daynight is created
   });
   const daynight = createDayNight(scene, lights);
-  let near = createGrid([...forest.obstacles, ...camp.obstacles], 4);
-  const env = { yaw: START.heading, near, walkable: map.walkable, groundAt: map.groundAt, speedMul: 1 };
-  // things to pick up, in their own grids
-  const shells = forest.placements.shell.map((s, index) => ({ ...s, index, r: 0.3, taken: false }));
-  const bushes = forest.placements.bush2.map((b, index) => ({ ...b, index, r: 0.5, restUntil: 0 }));
-  const nearShells = createGrid(shells, 4);
-  const nearBushes = createGrid(bushes, 4);
-  const trees = new Map();   // obstacle index key → { taps, wood, restUntil }
+  const env = { yaw: START.heading, near: (x, z) => tiles.near(x, z), walkable: map.walkable, groundAt: map.groundAt, speedMul: 1 };
+  const trees = new Map();   // tile:kind:index → { taps, wood, restUntil }
+  const treeKey = (o) => `${o.tile}:${o.kind}:${o.index}`;
 
   const camera = new T.PerspectiveCamera(50, 1, 0.1, 260);
   const camPos = new T.Vector3(), camLook = new T.Vector3();
   let W = 0, H = 0, host = null, state = null;
   let yaw = START.heading, pitch = CAM.pitch, firstFrame = true;
 
+  tiles.warm(START.x, START.z);
   const player = createPlayer(START.x, START.z, START.heading);
   player.ground = map.groundAt(player.x, player.z);
   const dog = createFollower(START.x + 0.9, START.z - 0.9, START.heading);   // beside you, not between you and the camera
@@ -109,14 +106,14 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     }
   }
   // a chopped tree wobbles for half a second; a caught fish jumps out of the water towards you
-  const wobbles = [];   // { kind, index, t }
-  function wobble(o) { wobbles.push({ kind: o.kind, index: o.index, t: 0 }); }
+  const wobbles = [];   // { o, t }
+  function wobble(o) { wobbles.push({ o, t: 0 }); }
   function updateWobbles(dt) {
     for (let i = wobbles.length - 1; i >= 0; i--) {
       const w = wobbles[i];
       w.t += dt;
       const f = Math.min(1, w.t / 0.55);
-      forest.setTilt(w.kind, w.index, Math.sin(f * Math.PI * 3) * 0.09 * (1 - f));
+      tiles.setPose(w.o, 1, Math.sin(f * Math.PI * 3) * 0.09 * (1 - f));
       if (f >= 1) wobbles.splice(i, 1);
     }
   }
@@ -129,7 +126,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const stump = stumpPool.pop() || stumpMesh();
     stump.position.set(o.x, groundOf(o.x, o.z) - 0.05, o.z);
     scene.add(stump);
-    for (let i = wobbles.length - 1; i >= 0; i--) if (wobbles[i].kind === o.kind && wobbles[i].index === o.index) wobbles.splice(i, 1);
+    for (let i = wobbles.length - 1; i >= 0; i--) if (wobbles[i].o === o) wobbles.splice(i, 1);
     o.rFull = o.rFull || o.r;
     o.r = 0.3;   // only the stump is in the way now
     falls.push({ o, t: 0, yaw, stump, restUntil: now + E.treeRestMs, thud: false, gone: false });
@@ -140,13 +137,13 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       f.t += dt;
       if (f.t < 1.0) {
         const k = f.t;
-        forest.setPose(f.o.kind, f.o.index, 1, Math.min(1.5, k * k * 1.6), f.yaw);
+        tiles.setPose(f.o, 1, Math.min(1.5, k * k * 1.6), f.yaw);
         if (!f.thud && k > 0.85) { f.thud = true; game.audio.play('thud'); }
-      } else if (f.t < 2.2) forest.setPose(f.o.kind, f.o.index, Math.max(0.001, 1 - (f.t - 1.0) / 1.2), 1.5, f.yaw);
-      else if (now < f.restUntil) { if (!f.gone) { f.gone = true; forest.setPose(f.o.kind, f.o.index, 0.001); } }
+      } else if (f.t < 2.2) tiles.setPose(f.o, Math.max(0.001, 1 - (f.t - 1.0) / 1.2), 1.5, f.yaw);
+      else if (now < f.restUntil) { if (!f.gone) { f.gone = true; tiles.setPose(f.o, 0.001); } }
       else {
         const g = Math.min(1, (now - f.restUntil) / 2000);
-        forest.setPose(f.o.kind, f.o.index, 0.05 + g * 0.95);
+        tiles.setPose(f.o, 0.05 + g * 0.95);
         if (g >= 1) { f.o.r = f.o.rFull; scene.remove(f.stump); stumpPool.push(f.stump); falls.splice(i, 1); }
       }
     }
@@ -324,8 +321,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     }
     if (tools.hut2 && !gear.hut2) {
       gear.hut2 = camp.addHut(CAMP.x - 6.4, CAMP.z - 3.2, 1.6, '#b76cff');
-      near = createGrid([...forest.obstacles, ...camp.obstacles, gear.hut2], 4);
-      env.near = near;
+      tiles.setStatics([...camp.obstacles, gear.hut2]);
     }
     lantern.visible = !!tools.lantaarn;
   }
@@ -526,20 +522,20 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       return { type: 'kamp', label: 'KAMP', target: null };
     }
     let best = null, bestD = Infinity;
-    for (const s of nearShells(px, pz)) {
+    for (const s of tiles.nearShells(px, pz)) {
       if (s.taken) continue;
       const d = Math.hypot(px - s.x, pz - s.z);
       if (d < REACH.shell && d < bestD) { best = { type: 'schelp', label: 'PAK', target: s }; bestD = d; }
     }
-    for (const b of nearBushes(px, pz)) {
+    for (const b of tiles.nearBushes(px, pz)) {
       if (b.restUntil > now) continue;
       const d = Math.hypot(px - b.x, pz - b.z) - b.r;
       if (d < REACH.bush && d < bestD) { best = { type: 'bes', label: 'PLUK', target: b }; bestD = d; }
     }
     if (best) return best;
-    for (const o of near(px, pz)) {
+    for (const o of tiles.near(px, pz)) {
       if (!o.kind || !o.kind.startsWith('tree')) continue;
-      const ts = trees.get(`${o.kind}:${o.index}`);
+      const ts = trees.get(treeKey(o));
       if (ts && ts.restUntil > now) continue;   // a stump: nothing to chop
       const d = Math.hypot(px - o.x, pz - o.z) - o.r;
       if (d < REACH.tree && d < bestD) { best = { type: 'hak', label: 'HAK', target: o }; bestD = d; }
@@ -550,7 +546,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     return null;
   }
   function treeState(o) {
-    const key = `${o.kind}:${o.index}`;
+    const key = treeKey(o);
     let t = trees.get(key);
     if (!t) { t = { taps: 0, wood: 0, restUntil: 0 }; trees.set(key, t); }
     return t;
@@ -584,15 +580,15 @@ export function createEilandScene(game, engine, controls, cb = {}) {
         return;
       case 'schelp':
         action.target.taken = true;
-        forest.setScale('shell', action.target.index, 0);
+        tiles.setScale(action.target, 0);
         cb.onCollect && cb.onCollect('schelp', 1);
         game.audio.play('coinSoft');
         return;
       case 'bes': {
         const b = action.target;
         b.restUntil = now + E.bushRestMs;
-        forest.setScale('bush2', b.index, 0.8);
-        setTimeout(() => forest.setScale('bush2', b.index, 1), E.bushRestMs);
+        tiles.setScale(b, 0.8);
+        setTimeout(() => tiles.setScale(b, 1), E.bushRestMs);
         cb.onCollect && cb.onCollect('bes', E.berries);
         game.audio.play('coinSoft');
         return;
@@ -651,22 +647,22 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (!W || !H) return;
     ndc.set((tp.x / W) * 2 - 1, -(tp.y / H) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-    const kinds = ['tree1', 'tree2', 'tree3', 'shell', 'bush2'].filter((k) => forest.meshes[k]);
-    const hits = raycaster.intersectObjects(kinds.map((k) => forest.meshes[k]), false);
+    const meshes = ['tree1', 'tree2', 'tree3', 'shell', 'bush2'].flatMap((k) => tiles.meshesOf(k));
+    const hits = raycaster.intersectObjects(meshes, false);
     const now = performance.now();
     for (const h of hits) {
-      const kind = kinds.find((k) => forest.meshes[k] === h.object);
+      const { tile, kind } = h.object.userData;
       const idx = h.instanceId;
       let picked = null;
       if (kind === 'shell') {
-        const s = shells[idx];
+        const s = tiles.find(tile, 'shell', idx);
         if (s && !s.taken && Math.hypot(s.x - player.x, s.z - player.z) < REACH.shell + 0.8) picked = { type: 'schelp', label: 'PAK', target: s };
       } else if (kind === 'bush2') {
-        const b = bushes[idx];
+        const b = tiles.find(tile, 'bush2', idx);
         if (b && b.restUntil <= now && Math.hypot(b.x - player.x, b.z - player.z) - b.r < REACH.bush + 0.8) picked = { type: 'bes', label: 'PLUK', target: b };
       } else {
-        const o = forest.obstacles.find((ob) => ob.kind === kind && ob.index === idx);
-        const ts = o && trees.get(`${o.kind}:${o.index}`);
+        const o = tiles.find(tile, kind, idx);
+        const ts = o && trees.get(treeKey(o));
         if (o && !(ts && ts.restUntil > now) && Math.hypot(o.x - player.x, o.z - player.z) - o.r < REACH.tree + 1.0) picked = { type: 'hak', label: 'HAK', target: o };
       }
       if (picked) { action = picked; doAction(); return; }
@@ -789,7 +785,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       // inside the cave the camera stays close, inside the walls and under the roof
       const d = 2.6;
       camPos.set(player.x - Math.sin(yaw) * d, player.ground + 1.7, player.z - Math.cos(yaw) * d);
-      const c = clampInCave(camPos.x, camPos.z, 0.45);
+      const c = clampInCave(camPos.x, camPos.z, 0.95);   // well clear of the wall crystals
       camPos.set(c.x, camPos.y, c.z);
     } else {
       const floor = groundOf(camPos.x, camPos.z) + 0.8;
@@ -825,6 +821,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     syncAvatar();
     syncPet();
 
+    tiles.update(player.x, player.z);   // the ground round the player exists before the physics step
     const input = controls.read();
     yaw -= input.lookDx * CAM.swipe;
     pitch = Math.min(CAM.maxPitch, Math.max(CAM.minPitch, pitch + input.lookDy * CAM.swipe * 0.6));
@@ -847,7 +844,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     updateBats(now, dt);
     updateDrips(now, dt);
     updateCaveGhost(now, dt);
-    forest.animate(now, dt, daynight.darkness);
+    tiles.animate(now, dt, daynight.darkness);
     if (input.tap) handleTap(input.tap);
     const next = findAction(now);
     const key = next ? `${next.type}:${next.label}` : '';
@@ -870,7 +867,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     focus.set(player.x, player.ground, player.z);
     daynight.update(now, focus, state.nacht.clockOffsetMs);
     const lite = engine.tier >= 2;
-    terrain.update(now, lite);
+    water.update(now, lite);
     camp.update(now, daynight.darkness, lite);
     // the night bookkeeping (fire, hunger, ghosts, bear, deer) runs on real elapsed time, up to a second per frame,
     // so a slow frame rate (CI, an old iPad) does not slow the world down
@@ -905,18 +902,22 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     kindAt(x, z) { return map.kindAt(x, z); },
     landmarks: { CAMP, PIER, LAKE, TENT: TENT_AT, CHEST: camp.chest.pos, CAVE },
     setChestOpen(open) { camp.chest.setOpen(open); },
-    forestCount: Object.values(forest.placements).reduce((n, l) => n + l.length, 0),
+    get forestCount() { return tiles.count; },
+    get tilesLoaded() { return tiles.loaded; },
     /** Nearest untaken shell / berry bush / tree, for the tests to walk to. */
     nearest(kind) {
-      const list = kind === 'schelp' ? shells.filter((s) => !s.taken) : kind === 'bes' ? bushes : forest.obstacles.filter((o) => o.kind && o.kind.startsWith('tree'));
+      const list = kind === 'schelp' ? tiles.allShells().filter((s) => !s.taken) : kind === 'bes' ? tiles.allBushes() : tiles.allObstacles().filter((o) => o.kind && o.kind.startsWith('tree'));
       let best = null, bd = Infinity;
-      for (const it of list) { const d = Math.hypot(it.x - player.x, it.z - player.z); if (d < bd && map.walkable(it.x, it.z + 1)) { bd = d; best = it; } }
+      const clear = (it) => (kind === 'schelp' || kind === 'bes') || !tiles.nearShells(it.x, it.z + 1).some((s) => !s.taken && Math.hypot(s.x - it.x, s.z - it.z - 1) < REACH.shell + 0.6);   // a tree with a shell at its foot would offer PAK
+      for (const it of list) { const d = Math.hypot(it.x - player.x, it.z - player.z); if (d < bd && map.walkable(it.x, it.z + 1) && clear(it)) { bd = d; best = it; } }
       return best ? { x: best.x, z: best.z } : null;
     },
     setInput(x, y, run = false) { controls.setOverride(x == null ? null : { x, y, run }); },
     jump() { controls.pressJump(); },
     setPhase(p) { phaseOverride = p; daynight.setOverride(p); },
     teleport(x, z) { player.x = x; player.z = z; player.ground = map.groundAt(x, z); firstFrame = true; },
+    get camera() { return { x: camera.position.x, y: camera.position.y, z: camera.position.z, ground: player.ground, h: map.heightAt(camera.position.x, camera.position.z) }; },
+    get debug() { return { scene, camera }; },
     act() { doAction(); },
     tapAt(x, y) { handleTap({ x, y }); },
     get fallen() { return falls.length; },

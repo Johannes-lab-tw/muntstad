@@ -11,11 +11,11 @@ await p.locator('#nav-avontuur').click({ force: true }); await p.waitForTimeout(
 const closeAll = async () => { for (let i = 0; i < 4; i++) { if (await p.locator('#overlay').isHidden()) break; await p.locator('#overlay button').first().click(); await p.waitForTimeout(300); } };
 const shot = async (n) => { await closeAll(); await p.locator('#bubble').evaluate((el) => el.classList.add('hidden')).catch(() => {}); await p.screenshot({ path: `screenshots/dev/${n}.png` }); console.log('shot', n); };
 const tp = (x, z) => p.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z), { x, z });
-await tp(52, 80); await p.evaluate(() => window.__muntstad.avontuur.setPhase(0.4)); await p.waitForTimeout(900); await shot('12-strand');
-await tp(60, 42); await p.waitForTimeout(900); await shot('13-meer');
-await tp(48, 58); await p.waitForTimeout(900); await shot('14-kamp');
+await tp(240, 408); await p.evaluate(() => window.__muntstad.avontuur.setPhase(0.4)); await p.waitForTimeout(900); await shot('12-strand');
+await tp(330, 233); await p.waitForTimeout(1500); await shot('13-meer');
+await tp(240, 306); await p.waitForTimeout(1500); await shot('14-kamp');
 await p.evaluate(() => window.__muntstad.avontuur.setPhase(0.85)); await p.waitForTimeout(1200); await shot('15-kamp-nacht');
-await tp(30, 50); await p.evaluate(() => window.__muntstad.avontuur.setPhase(0.5)); await p.waitForTimeout(900); await shot('16-bos');
+await tp(205, 262); await p.evaluate(() => window.__muntstad.avontuur.setPhase(0.5)); await p.waitForTimeout(900); await shot('16-bos');
 const cave = await p.evaluate(() => window.__muntstad.avontuur.landmarks.CAVE); await tp(cave.x + Math.sin(cave.heading) * 5, cave.z + Math.cos(cave.heading) * 5); await p.waitForTimeout(900); await shot('17-grot-buiten');
 const chest = await p.evaluate(() => window.__muntstad.avontuur.landmarks.CHEST); await tp(chest.x + Math.sin(cave.heading) * 1.6, chest.z + Math.cos(cave.heading) * 1.6); await p.waitForTimeout(900); await shot('18-grot-binnen');
 console.log(errs.length ? 'ERRORS ' + errs.join(' | ') : 'no page errors');

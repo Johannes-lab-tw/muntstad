@@ -36,8 +36,13 @@ export function createAvontuur(game) {
   actieBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); lastActionAt = performance.now(); if (scene3) scene3.doAction(); });
   actieBtn.hidden = false;
   actieBtn.style.visibility = 'hidden';
-  document.getElementById('av-dorp').addEventListener('click', () => {
-    if (performance.now() - lastActionAt < 500) return;   // the tail of a PAK/HAK tap, not a wish to leave
+  const dorpBtn = document.getElementById('av-dorp');
+  dorpBtn.addEventListener('pointerdown', () => { dorpArmed = true; });
+  dorpBtn.addEventListener('click', () => {
+    // a real tap on DORP starts with a pointerdown on DORP; the click at the tail of a PAK/HAK tap (the button moved
+    // under the finger) never had one and is not a wish to leave, however slow the device
+    if (!dorpArmed || performance.now() - lastActionAt < 500) return;
+    dorpArmed = false;
     game.audio.play('tap');
     game.show('stad');
   });
@@ -102,7 +107,7 @@ export function createAvontuur(game) {
     peersEl.hidden = peers === 0;
     if (peers) peersEl.textContent = `${samen.animal} 👥 ${peers}`;
   }
-  let lastActionAt = 0;
+  let lastActionAt = 0, dorpArmed = false;
   function onAction(a) {
     // V6.1: the button keeps its place (visibility, not display), so DORP never slides under a finger that just tapped PAK
     actieBtn.style.visibility = a ? 'visible' : 'hidden';
