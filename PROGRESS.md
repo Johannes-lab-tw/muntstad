@@ -145,7 +145,7 @@ Plan: PLAN-V5.md (zes punten van de speler + open punten uit RAPPORT §7). Zelfd
 
 ## Volgende sessie (stand 5 september 2026, avond)
 
-**Klaar en op GitHub (main):** PLAN-V6 V6.1 t/m V6.8, zie Run 6 hierboven. Lokaal: unit 99 groen, alle 38 e2e-tests groen op de drie iPad-profielen. CI: zes jobs (drie profielen × dorp/eiland, één worker, 75 minuten grens); de laatste runs waren groen op vijf jobs en rood op één tijdgevoelige wolventest, die is nu op de roedelstatus gezet. Pages deployt zodra een run helemaal groen is. Tags: v6.2 t/m v6.8 zetten zodra de run groen is (`git tag v6.8 <sha> && git push --tags`), `GAME_VERSION` in main.js staat op v6.7 en gaat mee omhoog.
+**Klaar en op GitHub (main):** PLAN-V6 V6.1 t/m V6.8, zie Run 6 hierboven. Lokaal: unit 99 groen, alle 38 e2e-tests groen op de drie iPad-profielen. CI: zes jobs (drie profielen × dorp/eiland, één worker, 75 minuten grens); run 33990183634 van 5 september 21:06 UTC is helemaal groen en de site is gedeployd (sw.js muntstad-v36). Tags v6.2, v6.3, v6.4, v6.5, v6.7 en v6.8 staan op GitHub; `GAME_VERSION` in main.js staat nog op v6.7 en gaat bij de volgende tag mee omhoog.
 
 **Eerst doen in de nieuwe sessie:**
 1. `gh run list --limit 3` — is de laatste run groen en is de site gedeployd (https://johannes-lab-tw.github.io/muntstad/ moet `muntstad-v36` in docs/sw.js hebben)? Zo niet: log lezen met `gh api repos/Johannes-lab-tw/muntstad/actions/jobs/<id>/logs`, alleen de ene test repareren, opnieuw pushen.
