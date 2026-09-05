@@ -79,7 +79,7 @@ test('V5.3: hunger drains and EET fills it; the Nachthert bumps you and your thi
   await page.waitForTimeout(300);
   const p = (await hook(page)).player;
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.deerAt(x, z + 2.5), p);
-  await expect.poll(async () => (await state(page)).nacht.bumped, { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await state(page)).nacht.bumped, { timeout: 20000 }).toBeGreaterThanOrEqual(1);   // on a slow runner it may already have bumped twice
   await page.evaluate(() => window.__muntstad.avontuur.removeDeer());   // one bump is enough for this test (it would come back after fleeing)
   await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.drops.length), { timeout: 20000 }).toBeGreaterThan(0);
   const dropsBefore = await page.evaluate(() => window.__muntstad.avontuur.drops.length);
