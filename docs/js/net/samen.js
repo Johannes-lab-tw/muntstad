@@ -13,7 +13,7 @@ export function createSamen(game) {
   const looks = new Map();   // peer id → { animal, color, hat, skin }
 
   function emit(type, ...args) { for (const fn of handlers[type] || []) fn(...args); }
-  function relayUrl() { return (game.state.settings.relayUrl || '').trim(); }
+  function relayUrl() { return (game.state.settings.relayUrl || '').trim() || game.config.net.defaultRelay || ''; }
   function myLook() {
     const s = game.state;
     const colorIdx = Math.max(0, game.config.colors.findIndex((c) => c.id === s.color));

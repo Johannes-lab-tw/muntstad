@@ -70,7 +70,7 @@ export const T = {
 
   samen: {
     title: 'Samen spelen',
-    help: 'Zet hier het adres van jullie eigen relais (wss://…). Druk dan op KAMER: de vier plaatjes zijn de code. Op de andere iPad: START → SAMEN → de vier plaatjes tikken.',
+    help: 'Druk op KAMER: de vier plaatjes zijn de code. Op de andere iPad: START → SAMEN → de vier plaatjes tikken. Het adres hieronder is ons eigen relais; alleen aanpassen als je een ander gebruikt.',
     noRelay: 'Nog geen relais-adres. Vul het hierboven in.',
     idle: 'Klaar om een kamer te openen.',
     connecting: 'Verbinden…',

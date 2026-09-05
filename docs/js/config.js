@@ -109,6 +109,8 @@ export const CONFIG = Object.freeze({
     posMs: 125,
     worldMs: 250,
     maxPlayers: 6,
+    // our own relay on Cloudflare (server/relay/worker.js, deployed 2026-09-05); a parent can override it on PAPA
+    defaultRelay: 'wss://muntstad-relay.johannes-b0e.workers.dev',
   },
 
   // Parent gate

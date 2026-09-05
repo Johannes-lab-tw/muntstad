@@ -27,6 +27,7 @@ export function createSamenUi(game) {
   stopBtn.addEventListener('click', () => { game.audio.play('tap'); samen.leave(); renderPapa(); });
   function renderPapa() {
     urlIn.value = game.state.settings.relayUrl || '';
+    urlIn.placeholder = game.config.net.defaultRelay || 'wss://…';
     const on = samen.status !== 'off';
     roomBtn.hidden = on;
     stopBtn.hidden = !on;

@@ -88,14 +88,13 @@ Vanaf dan start Muntstad als app en werkt hij ook zonder internet. Let op twee i
 
 Als beginscherm-app blijft de voortgang bewaard; in een gewoon Safari-tabblad kan Safari opslag na 7 dagen zonder gebruik opruimen. Daarom is er de Bewaar-code (§3, PAPA).
 
-## 1a. Samen spelen: het relais aanzetten (één keer, door een ouder)
+## 1a. Samen spelen: het relais
 
-Het relais geeft alleen berichten door tussen de iPads in één kamer. Twee manieren:
+Het relais geeft alleen berichten door tussen de iPads in één kamer. Het staat sinds 5 september 2026 op Cloudflare (gratis): `wss://muntstad-relay.johannes-b0e.workers.dev`. Dat adres zit als standaard in het spel, dus op geen enkele iPad hoeft iets ingetypt te worden: PAPA → KAMER → de vier plaatjes; de andere iPads: START → SAMEN → plaatjes tikken. STOP op PAPA sluit de kamer.
 
-1. **Cloudflare (gratis, werkt ook bij oma).** Maak een account op cloudflare.com. Op een pc met Node: `cd server/relay`, `npx wrangler login`, `npx wrangler deploy`. Je krijgt een adres zoals `https://muntstad-relay.<naam>.workers.dev`; zet dat als `wss://muntstad-relay.<naam>.workers.dev` op het PAPA-scherm onder "Samen spelen".
+Opnieuw neerzetten (na een wijziging in server/relay/worker.js): `cd server/relay`, `npx wrangler@4 deploy` (inloggen met `npx wrangler@4 login`, het Cloudflare-account is gekoppeld aan GitHub). Alternatief voor testen zonder internet:
+
 2. **Thuis op een pc.** `node server/relay/relay.js --host 0.0.0.0 --port 4174` en op PAPA `ws://<ip-van-de-pc>:4174`. Werkt alleen op hetzelfde wifi-netwerk; Safari op de iPad accepteert ws:// naar een lokaal adres alleen als de site zelf ook via http (niet https) is geopend, dus dit is vooral voor testen.
-
-Daarna: PAPA → KAMER → de vier plaatjes. De andere iPads: START → SAMEN → plaatjes tikken. STOP op PAPA sluit de kamer.
 
 ## 2. Wat het spel leert
 
