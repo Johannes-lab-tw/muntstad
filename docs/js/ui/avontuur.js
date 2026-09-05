@@ -12,6 +12,8 @@ import { fireRadius } from '../nacht.js';
 import { setFlag, formatCoins } from '../economy.js';
 import { collect, bagCount, openChest, chestOpenedToday, todayKey } from '../eiland.js';
 import { KETENS } from '../../content/ketens.js';
+import { CAMPAGNE } from '../../content/campagne.js';
+import { currentHoofdstuk, campagneEvent, berenVerloren, isGered } from '../campagne.js';
 import { currentKeten, ketenEvent, PLEKKEN } from '../ketens.js';
 import { burnFire, stokeFire, ghostSteal, dawnReward, fireLevel, levelSpan } from '../nacht.js';
 import { perks, drainHunger, eat, canEat, faint, deerBump, coolDown, freeze, cook } from '../uitdaging.js';
@@ -59,6 +61,7 @@ export function createAvontuur(game) {
   const stookBtn = document.getElementById('av-stook');   // V6.2: wood into the fire, its own button at the fire
   stookBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); if (scene3) scene3.hook.stoke(); });
   const nachtEl = document.getElementById('av-nacht');
+  const campEl = document.getElementById('av-campagne');
   const flauwEl = document.getElementById('av-flauw');
   const flauwTekst = document.getElementById('av-flauw-tekst');
   const mapEl = document.getElementById('av-map');
@@ -114,6 +117,54 @@ export function createAvontuur(game) {
     questSaid = key;
     game.mentor.sayText(cur.stapIndex === 0 ? `${cur.keten.titel}. ${cur.stap.tekst}` : cur.stap.tekst, { kind: 'reaction' });
   }
+  // ---------- the campaign (V6.6/V6.7): the game reports, campagne.js keeps the score ----------
+  let hoofdstukSaid = -1;
+  function campagne(ev) {
+    const r = campagneEvent(game.state, game.config, ev);
+    if (r.state === game.state) return;
+    game.update(() => r.state);
+    if (r.klaar) {
+      game.save();
+      game.audio.play('fanfare');
+      const h = CAMPAGNE.find((x) => x.id === r.klaar);
+      if (h) game.mentor.sayText(h.klaar, { kind: 'reaction' });
+      const p = game.walletPoint();
+      game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(r.reward)} 🪙`, '#2a9d3a');
+      game.bumpWallet();
+      if (r.gered) { game.update((s) => setFlag(s, 'gered', true)); setTimeout(() => { if (visible) game.mentor.say('lines.gered', {}, { kind: 'reaction' }); }, 6000); }
+      else setTimeout(() => { if (visible) sayHoofdstuk(); }, 6000);
+    }
+    hudKey = '';
+    if (visible) renderHud(game.state);
+  }
+  function sayHoofdstuk() {
+    const ch = currentHoofdstuk(game.state.campagne, CAMPAGNE);
+    if (!ch || !ch.tekst || hoofdstukSaid === ch.index) return;
+    hoofdstukSaid = ch.index;
+    game.mentor.sayText(`${game.t('lines.nieuwHoofdstuk', { n: ch.index + 1, titel: ch.tekst.titel })} ${ch.tekst.verhaal}`, { kind: 'reaction' });
+  }
+  function onCaveExit() { campagne({ soort: 'grotuit' }); }
+  function onGoldFish() {
+    game.audio.play('fanfare');
+    game.mentor.say('lines.goudvis', {}, { kind: 'reaction' });
+    campagne({ soort: 'goudvis' });
+  }
+  function onTop() {
+    game.mentor.say('lines.top', {}, { kind: 'reaction' });
+    campagne({ soort: 'top' });
+  }
+  function onBerenGewonnen() {
+    game.mentor.say('lines.berenGewonnen', {}, { kind: 'reaction' });
+    campagne({ soort: 'beren' });
+  }
+  function onBerenVerloren() {
+    game.audio.play('thud');
+    game.update((s) => berenVerloren(s, game.config));
+    game.save();
+    game.mentor.say('lines.berenVerloren', {}, { kind: 'reaction' });
+    hudKey = '';
+    if (visible) renderHud(game.state);
+  }
   const ontdektSaid = new Set();
   function onOntdek(plek) {
     if (!ontdektSaid.has(plek)) { ontdektSaid.add(plek); game.mentor.say('lines.ontdekt', { plek: PLEKKEN[plek].naam }, { kind: 'reaction' }); }
@@ -135,7 +186,7 @@ export function createAvontuur(game) {
     const full = bagCount(e) >= perks(e, game.config).bagMax;
     const peers = samen && samen.active ? samen.peers.size + 1 : 0;
     const nights = state.nacht.nights || 0;
-    const key = `${Object.values(e.bag).join(',')}|${fire}|${honger}|${warm}|${e.keten}|${e.stap}|${e.stapN}|${full}|${peers}|${nights}|${lastDark}`;
+    const key = `${Object.values(e.bag).join(',')}|${fire}|${honger}|${warm}|${e.keten}|${e.stap}|${e.stapN}|${full}|${peers}|${nights}|${lastDark}|${state.campagne ? state.campagne.hoofdstuk + ':' + state.campagne.munten : ''}`;
     if (key === hudKey) return;
     hudKey = key;
     // V6.2: the fire shows its level and how far it is to the next one; the cold as a blue bar
@@ -153,6 +204,12 @@ export function createAvontuur(game) {
     vignetteEl.classList.toggle('on', f > 0);
     vignetteEl.style.setProperty('--vig', coldF >= hungerF ? `rgba(30, 60, 160, ${0.5 + f * 0.45})` : `rgba(150, 20, 20, ${0.5 + f * 0.45})`);
     nachtEl.textContent = lastDark ? `🌙 Nacht ${nights + 1}` : `☀️ Dag ${nights + 1}`;
+    // the campaign line (V6.6): chapter, goal and the golden coins found so far
+    const ch = currentHoofdstuk(state.campagne, CAMPAGNE);
+    const munten = state.campagne ? state.campagne.munten || 0 : 0;
+    campEl.innerHTML = ch && ch.tekst
+      ? `<b>📖 ${ch.index + 1}. ${ch.tekst.titel}</b><span>${ch.tekst.doel}</span><i>${'🪙'.repeat(munten)}${'○'.repeat(7 - munten)}</i>`
+      : `<b>🏆 Muntstad is gered!</b><i>${'🪙'.repeat(7)}</i>`;
     nachtEl.classList.toggle('night', !!lastDark);
     // the chain card: the title, done steps ticked, the current step with its count, the rest greyed
     const cur = currentKeten(e, KETENS);
@@ -318,6 +375,7 @@ export function createAvontuur(game) {
     game.update((s) => ({ ...s, nacht: r.nacht, wallet: s.wallet + r.reward, earnedWork: s.earnedWork + r.reward }));
     game.save();
     keten({ soort: 'nacht', vuur: !!fireBurned });
+    campagne({ soort: 'nacht', vuur: !!fireBurned });
     if (r.reward > 0) {
       game.audio.play('upgrade');
       game.mentor.say('lines.dawnReward', { n: formatCoins(r.reward) }, { kind: 'reaction' });
@@ -374,6 +432,7 @@ export function createAvontuur(game) {
     game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(r.coins)}`, '#2a9d3a');
     game.bumpWallet();
     keten({ soort: 'kist' });
+    campagne({ soort: 'kist', which });
   }
   function onCaveGhostCaught() {
     // the cave ghost takes shells first (up to caveGhost.steals), otherwise one thing of whatever you carry
@@ -385,6 +444,7 @@ export function createAvontuur(game) {
     else { const id = Object.keys(bag).find((k) => bag[k] > 0); if (id) { bag[id] -= 1; taken = `een ${game.config.eiland.items[id].name.toLowerCase()}`; } }
     if (taken) game.update((s) => ({ ...s, eiland: { ...s.eiland, bag }, nacht: { ...s.nacht, stolen: s.nacht.stolen + 1 } }));
     game.mentor.say(taken ? 'lines.caveGhostCaught' : 'lines.ghostNothing', {}, { kind: 'reaction' });
+    campagne({ soort: 'grotspook' });
   }
   function onBearAte() {
     game.update((s) => ({ ...s, nacht: { ...s.nacht, fire: Math.max(0, s.nacht.fire - game.config.nacht.bearEats) } }));
@@ -438,7 +498,7 @@ export function createAvontuur(game) {
       onAction,
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
       onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte, onFireSync, onRemoteStoke, onChest, onCaveGhostCaught,
-      onTick, onDeerBump, onCook, onOntdek, onWolfBump,
+      onTick, onDeerBump, onCook, onOntdek, onWolfBump, onCaveExit, onGoldFish, onTop, onBerenGewonnen, onBerenVerloren,
     });
     Object.setPrototypeOf(hook, scene3.hook);   // the tests read positions and set inputs through window.__muntstad.avontuur
   }
@@ -465,6 +525,7 @@ export function createAvontuur(game) {
         setTimeout(() => { if (visible) game.mentor.say('lines.avontuur', {}, { kind: 'reaction' }); }, 6000);
         setTimeout(() => { if (visible) sayQuest(); }, 11000);
       } else setTimeout(() => { if (visible) sayQuest(); }, 1200);
+      setTimeout(() => { if (visible) sayHoofdstuk(); }, game.state.flags.avontuurIntro ? 7000 : 16000);   // the chapter's story, after the welcome and the quest
     },
     hide() {
       visible = false;

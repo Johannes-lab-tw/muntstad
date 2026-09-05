@@ -10,7 +10,7 @@ import { avatarModel, lookKey } from './avatar.js';
 import { petModel } from './pets.js';
 import { createPlayer, createFollower, stepPlayer, stepFollower, turnTowards } from './player.js';
 import { addLights } from './engine.js';
-import { createHeightmap, PIER, CAMP, LAKE, CAVE, VUURTOREN, HUT, caveInner } from './heightmap.js';
+import { createHeightmap, PIER, CAMP, LAKE, CAVE, HILL, VUURTOREN, HUT, caveInner } from './heightmap.js';
 import { createWater } from './terrain.js';
 import { createTiles } from './tiles.js';
 import { createCamp } from './camp.js';
@@ -54,7 +54,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (scene.fog) scene.fog.far = t >= 2 ? 70 : 95;   // the fog exists once daynight is created
   });
   const daynight = createDayNight(scene, lights);
-  const env = { yaw: START.heading, near: (x, z) => tiles.near(x, z), walkable: map.walkable, groundAt: map.groundAt, speedMul: 1 };
+  // with the climbing shoes (V6.6) the snow is walkable: the top of the mountain is chapter 4
+  const walkable = (x, z) => map.walkable(x, z) || (!!(state && state.eiland.tools.klimschoenen) && x > 1 && z > 1 && x < map.size - 1 && z < map.size - 1 && map.kindAt(x, z) === 'snow');
+  const env = { yaw: START.heading, near: (x, z) => tiles.near(x, z), walkable, groundAt: map.groundAt, speedMul: 1 };
   const trees = new Map();   // tile:kind:index → { taps, wood, restUntil }
   const treeKey = (o) => `${o.tile}:${o.kind}:${o.index}`;
 
@@ -215,7 +217,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     samen.on('emote', (d, from) => { const r = remotes.get(from); if (r && (d?.e === 'wave' || d?.e === 'dance')) { r.emote = d.e; r.emoteUntil = performance.now() + 2500; } });
     samen.on('world', (d) => { if (!samen.isGuest || !d) return; applyWorld(d); });
     samen.on('stoke', (d) => { if (samen.isHost && cb.onRemoteStoke) cb.onRemoteStoke(Math.max(0, Math.min(10, Number(d?.n) || 0))); });
-    samen.on('boe', () => { if (samen.isHost && bear) doScare(); });
+    samen.on('boe', () => { if (samen.isHost && bears.length) doScare(); });
     samen.on('sleep', () => { if (samen.isHost && cb.onSleep) cb.onSleep(); });
     samen.on('down', (d, from) => { const r = ensureRemote(from); r.down = true; });
     samen.on('up', (d, from) => { const r = remotes.get(from); if (r) r.down = false; });
@@ -289,13 +291,14 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       ph: +daynight.phase.toFixed(4),
       f: +state.nacht.fire.toFixed(1),
       g: ghosts.map((gh) => ({ x: +gh.g.x.toFixed(1), z: +gh.g.z.toFixed(1) })),
-      b: bear ? { x: +bear.b.x.toFixed(1), z: +bear.b.z.toFixed(1), s: bear.b.state } : null,
+      b: bears.length ? { x: +bears[0].b.x.toFixed(1), z: +bears[0].b.z.toFixed(1), s: bears[0].b.state } : null,
     });
   }
 
   // ---------- the night: camp gear, lights, ghosts, the bear ----------
   const ghosts = [];   // { g, model, holder }
-  let bear = null;     // { b, model, holder }
+  const bears = [];    // { b, model, holder }; one on a bear night, three in the last chapter (V6.7)
+  let berenNacht = null;   // { gone, ate } during the final chapter's night
   let ghostTimer = 0, wasDark = false, fireWasBurning = true, shiver = 0;
   const lantern = new T.PointLight(0xffd080, 0, 12, 1.6);
   lantern.visible = false;
@@ -356,26 +359,46 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     scene.add(holder);
     ghosts.push({ g: { x: p.x, z: p.z, heading: p.heading, state: 'come' }, model, holder });
   }
-  function spawnBear() {
-    if (bear) return;
-    const p = landSpot(30);
+  function spawnBear(dist = 30) {
+    const p = landSpot(dist);
     const model = bearModel();
     const holder = new T.Group();
     holder.add(model.group);
     holder.position.set(p.x, map.heightAt(p.x, p.z), p.z);
     scene.add(holder);
-    bear = { b: { x: p.x, z: p.z, heading: p.heading, state: 'come', scared: 0, pause: 0 }, model, holder };
+    bears.push({ b: { x: p.x, z: p.z, heading: p.heading, state: 'come', scared: 0, pause: 0 }, model, holder });
   }
+  /** The last chapter (V6.7): three bears at once; the night is won when all three ran, lost when they all ate or the fire died. */
+  function spawnBears(n) {
+    for (let i = 0; i < n; i++) spawnBear(28 + i * 4);
+    berenNacht = { gone: 0, ate: 0 };
+    game.audio.play('growl');
+    cb.onSay && cb.onSay('lines.berenKomen');
+  }
+  function clearBears() { for (const b of bears) scene.remove(b.holder); bears.length = 0; }
   function clearNight() {
     for (const gh of ghosts) scene.remove(gh.holder);
     ghosts.length = 0;
-    if (bear) { scene.remove(bear.holder); bear = null; }
+    clearBears();
+    berenNacht = null;
+  }
+  function nearestBear() {
+    let best = null, bd = Infinity;
+    for (const b of bears) { if (b.b.state !== 'come') continue; const d = Math.hypot(player.x - b.b.x, player.z - b.b.z); if (d < bd) { bd = d; best = b; } }
+    return best;
   }
   function doScare() {
     const wolvesRan = scareWolves();
-    if (!bear) { if (!wolvesRan) cb.onSay && cb.onSay('lines.bearScared'); return; }
-    const gone = scareBear(bear.b, config, perks(state.eiland, config).bearScares);
+    const b = nearestBear();
+    if (!b) { if (!wolvesRan) cb.onSay && cb.onSay('lines.bearScared'); return; }
+    const gone = scareBear(b.b, config, perks(state.eiland, config).bearScares);
+    if (gone && berenNacht) { berenNacht.gone++; if (berenNacht.gone >= config.campagne.beren) { berenNacht = null; cb.onBerenGewonnen && cb.onBerenGewonnen(); clearBears(); return; } }
     cb.onSay && cb.onSay(gone ? 'lines.bearGone' : 'lines.bearScared');
+  }
+  function berenLose() {
+    berenNacht = null;
+    clearBears();
+    cb.onBerenVerloren && cb.onBerenVerloren();
   }
   // ---------- the shadow wolves (V6.2): a pack from night 5 that circles you in the dark and shakes your bag ----------
   const wolves = [];   // { w: { x, z, heading, state, ang, wait }, model, holder }
@@ -430,7 +453,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     }
   }
   // discovering places (V6.2 chains): once a second, tell the UI which place you are at
-  let ontdekAcc = 0, lastPlek = null;
+  let ontdekAcc = 0, lastPlek = null, wasOnTop = false;
   function updateOntdek(dt) {
     ontdekAcc += dt;
     if (ontdekAcc < 1) return;
@@ -438,6 +461,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const p = plekAt(player.x, player.z);
     if (p && p !== lastPlek) { lastPlek = p; cb.onOntdek && cb.onOntdek(p); }
     if (!p) lastPlek = null;
+    const onTop = player.ground > HILL.top * 0.8 && Math.hypot(player.x - HILL.x, player.z - HILL.z) < HILL.r * 0.3;
+    if (onTop && !wasOnTop) cb.onTop && cb.onTop();
+    wasOnTop = onTop;
   }
   // ---------- the Nachthert and what it shakes out of your bag (V5.3) ----------
   let deer = null;   // { d: { x, z, heading, state, until }, model, holder }
@@ -532,7 +558,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       ghostTimer = rules.ghostEveryMs * 0.6;   // the first ghost comes soon after dark
       const bearNight = bearTonight(n, config, rules.bearEvery);
       cb.onNight && cb.onNight(bearNight && !guest, n.nights);
-      if (bearNight && !guest) spawnBear();
+      const finale = !guest && state.campagne && state.campagne.hoofdstuk === 6;   // chapter 7: the bears come a bit into the night
+      if (bearNight && !guest && !finale) spawnBear();
+      if (finale) setTimeout(() => { if (wasDark && !berenNacht && !bears.length) spawnBears(config.campagne.beren); }, config.campagne.berenVanaf);
       if (rules.deer && !guest) spawnDeer();
       if (rules.wolves && !guest) setTimeout(() => { if (wasDark && !guest) spawnWolves(); }, 15000);   // the pack comes a bit into the night
     }
@@ -567,16 +595,18 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       gh.holder.rotation.y = gh.g.heading;
       gh.model.update(now, { fade: isLit(gh.g.x, gh.g.z, lit) ? 0.35 : 1 });
     }
-    if (bear) {
+    for (let i = bears.length - 1; i >= 0; i--) {
+      const bear = bears[i];
       const res = stepBear(bear.b, { target: { x: CAMP.x, z: CAMP.z }, dt }, config);
-      if (res === 'eat') cb.onBearAte && cb.onBearAte();
-      if (res === 'gone') { scene.remove(bear.holder); bear = null; }
+      if (res === 'eat') { cb.onBearAte && cb.onBearAte(); if (berenNacht) { berenNacht.ate++; if (berenNacht.ate >= config.campagne.beren || state.nacht.fire <= 0) { berenLose(); break; } } }
+      if (res === 'gone') { scene.remove(bear.holder); bears.splice(i, 1); }
       else {
         bear.holder.position.set(bear.b.x, groundOf(bear.b.x, bear.b.z), bear.b.z);
         bear.holder.rotation.y = bear.b.heading;
         bear.model.update(now, { walking: bear.b.pause <= 0 });
       }
     }
+    if (berenNacht && isDark && state.nacht.fire <= 0) berenLose();
     broadcastWorld(now);
   }
 
@@ -585,9 +615,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   let lastActionKey = '';
   let hakUntil = 0;
   let fishing = null;       // { until, biteUntil }
+  let forceGoldFish = false;   // tests: the next catch is the golden fish
   function bearNear() {
-    const b = bear ? bear.b : remoteBear && remoteBear.state === 'come' ? remoteBear.holder.position : null;
-    return b && Math.hypot(player.x - b.x, player.z - b.z) < REACH.bear && (!bear || bear.b.state === 'come');
+    const nb = nearestBear();
+    const b = nb ? nb.b : remoteBear && remoteBear.state === 'come' ? remoteBear.holder.position : null;
+    return !!b && Math.hypot(player.x - b.x, player.z - b.z) < REACH.bear;
   }
   function findAction(now) {
     const px = player.x, pz = player.z;
@@ -719,6 +751,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       case 'trek':
         if (fishing && fishing.biteUntil && now < fishing.biteUntil) {
           cb.onCollect && cb.onCollect('vis', perks(state.eiland, config).fishPer);
+          if (state.eiland.tools.hengel && (forceGoldFish || Math.random() < config.campagne.goudvisKans)) { forceGoldFish = false; cb.onGoldFish && cb.onGoldFish(); }
           jumpFish(bobber.position, new T.Vector3(player.x, player.ground + 0.9, player.z));
           game.audio.play('splash');
           game.audio.play('buy');
@@ -814,8 +847,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   let nextDrip = 0;
   const drop = (() => { const m = new T.Mesh(new T.SphereGeometry(0.07, 6, 5), new T.MeshStandardMaterial({ color: 0x9fe8ff, emissive: 0x4fc8ff, emissiveIntensity: 0.6 })); m.visible = false; scene.add(m); return m; })();
   let dropT = -1;
+  let wasInCave = false;
   function updateDrips(now, dt) {
     const inside = map.inCave(player.x, player.z);
+    if (wasInCave && !inside) cb.onCaveExit && cb.onCaveExit();
+    wasInCave = inside;
     if (inside && now > nextDrip) {
       nextDrip = now + 2500 + Math.random() * 4000;
       game.audio.play('drip');
@@ -986,12 +1022,17 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get action() { return action ? { type: action.type, label: action.label } : null; },
     get fishing() { return fishing ? { biting: !!fishing.biteUntil } : null; },
     get ghosts() { return (samen && samen.isGuest ? remoteGhosts.map((rg) => ({ x: rg.holder.position.x, z: rg.holder.position.z, state: 'remote' })) : ghosts.map((gh) => ({ x: gh.g.x, z: gh.g.z, state: gh.g.state }))); },
-    get bear() { return bear ? { x: bear.b.x, z: bear.b.z, state: bear.b.state, scared: bear.b.scared } : null; },
+    get bear() { return bears.length ? { x: bears[0].b.x, z: bears[0].b.z, state: bears[0].b.state, scared: bears[0].b.scared } : null; },
+    get bears() { return bears.map((b) => ({ x: b.b.x, z: b.b.z, state: b.b.state, scared: b.b.scared })); },
+    spawnBears(n = config.campagne.beren) { spawnBears(n); },
+    /** Put every bear right next to the player (tests). */
+    bearsAt(x, z) { bears.forEach((b, i) => { b.b.x = x + i * 0.8; b.b.z = z; }); },
+    get berenNacht() { return berenNacht ? { ...berenNacht } : null; },
     get lights() { return state ? lightsNow() : []; },
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
     setDown(v) { down = !!v; },
     get down() { return down; },
-    onLand(x, z) { return map.walkable(x, z); },
+    onLand(x, z) { return walkable(x, z); },   // with the climbing shoes the snow counts as land
     kindAt(x, z) { return map.kindAt(x, z); },
     landmarks: { CAMP, PIER, LAKE, TENT: TENT_AT, CHEST: camp.chest.pos, CAVE, VUURTOREN, HUT, HUTCHEST: vuurtoren.chest.pos },
     setChestOpen(open, which = 'grot') { (which === 'hut' ? vuurtoren.chest : camp.chest).setOpen(open); },
@@ -1035,7 +1076,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     inCave(x, z) { return map.inCave(x, z); },
     emote,
     bite() { if (fishing && !fishing.biteUntil) fishing.until = 0; },
-    spawnGhost, spawnBear,
+    goldNext() { forceGoldFish = true; },
+    spawnGhost, spawnBear: () => spawnBear(),
     /** Put a ghost right next to the player (tests): it steals on the next step unless the spot is lit. */
     ghostAt(x, z) { spawnGhost(); const gh = ghosts[ghosts.length - 1]; gh.g.x = x; gh.g.z = z; },
   };

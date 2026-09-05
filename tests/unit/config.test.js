@@ -57,5 +57,5 @@ test('caps and timings match the spec', () => {
   assert.equal(CONFIG.mentor.tipGapMs, 90 * 1000);
   assert.equal(CONFIG.papa.holdMs, 3000);
   assert.equal(CONFIG.work.coinsPerCar, 2);
-  assert.equal(CONFIG.milestones.length, 9);   // 6 town stickers + 3 island stickers (PLAN-V4 R6)
+  assert.equal(CONFIG.milestones.length, 11);   // 6 town stickers + 3 island stickers (PLAN-V4 R6) + 2 campaign stickers (V6.6)
 });

@@ -162,7 +162,7 @@ export function createScene(container, game, engine) {
       scene.add(g);
     } else if (!want('straatnaam') && pronk.straatnaam) { scene.remove(pronk.straatnaam); pronk.straatnaam = null; }
     // the fireworks show: every few seconds a burst of coloured sparks over the park
-    if (want('vuurwerk-avond') && now > nextFirework) {
+    if ((want('vuurwerk-avond') || state.flags.gered) && now > nextFirework) {
       nextFirework = now + 4500 + Math.random() * 3000;
       const n = 26;
       const pos = new Float32Array(n * 3), vel = [];

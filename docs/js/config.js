@@ -59,6 +59,7 @@ export const CONFIG = Object.freeze({
       { id: 'vuurkuil', name: 'Vuurkuil', icon: '🕳️', price: 180, tekst: 'Het vuur brandt langzamer op.' },
       { id: 'hoog_hek', name: 'Hoog hek', icon: '🏰', price: 250, tekst: 'Een groter hek: het hele kamp is veilig.' },
       { id: 'hut2',     name: 'Tweede hut', icon: '🛖', price: 300, tekst: 'Een hut voor wie meespeelt.' },
+      { id: 'klimschoenen', name: 'Klimschoenen', icon: '🥾', price: 150, tekst: 'Je kunt de sneeuw op, tot de top van de berg.' },   // V6.6: chapter 4
     ],
     bagMaxBig: 60,                    // with the big backpack
     shoesSpeed: 1.25,                 // walk and run × this with the shoes
@@ -202,6 +203,15 @@ export const CONFIG = Object.freeze({
   },
 
   // Parent gate
+  // The campaign "De verdwenen munten van Muntstad" (V6.6/V6.7): seven chapters, one golden coin each (docs/js/campagne.js)
+  campagne: {
+    beloning: [50, 80, 100, 120, 150, 200, 500],   // coins per chapter
+    goudvisKans: 1 / 6,               // chapter 3: the golden fish bites one in six times, with the rod only
+    lichtNachten: 3,                  // chapter 6: nights in a row with the fire burning
+    beren: 3,                         // chapter 7: this many bears at once
+    berenVanaf: 20000,                // ... they come this long after dark (ms)
+  },
+
   // The savings bank (V6.4): coins you put away grow every calendar day; take them out whenever you like. No debt, no loss.
   bank: {
     ratePerDay: 0.05,                 // 5 % per day
@@ -304,6 +314,8 @@ export const CONFIG = Object.freeze({
     { id: 'eerste-nacht',     kind: 'nights',             value: 1,      sticker: '🌙', title: 'Eerste nacht overleefd!' },
     { id: 'eiland-verkoper',  kind: 'island-sold',        value: 100,    sticker: '🐚', title: '100 munten verdiend op het eiland!' },
     { id: 'vijf-opdrachten',  kind: 'quests',             value: 5,      sticker: '🎒', title: 'Vijf opdrachten van Muntje!' },
+    { id: 'eerste-munt',      kind: 'campagne',           value: 1,      sticker: '🪙', title: 'De eerste gouden munt is terug!' },
+    { id: 'muntstad-gered',   kind: 'campagne',           value: 7,      sticker: '🏆', title: 'Alle zeven munten: Muntstad is gered!' },
   ],
 
   // Avatar colours offered on START (id → CSS colour)

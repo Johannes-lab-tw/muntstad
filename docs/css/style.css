@@ -1035,6 +1035,10 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .av-row { display: flex; gap: 10px; align-items: center; }
 .av-nacht { padding: 6px 16px; font-size: 24px; font-weight: 900; color: #3f475f; white-space: nowrap; }
 .av-nacht.night { background: #1d2144; color: #fff; }
+.av-campagne { padding: 6px 14px; font-size: 17px; font-weight: 700; color: #3f475f; display: flex; flex-direction: column; gap: 1px; max-width: 320px; }
+.av-campagne b { color: var(--ink); font-size: 18px; }
+.av-campagne span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.av-campagne i { font-style: normal; letter-spacing: 1px; font-size: 15px; }
 .av-flauw { position: absolute; inset: 0; background: #05060f; z-index: 30; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
 .av-flauw.on { opacity: 1; }
 /* ---------- the campfire screen (V6.1): a full layer in AVONTUUR, same bones as WINKEL ---------- */

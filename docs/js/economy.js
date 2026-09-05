@@ -3,6 +3,7 @@
 // The game, the unit tests and the balance simulator all share this exact logic.
 import { createEiland } from './eiland.js';
 import { createNacht } from './nacht.js';
+import { createCampagne } from './campagne.js';
 
 export const THIN_SPACE = ' '; // narrow no-break space: thin, and '2 000' never breaks over two lines
 
@@ -39,6 +40,7 @@ export function createState(config, now) {
     eiland: createEiland(config),
     nacht: createNacht(),
     bank: createBank(now),
+    campagne: createCampagne(),
   };
 }
 
@@ -340,6 +342,7 @@ function milestoneReached(state, config, m) {
     case 'nights': return (state.nacht?.nights || 0) >= m.value;
     case 'island-sold': return (state.eiland?.earned || 0) >= m.value;
     case 'quests': return (state.eiland?.questsDone || 0) >= m.value;
+    case 'campagne': return (state.campagne?.munten || 0) >= m.value;   // V6.6: golden coins found
     default: return false;
   }
 }
@@ -404,6 +407,9 @@ export function stats(state, config) {
     tools: state.eiland ? Object.keys(state.eiland.tools).length : 0,
     fainted: state.nacht ? state.nacht.fainted || 0 : 0,
     frozen: state.nacht ? state.nacht.frozen || 0 : 0,
+    hoofdstuk: state.campagne ? state.campagne.hoofdstuk || 0 : 0,
+    munten: state.campagne ? state.campagne.munten || 0 : 0,
+    berenVerloren: state.campagne ? state.campagne.pogingen || 0 : 0,
     bankSaldo: state.bank ? Math.floor(state.bank.saldo || 0) : 0,
     bankEarned: state.bank ? Math.floor(state.bank.earned || 0) : 0,
     bumped: state.nacht ? state.nacht.bumped || 0 : 0,

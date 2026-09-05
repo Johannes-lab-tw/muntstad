@@ -57,7 +57,8 @@ export function placeForest(map, seed = 7, bounds = null) {
       else if (r < 0.26 && free(px, pz, 1.4)) out.tree2.push({ x: px, z: pz, y, s: s * 0.8, rot });
       else if (r < 0.30) out.bush2.push({ x: px, z: pz, y, s, rot });               // swamp berries
     } else if (kind === 'rock' || kind === 'snow') {
-      if (r < 0.22 && free(px, pz, 0)) out[r < 0.1 ? 'rock2' : 'rock3'].push({ x: px, z: pz, y, s: s * (0.8 + rand() * 0.8), rot });
+      // boulders, sparse enough to climb between (V6.6: the top of the mountain is chapter 4)
+      if (r < (kind === 'snow' ? 0.025 : 0.09) && free(px, pz, 0)) out[r < 0.03 ? 'rock2' : 'rock3'].push({ x: px, z: pz, y, s: s * (0.8 + rand() * 0.8), rot });
     } else if (kind === 'beach') {
       if (nearLake > -0.5 && nearLake < 1.8 && r < 0.5) out.reed.push({ x: px, z: pz, y, s, rot });
       else if (r < 0.05 && free(px, pz, 1.0)) out.rock1.push({ x: px, z: pz, y, s: s * 0.6, rot });
