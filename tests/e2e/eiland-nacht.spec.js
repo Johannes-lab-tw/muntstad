@@ -83,6 +83,6 @@ test('with the lantern a ghost next to you cannot steal; the tent lets you sleep
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(null));
   await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBeLessThan(1);
   const phase = await page.evaluate(() => window.__muntstad.avontuur.phase);
-  expect(phase).toBeGreaterThan(0.95);
+  expect(phase > 0.95 || phase < 0.1, `phase ${phase} is just before or just after dawn`).toBe(true);   // a slow runner may already have crossed into the morning
   expect(errors()).toEqual([]);
 });

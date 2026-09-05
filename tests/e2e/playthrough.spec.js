@@ -34,6 +34,7 @@ test('start → work → invest → passive income → fun → house → papa', 
   expect(w2 - w1).toBeLessThan(2);
 
   // LEUK: buy the cheapest hat (15) — earn the rest by working
+  await closePopups(page);   // a sticker or offline popup may sit in front of the button on a slow runner
   await page.locator('#shop-stad').click();
   while ((await state(page)).wallet < 15) await washCars(page, 2);
   await page.locator('#nav-winkel').click();
@@ -46,6 +47,7 @@ test('start → work → invest → passive income → fun → house → papa', 
   expect(afterHat.spentFun).toBe(15);
 
   // HUIS shows the hat on the avatar and the first sticker
+  await closePopups(page);   // a sticker or offline popup may sit in front of the button on a slow runner
   await page.locator('#shop-stad').click();
   await page.locator('#nav-huis').click();
   await expect(page.locator('#huis-scene .avatar[data-hat="pet"]')).toBeVisible();
@@ -62,6 +64,7 @@ test('start → work → invest → passive income → fun → house → papa', 
   expect((await state(page)).fun.tovenaar).toBeUndefined();
   expect(Math.floor((await state(page)).wallet)).toBeGreaterThanOrEqual(Math.floor(before));
   await expect(page.locator('#bubble-text')).toContainText('Nog');
+  await closePopups(page);   // a sticker or offline popup may sit in front of the button on a slow runner
   await page.locator('#shop-stad').click();
 
   // PAPA gate + stats
