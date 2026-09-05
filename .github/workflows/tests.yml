@@ -12,7 +12,7 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 75   # 38 e2e-tests op de trage runner (~1 fps eiland) duren 40-50 minuten per profiel
     strategy:
       fail-fast: false
       matrix:
