@@ -3,6 +3,7 @@
 import { createState } from './economy.js';
 import { normalizeEiland } from './eiland.js';
 import { normalizeNacht } from './nacht.js';
+import { createBank, dayIndex } from './economy.js';
 
 const CODE_PREFIX = 'MS1';
 
@@ -100,6 +101,7 @@ export function normalize(data, config, now) {
     flags: data.flags && typeof data.flags === 'object' ? { ...data.flags } : {},
     eiland: normalizeEiland(data.eiland, config),
     nacht: normalizeNacht(data.nacht, config),
+    bank: normalizeBank(data.bank, config, now),
     settings: {
       voice: data.settings && 'voice' in data.settings ? !!data.settings.voice : true,
       sound: data.settings && 'sound' in data.settings ? !!data.settings.sound : true,
@@ -234,6 +236,7 @@ export function encodeCode(state, config) {
     // the island (since PLAN-V4 R3): bag counts in config order, owned tools as indices, quest index + progress, sold, earned
     [Object.keys(config.eiland.items).map((id) => state.eiland.bag[id] || 0), config.eiland.tools.map((t, i) => (state.eiland.tools[t.id] ? i : -1)).filter((i) => i >= 0), state.eiland.quest, state.eiland.questN, state.eiland.questsDone, state.eiland.sold, state.eiland.earned, Math.round(state.eiland.honger ?? 100), state.eiland.keten || 0, state.eiland.stap || 0, state.eiland.stapN || 0, state.eiland.ketensDone || 0],
     [Math.round(state.nacht.fire), state.nacht.nights, state.nacht.stolen, state.nacht.clockOffsetMs, state.nacht.fainted || 0, state.nacht.bumped || 0],
+    [Math.floor(state.bank?.saldo || 0), state.bank?.lastGrowDay || 0, Math.floor(state.bank?.earned || 0)],   // V6.4: the savings bank
   ];
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   return `${CODE_PREFIX}.${bytesToB64(bytes)}.${checksum(bytes)}`;
@@ -291,9 +294,19 @@ export function decodeCode(code, config, now) {
       flags: { started: true, workIntro: true },
       eiland: { bag, tools, quest: ei[2], questN: ei[3], questsDone: ei[4], sold: ei[5], earned: ei[6], honger: ei[7], keten: ei[8], stap: ei[9], stapN: ei[10], ketensDone: ei[11] },
       nacht: { fire: list(p[20])[0], nights: list(p[20])[1], stolen: list(p[20])[2], clockOffsetMs: list(p[20])[3], fainted: list(p[20])[4], bumped: list(p[20])[5] },
+      bank: { saldo: list(p[21])[0], lastGrowDay: list(p[21])[1], earned: list(p[21])[2] },
       lastTick: now, createdAt: now,
     }, config, now);
   } catch (e) {
     return null;
   }
+}
+
+/** The savings bank (V6.4): a pot that only holds whole coins within the cap; an old save starts with an empty pot. */
+export function normalizeBank(data, config, now) {
+  const fresh = createBank(now);
+  if (!data || typeof data !== 'object') return fresh;
+  const num = (v, max = 1e12) => Math.min(max, Math.max(0, Math.floor(Number(v) || 0)));
+  const today = dayIndex(now);
+  return { saldo: num(data.saldo, config.bank.max), lastGrowDay: data.lastGrowDay == null ? today : Math.min(today, num(data.lastGrowDay)), earned: num(data.earned) };
 }

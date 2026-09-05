@@ -9,7 +9,7 @@ import * as T from '../../vendor/three.module.min.js';
 import { avatarModel, lookKey } from './avatar.js';
 import { petModel } from './pets.js';
 import { createPlayer, createFollower, stepPlayer, stepFollower, turnTowards, createGrid } from './player.js';
-import { PLOTS, HOUSE, HARBOR, ISLAND, obstacles as townObstacles, townWalkable, townGroundAt } from './world.js';
+import { PLOTS, HOUSE, HARBOR, BANK, ISLAND, obstacles as townObstacles, townWalkable, townGroundAt } from './world.js';
 import { isFunActive, makerLevel } from '../economy.js';
 
 export const SCALE = 0.34;   // the figure's size in the town: a third, so the town is three times as big for it
@@ -60,6 +60,7 @@ export function createDorpScene(game, engine, controls, cb = {}) {
     const boat = { x: HARBOR.x, z: HARBOR.z - HARBOR.len };
     if (Math.hypot(px - boat.x, pz - boat.z) < REACH.boat) return { type: 'vaar', label: 'VAAR', target: null };
     if (Math.hypot(px - HOUSE[0], pz - HOUSE[1]) < REACH.house) return { type: 'huis', label: 'HUIS', target: null };
+    if (Math.hypot(px - BANK[0], pz - BANK[1]) < 2.2) return { type: 'bank', label: 'BANK', target: null };
     let best = null, bd = Infinity;
     for (const m of config.makers) {
       const [x, z] = PLOTS[m.id];
@@ -72,6 +73,7 @@ export function createDorpScene(game, engine, controls, cb = {}) {
     if (!action) return;
     if (action.type === 'vaar') cb.onVaar && cb.onVaar();
     else if (action.type === 'huis') cb.onHuis && cb.onHuis();
+    else if (action.type === 'bank') cb.onBank && cb.onBank();
     else if (action.type === 'maker') cb.onMaker && cb.onMaker(action.target);
   }
 
@@ -163,7 +165,7 @@ export function createDorpScene(game, engine, controls, cb = {}) {
     get jumps() { return jumps; },
     get action() { return action ? { type: action.type, label: action.label, target: action.target } : null; },
     walkable: townWalkable,
-    landmarks: { HARBOR, HOUSE, PLOTS, ISLAND },
+    landmarks: { HARBOR, HOUSE, PLOTS, ISLAND, BANK },
     setInput(x, y, run = false) { controls.setOverride(x == null ? null : { x, y, run }); },
     jump() { controls.pressJump(); },
     teleport(x, z) { player.x = x; player.z = z; player.ground = townGroundAt(x, z); firstFrame = true; },

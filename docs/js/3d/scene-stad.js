@@ -3,7 +3,9 @@
 // Same contract as the old canvas scene: createScene(container, game, engine) →
 // { mount, resize, render(now), hitTest(x, y), spawnCoin, burst(id), setState(s), plotPoint(id), hop }.
 import * as T from '../../vendor/three.module.min.js';
-import { createWorld, PLOTS, HOUSE, roadPath, along, ISLAND } from './world.js';
+import { createWorld, PLOTS, HOUSE, BANK, HARBOR, PARK, roadPath, along, ISLAND } from './world.js';
+import { Builder, textPlane } from './build.js';
+import { isFunActive } from '../economy.js';
 import { makerModel, houseModel, signModel, arrowModel, ringModel, makerHeight } from './buildings.js';
 import { avatarModel, carModel, lookKey } from './avatar.js';
 import { addLights, createCamera } from './engine.js';
@@ -51,6 +53,11 @@ export function createScene(container, game, engine) {
     hits.push(hit);
     makers[m.id] = { level: -1, unlocked: null, affordable: null, model: null, sign: null, hit, arrow: null, ring: null };
   }
+  const bankHit = new T.Mesh(new T.BoxGeometry(1.8, 1.6, 1.6), hitMat);
+  bankHit.position.set(BANK[0], 0.8, BANK[1]);
+  bankHit.userData = { type: 'bank' };
+  scene.add(bankHit);
+  hits.push(bankHit);
   const houseHit = new T.Mesh(new T.BoxGeometry(3.4, 2.6, 3), hitMat);
   houseHit.position.set(HOUSE[0], 1.3, HOUSE[1]);
   houseHit.userData = { type: 'house' };
@@ -108,6 +115,75 @@ export function createScene(container, game, engine) {
       house.model.group.position.set(HOUSE[0], 0.05, HOUSE[1]);
       scene.add(house.model.group);
       house.paint = paint;
+    }
+  }
+
+  // ---------- the show pieces (V6.4): statue, yacht, own street, fireworks ----------
+  const pronk = { standbeeld: null, jacht: null, straatnaam: null, naam: '' };
+  let fireworks = [];
+  let nextFirework = 0;
+  function syncPronk(now) {
+    const want = (id) => isFunActive(state, config, id);
+    if (want('standbeeld') && !pronk.standbeeld) {
+      const b = new Builder({ r: 0.03 });
+      const x = PARK[0] + 2.5, z = PARK[1];
+      b.cyl(x, z, 0, 0.5, 0.35, '#c9b98a', 12);
+      b.cyl(x, z, 0.35, 0.38, 0.12, '#f1e9d2', 12);
+      b.box(x - 0.16, z - 0.14, 0.47, 0.32, 0.28, 0.5, '#ffc21c', { r: 0.08 });   // body
+      b.sphere(x, z, 1.15, 0.2, '#ffd75a', 10);                                   // head
+      b.box(x - 0.3, z - 0.06, 0.62, 0.12, 0.12, 0.34, '#ffc21c', { r: 0.04 });    // arms
+      b.box(x + 0.18, z - 0.06, 0.62, 0.12, 0.12, 0.34, '#ffc21c', { r: 0.04 });
+      pronk.standbeeld = b.build();
+      scene.add(pronk.standbeeld);
+    } else if (!want('standbeeld') && pronk.standbeeld) { scene.remove(pronk.standbeeld); pronk.standbeeld = null; }
+    if (want('jacht') && !pronk.jacht) {
+      const b = new Builder({ r: 0.05 });
+      const x = HARBOR.boat.x + 1.6, z = HARBOR.boat.z - 1.0;
+      b.box(x - 0.55, z - 1.4, -0.6, 1.1, 2.8, 0.5, '#ffffff', { r: 0.18 });
+      b.box(x - 0.45, z - 0.6, -0.1, 0.9, 1.3, 0.45, '#eaf4ff', { r: 0.1 });
+      b.box(x - 0.35, z - 0.2, 0.35, 0.7, 0.7, 0.3, '#cfe9ff', { r: 0.08 });
+      b.box(x - 0.5, z - 1.3, -0.12, 1.0, 0.1, 0.06, '#ffc21c', { r: 0.02 });
+      pronk.jacht = b.build();
+      scene.add(pronk.jacht);
+    } else if (!want('jacht') && pronk.jacht) { scene.remove(pronk.jacht); pronk.jacht = null; }
+    const naam = (state.name || 'Kapitein').slice(0, 12);
+    if (want('straatnaam') && (!pronk.straatnaam || pronk.naam !== naam)) {
+      if (pronk.straatnaam) scene.remove(pronk.straatnaam);
+      const g = new T.Group();
+      const b = new Builder({ r: 0.02 });
+      b.cyl(0, 0, 0, 0.05, 1.3, '#9aa3b2', 8);
+      g.add(b.build());
+      const sign = textPlane(`${naam}straat`, { w: 2.0, h: 0.42, font: 0.24, color: '#ffffff', bg: '#2f6fd6' });
+      sign.position.set(0, 1.35, 0);
+      g.add(sign);
+      g.position.set(10.0, 0.07, 2.05);
+      pronk.straatnaam = g;
+      pronk.naam = naam;
+      scene.add(g);
+    } else if (!want('straatnaam') && pronk.straatnaam) { scene.remove(pronk.straatnaam); pronk.straatnaam = null; }
+    // the fireworks show: every few seconds a burst of coloured sparks over the park
+    if (want('vuurwerk-avond') && now > nextFirework) {
+      nextFirework = now + 4500 + Math.random() * 3000;
+      const n = 26;
+      const pos = new Float32Array(n * 3), vel = [];
+      const geom = new T.BufferGeometry();
+      geom.setAttribute('position', new T.BufferAttribute(pos, 3));
+      const colors = [0xff5f5f, 0xffe94d, 0x45d65c, 0x45b6ff, 0xff6fae, 0xb76cff];
+      const pts = new T.Points(geom, new T.PointsMaterial({ color: colors[Math.floor(Math.random() * colors.length)], size: 0.22, transparent: true, opacity: 1, depthWrite: false }));
+      pts.frustumCulled = false;
+      const cx = PARK[0] + (Math.random() - 0.5) * 6, cz = PARK[1] + (Math.random() - 0.5) * 4, cy = 5.5 + Math.random() * 2;
+      for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, e = Math.random() * Math.PI; const sp = 1.6 + Math.random() * 1.2; vel.push([Math.cos(a) * Math.sin(e) * sp, Math.cos(e) * sp, Math.sin(a) * Math.sin(e) * sp]); pos[i * 3] = cx; pos[i * 3 + 1] = cy; pos[i * 3 + 2] = cz; }
+      scene.add(pts);
+      fireworks.push({ pts, pos, vel, born: now });
+      game.audio.play('pop');
+    }
+    for (let i = fireworks.length - 1; i >= 0; i--) {
+      const f = fireworks[i];
+      const age = (now - f.born) / 1000;
+      if (age > 1.6) { scene.remove(f.pts); f.pts.geometry.dispose(); fireworks.splice(i, 1); continue; }
+      for (let k = 0; k < f.vel.length; k++) { f.pos[k * 3] += f.vel[k][0] * 0.016; f.pos[k * 3 + 1] += (f.vel[k][1] - age * 2.2) * 0.016; f.pos[k * 3 + 2] += f.vel[k][2] * 0.016; }
+      f.pts.geometry.attributes.position.needsUpdate = true;
+      f.pts.material.opacity = Math.max(0, 1 - age / 1.6);
     }
   }
 
@@ -223,6 +299,7 @@ export function createScene(container, game, engine) {
     depthRef = opts.depthRef || center;
     const roadAvatar = opts.roadAvatar !== false;
     syncMakers();
+    syncPronk(now);
     syncAvatar();
     scheduleCoins(dt);
     const lite = engine.tier >= 2;
@@ -272,7 +349,7 @@ export function createScene(container, game, engine) {
     if (m === 'stad') { activeCamera = camera; depthRef = center; if (avatar) { avatar.group.visible = true; avatarHit.visible = true; } }
   }
 
-  /** Returns what was tapped: { type: 'maker', id } | { type: 'house' } | { type: 'avatar' } | null */
+  /** Returns what was tapped: { type: 'maker', id } | { type: 'house' } | { type: 'bank' } | { type: 'avatar' } | null */
   function hitTest(x, y) {
     if (!W || !state) return null;
     ndc.set((x / W) * 2 - 1, -(y / H) * 2 + 1);

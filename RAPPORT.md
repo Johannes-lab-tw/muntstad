@@ -2,7 +2,21 @@
 
 **Live:** https://johannes-lab-tw.github.io/muntstad/
 
-## 0. Vijfde ronde: spannender, wat je zoon vroeg (5 september 2026)
+## 0. Zesde ronde: één wereld, echt overleven (5 september 2026, middag en avond)
+
+Na de tweede iPad-test ("avontuur is saai en klein", "hij wil door de stad lopen", "alles is al gekocht") is PLAN-V6.md gemaakt en zijn de eerste vier stappen gebouwd. Elke stap heeft een commit, unit-tests en e2e-tests op drie iPad-formaten; de site gaat pas online als die groen zijn.
+
+1. **Het eiland is vijf keer zo groot** (480 bij 480 meter) en bestaat uit tegels van 60 meter waarvan er maar negen tegelijk bestaan, zodat de iPad het bijhoudt. Nieuw: een echte berg met sneeuw, een moeras in het oosten, een ruïne in het westen, en de grot in de flank van de berg. Rechtsboven een kaartje met waar je bent, het kamp, het meer, de grot, het moeras, de ruïne, de berg en de pier.
+2. **Het vuur heeft levels.** Hout in het vuur telt: vanaf 20 stuks level 2 (stenenkring), 50 level 3 (vuurkorf, je kunt vis bakken met KOOK), 100 level 4 (driepoot, licht tot 13 meter), 200 level 5 (vreugdevuur dat het hele kamp verlicht). Een groter vuur eet meer hout per nacht en zakt terug als het hout op is. STOOK is een eigen knop bij het vuur, KAMP (verkopen en kopen) kan nu altijd.
+3. **Echt overleven.** Naast honger is er kou: 's nachts weg van het vuur loopt je warmte leeg (blauwe balk), in het licht van het vuur komt ze terug, een lantaarn helpt. Bibberen onder een kwart, flauwvallen op nul. Een dag duurt 8 minuten, een nacht 5. Op het scherm staat "Dag 3" of "Nacht 3". Vanaf nacht 5 komen de schaduwwolven: een roedel die om je heen cirkelt en je rugzak leegschudt; licht houdt ze op afstand en BOE jaagt ze weg.
+4. **Opdrachtketens.** Muntje geeft nu ketens van drie tot vijf stappen met een beloning aan het eind ("Hak tien hout, doe het in het vuur, maak het vuur level 3"). De kaart links laat zien wat af is (✔), waar je bent (▶ met teller) en wat nog komt. Vijftien ketens, steeds zwaarder, geschreven door Ollama en met de hand nagekeken; de laatste vraagt een vreugdevuur en drie nachten.
+5. **Samen, zichtbaar.** Op het eiland staat een knop SAMEN: KAMER opent een kamer (je vriend tikt jouw vier plaatjes), of je tikt de plaatjes van je vriend; geen ouder meer nodig. Val je flauw terwijl er een vriend is, dan lig je dertig seconden op de grond en kan die vriend je met WEK wakker maken: je houdt dan alles.
+6. **Door het dorp lopen.** Op STAD staat een knop DORP: je loopt zelf door Muntstad, met de hond, langs de gebouwen (KOOP en BETER bij een kavel, HUIS bij je huis, BANK bij de Spaarbank). In de haven ligt de boot: VAAR brengt je met een overtocht naar het eiland, en DORP op het eiland vaart terug. KAART is de oude STAD-kaart.
+7. **Weer iets om voor te sparen.** Elke geldmaker heeft nu tien levels (goud, neon, sterren, gouden dak, kroon). Drie nieuwe geldmakers aan de noordkant: Hotel (200 000), Handelshaven (1 miljoen), Raketbasis (5 miljoen). Showspullen voor wie alles heeft: vuurwerkshow (100 000), gouden standbeeld (250 000), gouden hoed (500 000), jacht (1 miljoen), eigen straatnaam (2 miljoen). En de **Spaarbank** op het plein: munten in de pot groeien elke dag met 5 %, ophalen wanneer je wilt; op PAPA zie je saldo en rente. Geen schuld, geen verlies.
+
+Nog te doen uit PLAN-V6: het Vuurtoren-eiland (V6.5), de campagne "De verdwenen munten van Muntstad" in zeven hoofdstukken met de drie beren als eindbaas (V6.6 en V6.7), en de afwerking met de MELD-knop op PAPA (V6.8). Bewaar-codes van eerdere rondes blijven laden.
+
+## 0-vorig. Vijfde ronde: spannender, wat je zoon vroeg (5 september 2026)
 
 Na jullie iPad-test van 5 september noemde je zoon zes dingen; die zijn alle zes gebouwd (PLAN-V5.md), plus twee open punten uit §7.
 

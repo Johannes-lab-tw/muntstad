@@ -38,7 +38,39 @@ export function createState(config, now) {
     settings: { voice: true, sound: true, music: true, relayUrl: '' },
     eiland: createEiland(config),
     nacht: createNacht(),
+    bank: createBank(now),
   };
+}
+
+/** The savings bank (V6.4): saldo in the pot, the day it last grew, the interest earned so far. */
+export function createBank(now = 0) {
+  return { saldo: 0, lastGrowDay: dayIndex(now), earned: 0 };
+}
+export function dayIndex(now) {
+  return Math.floor(now / 86400000);
+}
+/** Every calendar day that passed, the pot grows by the rate (compounded), capped. Returns { state, growth }. */
+export function bankGrow(state, config, now) {
+  const b = state.bank || createBank(now);
+  const today = dayIndex(now);
+  const days = Math.max(0, today - (b.lastGrowDay ?? today));
+  if (days === 0 || b.saldo <= 0) return { state: { ...state, bank: { ...b, lastGrowDay: today } }, growth: 0 };
+  const grown = Math.min(config.bank.max, b.saldo * Math.pow(1 + config.bank.ratePerDay, Math.min(days, 365)));
+  const growth = Math.floor(grown - b.saldo);
+  return { state: { ...state, bank: { saldo: b.saldo + growth, lastGrowDay: today, earned: (b.earned || 0) + growth }, earnedPassive: state.earnedPassive + growth }, growth };
+}
+/** Put coins in the pot (at most what is in the wallet, whole coins). Returns { ok, state, n }. */
+export function bankDeposit(state, config, n) {
+  const b = state.bank || createBank(0);
+  const amount = Math.min(Math.floor(n), Math.floor(state.wallet), Math.max(0, config.bank.max - b.saldo));
+  if (amount <= 0) return { ok: false, state, n: 0 };
+  return { ok: true, state: { ...state, wallet: state.wallet - amount, bank: { ...b, saldo: b.saldo + amount } }, n: amount };
+}
+/** Take everything out of the pot. Returns { ok, state, n }. */
+export function bankWithdraw(state) {
+  const b = state.bank || createBank(0);
+  if (b.saldo <= 0) return { ok: false, state, n: 0 };
+  return { ok: true, state: { ...state, wallet: state.wallet + b.saldo, bank: { ...b, saldo: 0 } }, n: b.saldo };
 }
 
 // ---------- helpers ----------
@@ -372,6 +404,8 @@ export function stats(state, config) {
     tools: state.eiland ? Object.keys(state.eiland.tools).length : 0,
     fainted: state.nacht ? state.nacht.fainted || 0 : 0,
     frozen: state.nacht ? state.nacht.frozen || 0 : 0,
+    bankSaldo: state.bank ? Math.floor(state.bank.saldo || 0) : 0,
+    bankEarned: state.bank ? Math.floor(state.bank.earned || 0) : 0,
     bumped: state.nacht ? state.nacht.bumped || 0 : 0,
     honger: state.eiland ? Math.round(state.eiland.honger ?? 100) : 100,
     funOwned: ownedFunIds(state, config).length,

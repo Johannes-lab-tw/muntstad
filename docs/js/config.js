@@ -201,6 +201,13 @@ export const CONFIG = Object.freeze({
   },
 
   // Parent gate
+  // The savings bank (V6.4): coins you put away grow every calendar day; take them out whenever you like. No debt, no loss.
+  bank: {
+    ratePerDay: 0.05,                 // 5 % per day
+    max: 50000000,                    // the pot never grows past this
+    steps: [100, 1000, 10000],        // the INLEG buttons
+  },
+
   // Walking through the town (V6.3): the crossing to the island shows the boat this long
   dorp: {
     overtochtMs: 2600,
@@ -214,15 +221,19 @@ export const CONFIG = Object.freeze({
 
   // Coin-makers. One of each, level 1..maxLevel. Upgrade price from level n to n+1 = price * 2^n.
   // The next type unlocks when the total coins earned reach its price. Index 0 is always unlocked.
-  maxLevel: 5,
+  maxLevel: 10,                     // V6.4: levels 6-10 (neon, stars, a golden roof) with the same multipliers carried on
   makers: [
-    { id: 'limonade',  name: 'Limonadekraam',    icon: '🍋', price: 20,    income: [12, 18, 27, 41, 61] },
-    { id: 'wasstraat', name: 'Wasstraat',        icon: '🚿', price: 120,   income: [50, 75, 113, 170, 250] },
-    { id: 'pizzeria',  name: 'Pizzeria',         icon: '🍕', price: 400,   income: [150, 225, 338, 510, 750] },
-    { id: 'ijssalon',  name: 'IJssalon',         icon: '🍦', price: 1000,  income: [300, 450, 675, 1020, 1500] },   // V5.5
-    { id: 'fabriek',   name: 'Fabriek',          icon: '🤖', price: 2000,  income: [600, 900, 1350, 2040, 3000] },
-    { id: 'flat',      name: 'Flatgebouw',       icon: '🏢', price: 10000, income: [2500, 3750, 5625, 8500, 12500] },
-    { id: 'pretpark',  name: 'Pretpark',         icon: '🎡', price: 40000, income: [8000, 12000, 18000, 27200, 40000] },   // V5.5: the top of the town
+    { id: 'limonade',  name: 'Limonadekraam',    icon: '🍋', price: 20,    income: [12, 18, 27, 41, 61, 90, 130, 205, 300, 455] },
+    { id: 'wasstraat', name: 'Wasstraat',        icon: '🚿', price: 120,   income: [50, 75, 113, 170, 250, 375, 550, 850, 1200, 1900] },
+    { id: 'pizzeria',  name: 'Pizzeria',         icon: '🍕', price: 400,   income: [150, 225, 338, 510, 750, 1100, 1600, 2600, 3800, 5700] },
+    { id: 'ijssalon',  name: 'IJssalon',         icon: '🍦', price: 1000,  income: [300, 450, 675, 1020, 1500, 2200, 3300, 5100, 7500, 11400] },   // V5.5
+    { id: 'fabriek',   name: 'Fabriek',          icon: '🤖', price: 2000,  income: [600, 900, 1350, 2040, 3000, 4500, 6600, 10200, 15000, 22800] },
+    { id: 'flat',      name: 'Flatgebouw',       icon: '🏢', price: 10000, income: [2500, 3750, 5625, 8500, 12500, 18800, 27500, 42500, 62500, 95000] },
+    { id: 'pretpark',  name: 'Pretpark',         icon: '🎡', price: 40000, income: [8000, 12000, 18000, 27200, 40000, 60000, 88000, 136000, 200000, 304000] },   // V5.5: the top of the town
+    // V6.4: the new top of the town (the simulator and the balance test keep the lesson: investing pays)
+    { id: 'hotel',     name: 'Hotel',            icon: '🏨', price: 200000,  income: [40000, 60000, 90000, 136000, 200000, 300000, 440000, 680000, 1000000, 1520000] },
+    { id: 'haven',     name: 'Handelshaven',     icon: '🚢', price: 1000000, income: [150000, 225000, 337500, 510000, 750000, 1125000, 1650000, 2550000, 3750000, 5700000] },
+    { id: 'raketbasis', name: 'Raketbasis',      icon: '🚀', price: 5000000, income: [600000, 900000, 1350000, 2040000, 3000000, 4500000, 6600000, 10200000, 15000000, 22800000] },
   ],
 
   // LEUK catalogue: fixed prices, all visible from the start, no randomness.
@@ -272,6 +283,12 @@ export const CONFIG = Object.freeze({
     { id: 'fontein',    name: 'Fontein',        icon: '⛲', price: 120, kind: 'garden' },
     { id: 'salto',      name: 'Salto',          icon: '🤸', price: 60,  kind: 'dance' },
     { id: 'trampoline', name: 'Trampoline',     icon: '🦘', price: 300, kind: 'toy' },
+    // V6.4 show pieces (kind 'pronk'): for the player who has everything; they show on the map and in the town
+    { id: 'vuurwerk-avond', name: 'Vuurwerkshow', icon: '🎇', price: 100000,  kind: 'pronk' },
+    { id: 'standbeeld', name: 'Gouden standbeeld', icon: '🗿', price: 250000, kind: 'pronk' },
+    { id: 'gouden-hoed', name: 'Gouden hoed',   icon: '👑', price: 500000,  kind: 'hat' },
+    { id: 'jacht',      name: 'Jacht',          icon: '🛥️', price: 1000000, kind: 'pronk' },
+    { id: 'straatnaam', name: 'Eigen straat',   icon: '🪧', price: 2000000, kind: 'pronk' },
     { id: 'auto',       name: 'Auto',           icon: '🚗', price: 500, kind: 'vehicle' },
   ],
 

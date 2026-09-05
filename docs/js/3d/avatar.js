@@ -62,6 +62,12 @@ function hat(b, id, top) {
       b.sphere(0, 0, top + 1.2 * s, 0.08 * s, '#ffe94d', 8);
       b.sphere(0.2 * s, 0.24 * s, top + 0.5 * s, 0.05 * s, '#ffe94d', 6);
       break;
+    case 'gouden-hoed':   // V6.4: a golden top hat with a red band and a sparkle
+      b.cyl(0, 0, top, 0.58 * s, 0.07 * s, '#ffc21c', 20);
+      b.cyl(0, 0, top + 0.07 * s, 0.35 * s, 0.75 * s, '#ffd75a', 16);
+      b.cyl(0, 0, top + 0.14 * s, 0.36 * s, 0.12 * s, '#ff5f5f', 16);
+      b.sphere(0.22 * s, 0.24 * s, top + 0.6 * s, 0.06 * s, '#ffffff', 6);
+      break;
     case 'kroon':
       b.cyl(0, 0, top, 0.34 * s, 0.22 * s, '#ffc21c', 12);
       for (let i = 0; i < 5; i++) {

@@ -173,6 +173,8 @@ function toggleFun(id) {
 function tick() {
   const now = Date.now();
   const wasHungry = state.petHungry;
+  const bg = E.bankGrow(state, CONFIG, now);   // V6.4: midnight passed while playing
+  if (bg.growth > 0) { state = bg.state; if (TOPBAR_SCREENS.has(screen)) game.mentor.say('lines.bankGrew', {}, { kind: 'reaction' }); }
   const r = E.advance(state, CONFIG, now);
   state = r.state;
   if (r.offline) {
@@ -193,6 +195,7 @@ function tick() {
 }
 
 let foodSaid = 0;
+let pendingBankGrowth = 0;
 function onFoodPaid(amount) {
   // the cost is always visible: "−5" ticks away at the wallet; Muntje explains it now and then
   if (TOPBAR_SCREENS.has(screen)) {
@@ -263,6 +266,7 @@ function show(name) {
   if (next.show) next.show();
   render();
   game.emit('screen', name);
+  if (name === 'stad' && pendingBankGrowth > 0) { const n = pendingBankGrowth; pendingBankGrowth = 0; setTimeout(() => { if (screen === 'stad') game.mentor.say('lines.bankGrew', {}, { kind: 'reaction' }); }, 4200); void n; }
   if (name === 'stad' && (pendingOffline || pendingMilestones.length)) {
     // the "while you were away" popup comes first (the strongest aha), stickers queue up behind it;
     // the welcome line (≈ 2.5 s spoken) gets room before the first popup takes over
@@ -299,6 +303,9 @@ function applySettings() {
 function boot() {
   const loaded = S.load(storage, CONFIG, Date.now());
   state = loaded.state;
+  // V6.4: the savings bank grew while the iPad was off (per calendar day)
+  const grown = E.bankGrow(state, CONFIG, Date.now());
+  if (grown.growth > 0) { state = grown.state; pendingBankGrowth = grown.growth; }
   if (loaded.status !== 'ok' && loaded.status !== 'new') console.info(`[muntstad] save ${loaded.status}: ${loaded.message}`);
   if (loaded.status === 'new') save();
 

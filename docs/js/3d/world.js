@@ -4,7 +4,7 @@
 import * as T from '../../vendor/three.module.min.js';
 import { Builder, MAT, shade, col, textPlane, INK } from './build.js';
 
-export const ISLAND = { w: 20, d: 14, r: 2.4 };   // V5.5: bigger, room for seven coin-makers
+export const ISLAND = { w: 20, d: 18, r: 2.4 };   // V6.4: a strip on the north side for the Hotel, the Handelshaven and the Raketbasis
 // the loop sits well inside the plots: sidewalk edges at y 2.0/9.8 and x 2.4/13.2 leave every plot's building clear
 export const ROAD = { x: 3.4, y: 3.0, w: 12.8, d: 7.8, r: 1.4, width: 1.2 };
 export const PLOTS = {
@@ -15,7 +15,11 @@ export const PLOTS = {
   pretpark: [18.3, 9.6],
   flat: [13.6, 13.1],
   fabriek: [1.6, 9.2],
+  hotel: [3.2, 16.3],        // V6.4: the north strip
+  haven: [9.8, 16.3],
+  raketbasis: [16.4, 16.3],
 };
+export const BANK = [12.9, 4.8];   // V6.4: the savings bank on the square
 export const HOUSE = [1.6, 4.4];
 export const PARK = [9.8, 6.9];
 export const PAVE = '#e9e2cf';
@@ -23,7 +27,7 @@ const PAL = {
   grass: '#6fd35b', grassDark: '#55b647', sand: '#f4d98a', dirt: '#b97b4b', rock: '#8a5a3a',
   road: '#4f5766', roadLine: '#f7d24a', side: '#dcd7cb',
 };
-const TREES = [[5.3, 5.0, 0.9], [13.3, 5.2, 1], [12.2, 8.9, 0.8], [3.4, 13.2, 0.8], [8.4, 13.3, 0.9], [1.2, 1.6, 0.7], [7.6, 0.5, 0.75], [19.1, 13.0, 0.7], [0.6, 6.6, 0.6], [19.4, 0.8, 0.65], [6.8, 9.2, 0.85], [15.8, 6.9, 0.8]];
+const TREES = [[5.3, 5.0, 0.9], [12.6, 16.9, 0.8], [12.2, 8.9, 0.8], [3.4, 13.2, 0.8], [8.4, 13.3, 0.9], [1.2, 1.6, 0.7], [7.6, 0.5, 0.75], [19.1, 13.0, 0.7], [0.6, 6.6, 0.6], [19.4, 0.8, 0.65], [6.8, 9.2, 0.85], [15.8, 6.9, 0.8]];
 const BUSHES = [[5.6, 8.4, 0.9], [13.8, 7.6, 0.7], [7.5, 13.4, 0.8], [17.5, 7.0, 0.6], [3.2, 0.8, 0.6], [11.8, 0.9, 0.55], [0.7, 12.8, 0.7], [10.9, 13.6, 0.6]];
 const LAMPS = [[2.2, 2.6], [17.4, 2.6], [2.2, 11.2], [17.4, 11.2]];
 const FLOWERS = [[7.6, 7.9, '#ff6fae'], [7.9, 8.2, '#ffe94d'], [11.3, 8.5, '#7c9bff'], [11.6, 8.8, '#ff6fae'], [4.2, 13.5, '#ffe94d'], [11.2, 13.6, '#ff6fae'], [17.2, 8.4, '#7c9bff'], [0.9, 3.4, '#ffe94d'], [7.2, 7.4, '#ff9f2e'], [11.9, 7.9, '#ffe94d']];
@@ -381,6 +385,16 @@ export function createWorld(config) {
     }
   });
 
+  // ---- the savings bank (V6.4): a small stone bank with two columns and a golden coin on the roof ----
+  const bank = new Builder({ r: 0.04 });
+  bank.box(BANK[0] - 0.7, BANK[1] - 0.6, 0, 1.4, 1.2, 0.9, '#f1e9d2', { r: 0.06 });
+  bank.box(BANK[0] - 0.8, BANK[1] - 0.7, 0.9, 1.6, 1.4, 0.16, '#c9b98a', { r: 0.04 });
+  bank.cyl(BANK[0] - 0.45, BANK[1] + 0.55, 0, 0.09, 0.9, '#ffffff', 10);
+  bank.cyl(BANK[0] + 0.45, BANK[1] + 0.55, 0, 0.09, 0.9, '#ffffff', 10);
+  bank.face(BANK[0] - 0.7, BANK[1] - 0.6, 0, 1.4, 1.2, 'y', 0.5, 0, 0.4, 0.6, '#7a3f1a');
+  bank.coin(BANK[0], BANK[1], 1.35, 0.3);
+  group.add(bank.build());
+  anim.push((t) => { /* the coin turns in scene-stad (static merge here) */ });
   // ---- the harbour (V6.3): a pier from the beach corner into the sea, the boat at its end ----
   const pier = new Builder({ r: 0.02 });
   pier.box(HARBOR.x - HARBOR.w / 2, HARBOR.z - HARBOR.len, HARBOR.deck - 0.08, HARBOR.w, HARBOR.len + 0.3, 0.08, '#b5763f', { r: 0.02 });
@@ -446,5 +460,6 @@ export function obstacles(config) {
   out.push({ x: PARK[0], z: PARK[1], r: 1.8 });
   for (const m of config.makers) { const [x, z] = PLOTS[m.id]; out.push({ x, z, r: 1.9 }); }
   out.push({ x: HOUSE[0], z: HOUSE[1], r: 1.95 });
+  out.push({ x: BANK[0], z: BANK[1], r: 1.0, kind: 'bank' });
   return out;
 }

@@ -98,6 +98,8 @@ export function createPapa(game) {
       [L.stolen, `${s.stolen}×`],
       [L.tools, `${s.tools} / ${game.config.eiland.tools.length}`],
       [L.fainted, `${s.fainted}×`],
+      [L.bankSaldo, `${formatCoins(s.bankSaldo)} 🪙`],
+      [L.bankEarned, `${formatCoins(s.bankEarned)} 🪙`],
       [L.bumped, `${s.bumped}×`],
       [L.honger, `${s.honger}`],
     ];

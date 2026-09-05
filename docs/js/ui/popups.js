@@ -1,5 +1,5 @@
 // popups.js — offline earnings (count-up + TOP!), milestone celebrations (fanfare, confetti, sticker), building card.
-import { formatCoins, makerById, makerLevel, makerIncome, upgradePrice } from '../economy.js';
+import { formatCoins, makerById, makerLevel, makerIncome, upgradePrice, bankGrow, bankDeposit, bankWithdraw } from '../economy.js';
 import { makerSprite } from '../3d/thumbs.js';
 
 export function createPopups(game) {
@@ -195,9 +195,72 @@ export function createPopups(game) {
     });
   }
 
+  /** The savings bank (V6.4): the pot, the growth so far, ERIN steps, ALLES ERIN, OPHALEN. */
+  function bank() {
+    if (open) return;
+    const grown = bankGrow(game.state, game.config, game.now());
+    if (grown.growth > 0) { game.update(() => grown.state); game.save(); }
+    present((box) => {
+      box.dataset.popup = 'bank';
+      box.appendChild(el('div', 'popup-icon', '🏦'));
+      box.appendChild(el('h2', 'popup-title', game.t('popups.bankTitle')));
+      box.appendChild(el('p', 'popup-text', game.t('popups.bankText')));
+      const saldo = el('p', 'bcard-income');
+      const earned = el('p', 'popup-text');
+      const refresh = () => {
+        const b = game.state.bank || { saldo: 0, earned: 0 };
+        saldo.textContent = `${game.t('popups.bankSaldo')} ${formatCoins(Math.floor(b.saldo))} 🪙`;
+        earned.textContent = `${game.t('popups.bankEarned')} ${formatCoins(Math.floor(b.earned || 0))} 🪙`;
+        for (const [n, btn] of stepBtns) btn.classList.toggle('dim', Math.floor(game.state.wallet) < n);
+        outBtn.classList.toggle('dim', b.saldo <= 0);
+        allBtn.classList.toggle('dim', Math.floor(game.state.wallet) < 1);
+      };
+      box.appendChild(saldo);
+      box.appendChild(earned);
+      if (grown.growth > 0) box.appendChild(el('p', 'popup-text', game.t('popups.bankGrew', { n: formatCoins(grown.growth) })));
+      const row = el('div', 'row');
+      const stepBtns = [];
+      const put = (n) => {
+        const r = bankDeposit(game.state, game.config, n);
+        if (!r.ok) { box.classList.add('shake'); setTimeout(() => box.classList.remove('shake'), 500); return; }
+        game.audio.play('buy');
+        game.update(() => r.state);
+        game.save();
+        game.bumpWallet();
+        refresh();
+      };
+      for (const n of game.config.bank.steps) {
+        const b = button(`${game.t('popups.inleg')} ${formatCoins(n)}`, 'btn-primary btn-lg', () => put(n));
+        b.dataset.bank = String(n);
+        stepBtns.push([n, b]);
+        row.appendChild(b);
+      }
+      box.appendChild(row);
+      const row2 = el('div', 'row');
+      const allBtn = button(game.t('popups.alles'), 'btn-success btn-lg', () => put(Math.floor(game.state.wallet)));
+      allBtn.dataset.bank = 'alles';
+      const outBtn = button(game.t('popups.ophalen'), 'btn-orange btn-lg', () => {
+        const r = bankWithdraw(game.state);
+        if (!r.ok) { box.classList.add('shake'); setTimeout(() => box.classList.remove('shake'), 500); return; }
+        game.audio.play('upgrade');
+        game.update(() => r.state);
+        game.save();
+        game.bumpWallet();
+        refresh();
+      });
+      outBtn.dataset.bank = 'ophalen';
+      row2.appendChild(allBtn);
+      row2.appendChild(outBtn);
+      box.appendChild(row2);
+      box.appendChild(button(game.t('ui.dicht'), 'btn-secondary btn-lg', close));
+      refresh();
+      if (!game.state.flags.bankHint) { game.update((s) => ({ ...s, flags: { ...s.flags, bankHint: true } })); game.mentor.say('lines.bankHint', {}, { kind: 'reaction' }); }
+    });
+  }
+
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay && popup.dataset.popup === 'building') close();
+    if (e.target === overlay && (popup.dataset.popup === 'building' || popup.dataset.popup === 'bank')) close();
   });
 
-  return { offline, milestone, building, close, get isOpen() { return open; } };
+  return { offline, milestone, building, bank, close, get isOpen() { return open; } };
 }

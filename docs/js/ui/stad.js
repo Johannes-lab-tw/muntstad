@@ -67,6 +67,9 @@ export function createStad(game) {
       game.audio.play('tap');
       game.update((s) => setFlag(s, 'tappedBuilding', true));
       game.popups.building(hit.id);
+    } else if (hit.type === 'bank') {
+      game.audio.play('tap');
+      game.popups.bank();
     } else if (hit.type === 'house') {
       game.audio.play('tap');
       game.show('huis');

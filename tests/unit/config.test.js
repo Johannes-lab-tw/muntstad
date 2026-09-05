@@ -24,7 +24,9 @@ test('makers are ordered by price and the first one is cheap enough for a minute
 
 test('LEUK catalogue has at least 30 items with the price ranges of the spec', () => {
   assert.ok(CONFIG.fun.length >= 30, `only ${CONFIG.fun.length} items`);
-  const inRange = (kind, lo, hi) => CONFIG.fun.filter((f) => f.kind === kind).every((f) => f.price >= lo && f.price <= hi);
+  // V6.4: the show pieces (100 000 and up: statue, yacht, golden hat, own street) sit outside the everyday ranges on purpose
+  const everyday = CONFIG.fun.filter((f) => f.price < 100000);
+  const inRange = (kind, lo, hi) => everyday.filter((f) => f.kind === kind).every((f) => f.price >= lo && f.price <= hi);
   assert.ok(inRange('hat', 15, 60));
   assert.ok(inRange('skin', 40, 80));
   assert.ok(inRange('garden', 30, 120));
@@ -34,7 +36,9 @@ test('LEUK catalogue has at least 30 items with the price ranges of the spec', (
   assert.equal(CONFIG.fun.find((f) => f.id === 'auto').price, 500);
   assert.equal(CONFIG.fun.find((f) => f.id === 'trampoline').price, 300);
   assert.equal(CONFIG.fun.find((f) => f.id === 'vuurwerk').price, 30);
-  for (const f of CONFIG.fun) assert.ok(['hat', 'skin', 'vehicle', 'paint', 'garden', 'pet', 'show', 'dance', 'toy'].includes(f.kind), f.id);
+  for (const f of CONFIG.fun) assert.ok(['hat', 'skin', 'vehicle', 'paint', 'garden', 'pet', 'show', 'dance', 'toy', 'pronk'].includes(f.kind), f.id);
+  assert.ok(CONFIG.fun.filter((f) => f.kind === 'pronk').length >= 4, 'the show pieces');
+  assert.ok(CONFIG.fun.filter((f) => f.price >= 100000).every((f) => f.price >= 100000 && f.price <= 2000000));
 });
 
 test('names are short Dutch words (no English UI words)', () => {

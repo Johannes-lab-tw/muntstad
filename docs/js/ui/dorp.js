@@ -58,6 +58,7 @@ export function createDorp(game) {
       onAction,
       onVaar() { vaar('avontuur'); },
       onHuis() { game.audio.play('tap'); game.show('huis'); },
+      onBank() { game.audio.play('tap'); game.popups.bank(); },
       onMaker(id) { game.audio.play('tap'); game.update((s) => setFlag(s, 'tappedBuilding', true)); game.popups.building(id); },
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
     });

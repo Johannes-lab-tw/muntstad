@@ -81,7 +81,7 @@ test('buying a maker needs coins and unlock; upgrading needs ownership and coins
   assert.equal(up2.ok, true);
   assert.equal(up2.state.makers.limonade, 2);
   assert.equal(up2.state.wallet, 0);
-  const maxed = withMaker(r.state, 'limonade', 5);
+  const maxed = withMaker(r.state, 'limonade', CONFIG.maxLevel);   // V6.4: ten levels
   assert.equal(E.upgradeMaker({ ...maxed, wallet: 10000 }, CONFIG, 'limonade').reason, 'max');
 });
 

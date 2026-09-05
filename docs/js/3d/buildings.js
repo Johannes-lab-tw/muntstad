@@ -272,7 +272,155 @@ function pretpark(b, group, anim, level) {
   if (level >= 3) flagAt(b, group, anim, -1.4, 1.2, 1.9, '#45d65c');
 }
 
-const BUILDERS = { limonade, wasstraat, pizzeria, ijssalon, fabriek, flat, pretpark };
+// ---------- V6.4: Hotel, Handelshaven, Raketbasis (drafted by Ollama from the ijssalon and pretpark, corrected by hand) ----------
+function hotel(b, group, anim, level) {
+  const c = '#fff5e6', trim = '#ff9f2e';
+  const floors = Math.min(level, 5);
+  const h = 1.2 + floors * 0.7;
+  // main tower
+  b.box(-0.8, -0.8, 0, 1.6, 1.6, h, c, { r: 0.08 });
+  // windows on the front (y+) and side (x+)
+  for (let f = 0; f < floors; f++) {
+    const z = 0.6 + f * 0.7;
+    windowPane(b, -0.8, -0.8, 0, 1.6, 1.6, 'y', 0.3, z, 0.4, 0.4);
+    windowPane(b, -0.8, -0.8, 0, 1.6, 1.6, 'y', 0.9, z, 0.4, 0.4);
+    windowPane(b, -0.8, -0.8, 0, 1.6, 1.6, 'x', 0.3, z, 0.4, 0.4);
+    windowPane(b, -0.8, -0.8, 0, 1.6, 1.6, 'x', 0.9, z, 0.4, 0.4);
+  }
+  // entrance door and canopy
+  b.face(-0.8, -0.8, 0, 1.6, 1.6, 'y', 0.6, 0.3, 0.5, 0.6, DOOR);
+  b.box(-0.8, -0.8, 1.0, 1.8, 1.8, 0.2, trim, { r: 0.04 });
+  // HOTEL sign
+  const sign = textPlane('HOTEL', { w: 1.2, h: 0.36, font: 0.26, color: '#ffffff', bg: trim });
+  sign.position.set(0, h - 0.25, 0.83);   // over the entrance on the road side
+  group.add(sign);
+  // level 2: extra prop (flower box)
+  if (level >= 2) {
+    b.box(-0.8, -0.8, 1.0, 1.6, 1.6, 0.1, '#45d65c', { r: 0.02 });
+    for (let i = 0; i < 4; i++) b.sphere(-1.2 + i * 0.3, -0.8, 1.1, 0.08, '#ff6fae', 6);
+  }
+  // level 3: swimming pool next to the hotel
+  if (level >= 3) {
+    b.box(1.0, -0.8, 0, 0.8, 1.6, 0.4, '#7cc4ff', { r: 0.05 });
+    b.box(1.0, -0.8, 0.4, 0.9, 1.7, 0.1, '#ffffff', { r: 0.02 });
+    // pool ladder
+    b.box(1.3, -0.8, 0.2, 0.05, 0.05, 0.5, METAL, { r: 0.01 });
+    b.box(1.3, -0.8, 0.2, 0.3, 0.05, 0.05, METAL, { r: 0.01 });
+  }
+  // level 4: flag
+  if (level >= 4) flagAt(b, group, anim, -0.8, -0.8, h + 0.2, trim);
+  // level 5: rooftop terrace with parasols
+  if (level >= 5) {
+    b.box(-0.8, -0.8, h, 1.6, 1.6, 0.1, '#d5c9a0', { r: 0.02 });
+    // parasol 1
+    b.cyl(-1.0, -1.0, h + 0.1, 0.05, 0.8, METAL, 6);
+    b.cone(-1.0, -1.0, h + 0.9, 0.4, 0.3, '#ff5f5f', 8);
+    // parasol 2
+    b.cyl(-0.6, -1.0, h + 0.1, 0.05, 0.8, METAL, 6);
+    b.cone(-0.6, -1.0, h + 0.9, 0.4, 0.3, '#45d65c', 8);
+    // small table
+    b.cyl(-0.8, -1.0, h + 0.1, 0.2, 0.1, WOOD, 8);
+    crownAt(b, group, anim, -0.8, -0.8, h + 0.5);
+  }
+}
+
+function haven(b, group, anim, level) {
+  const c = '#e0e0e0', trim = '#45b6ff';
+  // warehouse (loods)
+  b.box(-0.8, -0.8, 0, 1.6, 1.6, 1.5, c, { r: 0.08 });
+  b.box(-0.8, -0.8, 1.5, 1.6, 1.6, 0.2, trim, { r: 0.04 });
+  // dock (kade)
+  b.slab(-1.5, 0.9, 0, 3.0, 0.6, '#d5c9a0');
+  // crane base
+  b.box(1.0, 1.0, 0, 0.4, 0.4, 2.5, METAL, { r: 0.02 });
+  // rotating crane arm
+  const crane = new T.Group();
+  const cb = new Builder({ r: 0.02 });
+  cb.box(0, 0, 0, 1.5, 0.2, 0.2, METAL, { r: 0.02 });
+  cb.box(1.2, 0, 0, 0.2, 0.2, 0.2, '#ff5f5f', { r: 0.02 });
+  crane.add(cb.build());
+  crane.position.set(1.0, 1.0, 2.5);
+  group.add(crane);
+  anim.push((t) => { crane.rotation.y = t / 1500; });
+  // containers
+  const colors = ['#ff5f5f', '#45d65c', '#ffe94d', '#b76cff'];
+  for (let i = 0; i < 3; i++) {
+    b.box(-1.2 + i * 0.5, 1.0, 0, 0.4, 0.4, 0.8, colors[i], { r: 0.02 });
+  }
+  // level 2: extra container
+  if (level >= 2) {
+    b.box(-0.5, 1.0, 0.8, 0.4, 0.4, 0.8, '#ff9f2e', { r: 0.02 });
+  }
+  // level 3: cargo ship
+  if (level >= 3) {
+    b.box(-1.45, -1.45, 0, 1.4, 0.7, 0.5, '#ffffff', { r: 0.05 });
+    b.box(-1.45, -1.45, 0.5, 1.4, 0.7, 0.16, trim, { r: 0.02 });
+    // ship containers
+    b.box(-1.3, -1.35, 0.66, 0.4, 0.4, 0.35, '#ff5f5f', { r: 0.02 });
+    b.box(-0.8, -1.35, 0.66, 0.4, 0.4, 0.35, '#45d65c', { r: 0.02 });
+  }
+  // level 4: flag
+  if (level >= 4) flagAt(b, group, anim, -0.8, -0.8, 1.7, trim);
+  // level 5: lighthouse with rotating light
+  if (level >= 5) {
+    b.cyl(1.2, -1.2, 0, 0.3, 2.0, '#ffffff', 10);
+    b.cyl(1.2, -1.2, 2.0, 0.35, 0.3, '#ff5f5f', 10);
+    const light = new T.Group();
+    const lb = new Builder({ r: 0.02 });
+    lb.box(0, 0, 0, 0.2, 0.2, 0.2, '#fff1a8', { r: 0.02 });
+    light.add(lb.build());
+    light.position.set(1.2, -1.2, 2.3);
+    group.add(light);
+    anim.push((t) => { light.rotation.y = t / 800; });
+    crownAt(b, group, anim, 1.2, -1.2, 2.5);
+  }
+}
+
+function raketbasis(b, group, anim, level) {
+  const c = '#e0e0e0', trim = '#ff5f5f';
+  // launch platform
+  b.slab(-1.5, -1.5, 0, 3.0, 3.0, '#d5c9a0');
+  b.box(-0.8, -0.8, 0, 1.6, 1.6, 0.2, METAL, { r: 0.02 });
+  // tower
+  b.box(1.0, 1.0, 0, 0.4, 0.4, 3.0, METAL, { r: 0.02 });
+  b.box(1.0, 1.0, 3.0, 0.6, 0.6, 0.4, trim, { r: 0.02 });
+  // radar on top of tower
+  const radar = new T.Group();
+  const rb = new Builder({ r: 0.02 });
+  rb.box(0, 0, 0, 0.4, 0.4, 0.1, '#45d65c', { r: 0.02 });
+  radar.add(rb.build());
+  radar.position.set(1.0, 1.0, 3.4);
+  group.add(radar);
+  anim.push((t) => { radar.rotation.y = t / 1000; });
+  // rocket (grows with level)
+  const rs = 0.5 + Math.min(level, 5) * 0.1;
+  b.cyl(-0.8, -0.8, 0.2, 0.3 * rs, 1.5 * rs, '#ffffff', 10);
+  b.cone(-0.8, -0.8, 0.2 + 1.5 * rs, 0.3 * rs, 0.5 * rs, trim, 10);
+  b.sphere(-0.8, -0.8, 0.2 + 1.5 * rs + 0.5 * rs, 0.15 * rs, '#ffe94d', 8);
+  // level 2: extra prop (fuel tank)
+  if (level >= 2) {
+    b.cyl(-1.2, -1.2, 0, 0.2, 0.8, '#45b6ff', 8);
+  }
+  // level 3: extra prop (control booth)
+  if (level >= 3) {
+    b.box(-1.2, 1.0, 0, 0.6, 0.6, 0.8, c, { r: 0.05 });
+    windowPane(b, -1.2, 1.0, 0, 0.6, 0.6, 'y', 0.5, 0.4, 0.4, 0.4);
+  }
+  // level 4: smoke
+  if (level >= 4) {
+    smokeAt(group, anim, -0.8, -0.8, 0.2, 800, 0.3);
+  }
+  // level 5: second rocket
+  if (level >= 5) {
+    const rs2 = 0.4 + Math.min(level, 5) * 0.08;
+    b.cyl(0.5, -0.8, 0.2, 0.25 * rs2, 1.2 * rs2, '#ffffff', 10);
+    b.cone(0.5, -0.8, 0.2 + 1.2 * rs2, 0.25 * rs2, 0.4 * rs2, '#45d65c', 10);
+    b.sphere(0.5, -0.8, 0.2 + 1.2 * rs2 + 0.4 * rs2, 0.12 * rs2, '#ffe94d', 8);
+    crownAt(b, group, anim, 0.5, -0.8, 0.2 + 1.2 * rs2 + 0.6 * rs2);
+  }
+}
+
+const BUILDERS = { limonade, wasstraat, pizzeria, ijssalon, fabriek, flat, pretpark, hotel, haven, raketbasis };
 
 /** Height of a coin-maker in world units at a level. */
 export function makerHeight(id, level) {
@@ -281,14 +429,42 @@ export function makerHeight(id, level) {
   if (id === 'fabriek') return level >= 4 ? 4.2 : 3.6;
   if (id === 'ijssalon') return level >= 4 ? 4.6 : 3.4;
   if (id === 'pretpark') return 2.4 + Math.min(level, 5) * 0.16;
+  if (id === 'hotel') return 1.2 + Math.min(level, 5) * 0.7 + (level >= 5 ? 1.3 : 0.4);
+  if (id === 'haven') return level >= 5 ? 3.2 : 2.9;
+  if (id === 'raketbasis') return 3.9;
   return level >= 5 ? 3.6 : 3.0;
+}
+
+/** Levels 6-10 (V6.4): the same building with a golden trim, a neon sign, stars that turn, a golden roof and a crown. */
+function topper(b, group, anim, id, level) {
+  if (level < 6) return;
+  const top = makerHeight(id, 5) + 0.1;
+  b.add(new T.TorusGeometry(1.55, 0.06, 6, 28).rotateX(Math.PI / 2).translate(0, 0.08, 0), '#ffc21c');   // golden rim round the plot
+  if (level >= 7) {
+    const neon = textPlane('★ TOP ★', { w: 1.6, h: 0.42, font: 0.3, color: '#ffffff', bg: '#ff3b8b' });
+    neon.position.set(0, top + 0.3, 0);
+    group.add(neon);
+    anim.push((t) => { neon.rotation.y = t / 1300; neon.position.y = top + 0.3 + Math.sin(t / 400) * 0.05; });
+  }
+  if (level >= 8) {
+    const stars = new T.Group();
+    const sb = new Builder({ r: 0.01 });
+    for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2; sb.sphere(Math.cos(a) * 0.9, Math.sin(a) * 0.9, 0, 0.12, '#ffe94d', 6); }
+    stars.add(sb.build({ shadow: false }));
+    stars.position.set(0, top + 0.9, 0);
+    group.add(stars);
+    anim.push((t) => { stars.rotation.y = -t / 900; });
+  }
+  if (level >= 9) b.cone(0, 0, top + 0.5, 0.5, 0.7, '#ffc21c', 8);   // the golden roof cap
+  if (level >= 10) { b.cyl(0, 0, top + 1.2, 0.3, 0.2, '#ffc21c', 10); for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; b.sphere(Math.cos(a) * 0.26, Math.sin(a) * 0.26, top + 1.5, 0.06, ['#ff5f5f', '#45b6ff', '#45d65c', '#ff6fae', '#b76cff'][i], 6); } }
 }
 
 export function makerModel(id, level) {
   const group = new T.Group();
   const anim = [];
   const b = new Builder();
-  BUILDERS[id](b, group, anim, level);
+  BUILDERS[id](b, group, anim, Math.min(level, 5));
+  topper(b, group, anim, id, level);
   group.add(b.build());
   return { group, update(t) { for (const fn of anim) fn(t); } };
 }
