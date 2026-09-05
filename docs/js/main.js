@@ -14,6 +14,7 @@ import { createFx } from './ui/fx.js';
 import { createStart } from './ui/start.js';
 import { createStad } from './ui/stad.js';
 import { createAvontuur } from './ui/avontuur.js';
+import { createDorp } from './ui/dorp.js';
 import { createSamen } from './net/samen.js';
 import { createSamenUi } from './ui/samen.js';
 import { createWerk } from './ui/werk.js';
@@ -247,7 +248,7 @@ function bumpWallet() {
 
 // ---------- screens ----------
 
-const TOPBAR_SCREENS = new Set(['stad', 'avontuur', 'werk', 'winkel', 'huis']);
+const TOPBAR_SCREENS = new Set(['stad', 'dorp', 'avontuur', 'werk', 'winkel', 'huis']);
 
 function show(name) {
   if (!screens[name]) return;
@@ -312,6 +313,7 @@ function boot() {
   screens.start = createStart(game);
   screens.stad = createStad(game);
   screens.avontuur = createAvontuur(game);
+  screens.dorp = createDorp(game);
   screens.werk = createWerk(game);
   screens.winkel = createWinkel(game);
   screens.huis = createHuis(game);
@@ -364,7 +366,7 @@ function boot() {
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch((e) => console.info('[muntstad] service worker not registered:', e.message));
   }
-  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 4, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook, get mentorLog() { return game.mentor.log; }, get samen() { return game.samen; } };
+  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 4, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook, dorp: screens.dorp.hook, get mentorLog() { return game.mentor.log; }, get samen() { return game.samen; } };
 }
 
 boot();

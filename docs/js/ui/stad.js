@@ -12,7 +12,7 @@ export function createStad(game) {
   let idleTimer = 0;
 
   // ---- navigation ----
-  for (const [id, screen] of [['nav-werk', 'werk'], ['nav-winkel', 'winkel'], ['nav-huis', 'huis'], ['nav-avontuur', 'avontuur']]) {
+  for (const [id, screen] of [['nav-werk', 'werk'], ['nav-winkel', 'winkel'], ['nav-huis', 'huis'], ['nav-avontuur', 'avontuur'], ['nav-dorp', 'dorp']]) {
     document.getElementById(id).addEventListener('click', () => {
       game.audio.play('tap');
       game.show(screen);

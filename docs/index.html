@@ -64,6 +64,7 @@
     <section class="screen screen-stad" data-screen="stad" id="screen-stad">
       <div id="town" class="town gl-host" aria-label="Muntstad" role="img"></div>
       <button class="btn btn-orange btn-lg btn-avontuur" id="nav-avontuur" type="button">AVONTUUR ⛵</button>
+      <button class="btn btn-success btn-lg btn-dorp" id="nav-dorp" type="button">DORP 🚶</button>
       <nav class="bottombar" id="bottombar">
         <button class="btn btn-nav btn-werk" id="nav-werk" type="button"><img class="btn-icon" id="ico-werk" alt="" draggable="false">WERK</button>
         <button class="btn btn-nav btn-winkel" id="nav-winkel" type="button"><img class="btn-icon" id="ico-winkel" alt="" draggable="false">WINKEL</button>
@@ -71,6 +72,31 @@
         <button class="btn btn-papa" id="nav-papa" type="button" aria-label="PAPA"><span class="papa-ring" id="papa-ring"></span><span class="papa-label">PAPA</span></button>
       </nav>
     </section>
+
+    <!-- DORP (V6.3): walk through Muntstad yourself; the boat in the harbour goes to the island -->
+    <section class="screen screen-dorp" data-screen="dorp" id="screen-dorp">
+      <div id="dorp" class="gl-host" aria-label="Muntstad, lopend" role="img"></div>
+      <div class="stick" id="dp-stick" aria-hidden="true"><div class="stick-knob" id="dp-stick-knob"></div></div>
+      <div class="av-top-right">
+        <button class="btn btn-secondary btn-emote dp-kaart" id="dp-kaart" type="button">🗺️ KAART</button>
+      </div>
+      <div class="av-emotes dp-nav">
+        <button class="btn btn-nav-sm btn-werk" id="dp-werk" type="button">WERK</button>
+        <button class="btn btn-nav-sm btn-winkel" id="dp-winkel" type="button">WINKEL</button>
+        <button class="btn btn-nav-sm btn-huis" id="dp-huis" type="button">HUIS</button>
+      </div>
+      <div class="av-buttons">
+        <button class="btn btn-primary btn-actie" id="dp-actie" type="button" hidden>KOOP</button>
+        <button class="btn btn-success btn-jump" id="dp-spring" type="button">SPRING</button>
+      </div>
+    </section>
+    <div class="overtocht" id="overtocht" hidden aria-live="polite">
+      <div class="overtocht-sky"></div>
+      <div class="overtocht-sea"></div>
+      <div class="overtocht-boot">⛵</div>
+      <div class="overtocht-dolfijn">🐬</div>
+      <p class="overtocht-tekst" id="overtocht-tekst"></p>
+    </div>
 
     <!-- AVONTUUR: walk around yourself (PLAN-V4 round 1) -->
     <section class="screen screen-avontuur" data-screen="avontuur" id="screen-avontuur">

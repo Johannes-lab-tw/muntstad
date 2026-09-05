@@ -925,6 +925,22 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 
 /* ---------- AVONTUUR (PLAN-V4 round 1): walk around yourself ---------- */
 .btn-avontuur { position: absolute; right: 14px; top: calc(var(--topbar-h) + 12px); z-index: 20; min-width: 214px; }
+.btn-dorp { position: absolute; right: 14px; top: calc(var(--topbar-h) + 122px); z-index: 20; min-width: 214px; }
+/* ---------- DORP (V6.3): walking through the town ---------- */
+.screen-dorp { background: linear-gradient(180deg, #a6e4ff 0%, #5fc4ff 38%, #1f8ee0 70%, #1479cf 100%); touch-action: none; user-select: none; -webkit-user-select: none; }
+.dp-kaart { min-height: 58px; font-size: 22px; }
+.btn-nav-sm { min-height: 82px; min-width: 150px; font-size: 26px; }
+.overtocht { position: fixed; inset: 0; z-index: 60; opacity: 0; transition: opacity 0.45s; pointer-events: none; overflow: hidden; background: #1f8ee0; }
+.overtocht.on { opacity: 1; pointer-events: auto; }
+.overtocht-sky { position: absolute; inset: 0 0 45% 0; background: linear-gradient(180deg, #a6e4ff 0%, #5fc4ff 100%); }
+.overtocht-sea { position: absolute; inset: 55% 0 0 0; background: repeating-linear-gradient(180deg, #2a9df0 0 18px, #1f8ee0 18px 36px); animation: golven 1.2s linear infinite; }
+.overtocht-boot { position: absolute; left: -12%; top: 40%; font-size: 120px; line-height: 1; animation: varen 2.6s ease-in-out forwards, deinen 0.9s ease-in-out infinite; }
+.overtocht-dolfijn { position: absolute; left: 20%; top: 58%; font-size: 64px; animation: springen 1.3s ease-in-out infinite; }
+.overtocht-tekst { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); margin: 0; color: #fff; font-size: 40px; font-weight: 900; text-shadow: 0 3px 0 var(--ink), 0 0 18px rgba(0, 0, 0, 0.35); white-space: nowrap; }
+@keyframes varen { from { left: -12%; } to { left: 78%; } }
+@keyframes deinen { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(3deg); } }
+@keyframes springen { 0%, 100% { transform: translateY(24px) scaleX(-1); opacity: 0; } 50% { transform: translateY(-30px) scaleX(-1); opacity: 1; } }
+@keyframes golven { from { background-position: 0 0; } to { background-position: 0 36px; } }
 .screen-avontuur { background: linear-gradient(180deg, #a6e4ff 0%, #5fc4ff 38%, #1f8ee0 70%, #1479cf 100%); touch-action: none; user-select: none; -webkit-user-select: none; }
 .stick {
   position: absolute;

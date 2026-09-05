@@ -53,7 +53,7 @@ export function createAvontuur(game) {
     if (!dorpArmed || performance.now() - lastActionAt < 500) return;
     dorpArmed = false;
     game.audio.play('tap');
-    game.show('stad');
+    if (game.vaar) game.vaar('dorp'); else game.show('stad');   // V6.3: the boat back to the harbour
   });
   const eetBtn = document.getElementById('av-eet');
   const stookBtn = document.getElementById('av-stook');   // V6.2: wood into the fire, its own button at the fire

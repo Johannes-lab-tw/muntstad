@@ -381,8 +381,58 @@ export function createWorld(config) {
     }
   });
 
+  // ---- the harbour (V6.3): a pier from the beach corner into the sea, the boat at its end ----
+  const pier = new Builder({ r: 0.02 });
+  pier.box(HARBOR.x - HARBOR.w / 2, HARBOR.z - HARBOR.len, HARBOR.deck - 0.08, HARBOR.w, HARBOR.len + 0.3, 0.08, '#b5763f', { r: 0.02 });
+  for (let i = 0; i < 9; i++) pier.box(HARBOR.x - HARBOR.w / 2 - 0.02, HARBOR.z - HARBOR.len + 0.15 + i * 0.42, HARBOR.deck, HARBOR.w + 0.04, 0.03, 0.02, '#8a5a35', { r: 0.005 });
+  for (const [px, pz] of HARBOR.posts) pier.cyl(px, pz, WATER_Y - 0.2, 0.07, HARBOR.deck + 0.35 - WATER_Y, '#8a5a35', 6);
+  group.add(pier.build());
+  const boatB = new Builder({ r: 0.04 });
+  const bx = HARBOR.boat.x, bz = HARBOR.boat.z;
+  boatB.box(bx - 0.42, bz - 0.9, WATER_Y - 0.12, 0.84, 1.8, 0.42, '#e0533d', { r: 0.14 });
+  boatB.box(bx - 0.36, bz - 0.82, WATER_Y + 0.3, 0.72, 1.64, 0.04, '#f4d98a', { r: 0.03 });
+  boatB.cyl(bx, bz + 0.1, WATER_Y + 0.3, 0.035, 1.4, '#8a5a35', 6);
+  boatB.box(bx + 0.02, bz - 0.55, WATER_Y + 0.65, 0.02, 0.66, 0.9, '#ffffff', { r: 0.01 });
+  boatB.box(bx - 0.06, bz - 0.55, WATER_Y + 0.65, 0.06, 0.66, 0.06, '#8a5a35', { r: 0.01 });
+  const boat = boatB.build();
+  group.add(boat);
+  anim.push((t) => { boat.position.y = Math.sin(t / 700) * 0.035; boat.rotation.z = Math.sin(t / 900) * 0.035; boat.rotation.x = Math.sin(t / 1100) * 0.02; });
   return { group, update, lamps };
 }
+
+// ---------- V6.3: walking through the town (3d/scene-dorp.js) ----------
+/** The harbour: the pier runs from the beach corner (z = HARBOR.z) into the sea (z = HARBOR.z - len); the boat lies beyond it. */
+export const HARBOR = Object.freeze({
+  x: 18.0, z: -2.4, len: 3.6, w: 1.0, deck: 0.1,
+  posts: Object.freeze([[17.52, -3.1], [18.48, -3.1], [17.52, -4.5], [18.48, -4.5], [17.52, -5.85], [18.48, -5.85]]),
+  boat: Object.freeze({ x: 19.25, z: -6.1 }),   // moored beside the end of the pier, out of the camera's way
+});
+function inRounded(x, z, x0, z0, w, d, r) {
+  if (x < x0 || x > x0 + w || z < z0 || z > z0 + d) return false;
+  const cx = Math.max(x0 + r, Math.min(x0 + w - r, x)), cz = Math.max(z0 + r, Math.min(z0 + d - r, z));
+  return Math.hypot(x - cx, z - cz) <= r + 1e-9;
+}
+function inTriangle(x, z, [ax, az], [bx, bz], [cx, cz]) {
+  const s1 = (bx - ax) * (z - az) - (bz - az) * (x - ax), s2 = (cx - bx) * (z - bz) - (cz - bz) * (x - bx), s3 = (ax - cx) * (z - cz) - (az - cz) * (x - cx);
+  return (s1 >= 0 && s2 >= 0 && s3 >= 0) || (s1 <= 0 && s2 <= 0 && s3 <= 0);
+}
+export function onPier(x, z) {
+  return Math.abs(x - HARBOR.x) <= HARBOR.w / 2 && z >= HARBOR.z - HARBOR.len && z <= HARBOR.z + 0.3;
+}
+/** Where you can walk: the island (minus a rim), the beach corner and the pier. The sea is not. */
+export function townWalkable(x, z) {
+  if (onPier(x, z)) return true;
+  if (inRounded(x, z, 0.35, 0.35, ISLAND.w - 0.7, ISLAND.d - 0.7, Math.max(0.3, ISLAND.r - 0.3))) return true;
+  return inTriangle(x, z, [19.5, 0.6], [19.5, -4.4], [13.9, 0.6]);   // the beach corner, overlapping the island rim so the two join
+}
+/** The ground under your feet: the pier deck, the road band, else the grass. */
+export function townGroundAt(x, z) {
+  if (onPier(x, z)) return HARBOR.deck;
+  const R = ROAD, b = R.width / 2 + 0.4;
+  if (inRounded(x, z, R.x - b, R.y - b, R.w + 2 * b, R.d + 2 * b, R.r + b) && !inRounded(x, z, R.x + b, R.y + b, R.w - 2 * b, R.d - 2 * b, Math.max(0.2, R.r - b))) return 0.08;
+  return z < 0 ? 0.01 : 0.02;
+}
+
 
 // ---------- collision circles for the adventure (3d/player.js) ----------
 const PALMS = [[13.9, 1.4, 0.3], [15.0, 2.9, 0.26]];

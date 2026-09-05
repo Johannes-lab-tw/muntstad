@@ -201,6 +201,11 @@ export const CONFIG = Object.freeze({
   },
 
   // Parent gate
+  // Walking through the town (V6.3): the crossing to the island shows the boat this long
+  dorp: {
+    overtochtMs: 2600,
+  },
+
   papa: {
     holdMs: 3000,                     // hold PAPA for 3 s
     sumMin: 23,                       // gate sum: two numbers in [sumMin, sumMax], always with a carry
