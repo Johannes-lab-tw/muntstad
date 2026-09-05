@@ -289,6 +289,7 @@ export function createAvontuur(game) {
       controls.setEnabled(true);
       hudKey = '';
       renderHud(game.state);
+      game.audio.setTheme('eiland');
       game.audio.setAmbient(scene3.hook.darkness > 0.5 ? 'night' : 'day');
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(loop);
@@ -303,6 +304,7 @@ export function createAvontuur(game) {
       visible = false;
       controls.setEnabled(false);
       game.audio.setAmbient(null);
+      game.audio.setTheme('dorp');
       kamp.close();
       cancelAnimationFrame(raf);
       raf = 0;

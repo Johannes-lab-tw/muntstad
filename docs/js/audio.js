@@ -27,7 +27,7 @@ export function createAudio() {
         sfxGain.gain.value = soundOn ? 1 : 0;
         sfxGain.connect(master);
         musicGain = ctx.createGain();
-        musicGain.gain.value = musicOn ? 0.16 : 0;
+        musicGain.gain.value = musicOn ? 0.22 : 0;
         musicGain.connect(master);
       } catch (e) {
         ctx = null;
@@ -55,7 +55,7 @@ export function createAudio() {
     osc.stop(t0 + dur + 0.02);
   }
 
-  function noise({ start = 0, dur = 0.1, gain = 0.2, filter = 'bandpass', freq = 1200, q = 1, slideTo = null }) {
+  function noise({ start = 0, dur = 0.1, gain = 0.2, filter = 'bandpass', freq = 1200, q = 1, slideTo = null, dest = null }) {
     if (!ctx) return;
     const t0 = ctx.currentTime + start;
     const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
@@ -74,7 +74,7 @@ export function createAudio() {
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     src.connect(f);
     f.connect(g);
-    g.connect(sfxGain);
+    g.connect(dest || sfxGain);
     src.start(t0);
     src.stop(t0 + dur + 0.02);
   }
@@ -156,21 +156,38 @@ export function createAudio() {
   }
 
   // ---- music: a quiet generated loop (pentatonic melody + bass), scheduled with lookahead ----
-  const MELODY = [NOTE.C5, NOTE.E5, NOTE.G5, NOTE.E5, NOTE.D5, NOTE.E5, NOTE.C5, 0, NOTE.A4, NOTE.C5, NOTE.E5, NOTE.D5, NOTE.C5, 0, NOTE.G4, 0];
-  const BASS = [NOTE.C4, 0, NOTE.G4, 0, NOTE.A4 / 2, 0, NOTE.E4, 0, NOTE.C4, 0, NOTE.G4 / 2, 0, NOTE.A4 / 2, 0, NOTE.G4 / 2, 0];
-  let STEP = 0.28; // seconds per 8th note (~107 BPM); the night slows it down and drops an octave
+  // V5.6: two tunes (32 steps each, A A B A), the town's and the island's, with a light drum; the night slows the
+  // island tune down, drops it an octave and adds a wind pad
+  const A = [NOTE.C5, NOTE.E5, NOTE.G5, NOTE.E5, NOTE.D5, NOTE.E5, NOTE.C5, 0, NOTE.A4, NOTE.C5, NOTE.E5, NOTE.D5, NOTE.C5, 0, NOTE.G4, 0];
+  const B = [NOTE.E5, NOTE.G5, NOTE.A5, NOTE.G5, NOTE.E5, NOTE.D5, NOTE.E5, 0, NOTE.G5, NOTE.E5, NOTE.D5, NOTE.C5, NOTE.D5, NOTE.E5, NOTE.C5, 0];
+  const AB = [NOTE.C4, 0, NOTE.G4, 0, NOTE.A4 / 2, 0, NOTE.E4, 0, NOTE.C4, 0, NOTE.G4 / 2, 0, NOTE.A4 / 2, 0, NOTE.G4 / 2, 0];
+  const D4 = NOTE.D5 / 2, F4 = NOTE.E5 / 2 * 1.0595, A4 = NOTE.A4, C5 = NOTE.C5, D5 = NOTE.D5, F5 = NOTE.E5 * 1.0595, G5 = NOTE.G5, A5 = NOTE.A5;
+  const IA = [D5, F5, A5, F5, G5, F5, D5, 0, C5, D5, F5, D5, C5, A4, D5, 0];
+  const IB = [A5, G5, F5, G5, A5, 0, F5, D5, C5, D5, F5, G5, F5, D5, C5, 0];
+  const IBASS = [D4, 0, D4, 0, A4 / 2, 0, A4 / 2, 0, F4, 0, F4, 0, C5 / 2, 0, C5 / 2, 0];
+  const THEMES = {
+    dorp: { melody: [...A, ...A, ...B, ...A], bass: [...AB, ...AB, ...AB, ...AB], step: 0.28, lead: 'triangle', drums: true },
+    eiland: { melody: [...IA, ...IA, ...IB, ...IA], bass: [...IBASS, ...IBASS, ...IBASS, ...IBASS], step: 0.3, lead: 'square', drums: true },
+  };
+  let theme = THEMES.dorp;
+  let STEP = 0.28;
   let octave = 1;
+  let night = false;
 
   function scheduleMusic() {
     if (!ctx || !musicOn) return;
     while (nextNoteTime < ctx.currentTime + 0.4) {
-      const i = step % MELODY.length;
-      const m = MELODY[i];
-      const b = BASS[i];
+      const i = step % theme.melody.length;
+      const m = theme.melody[i];
+      const b = theme.bass[i];
       const start = Math.max(0, nextNoteTime - ctx.currentTime);
-      if (m) tone({ freq: m * octave, type: 'triangle', start, dur: STEP * 0.9, gain: 0.5, attack: 0.02, dest: musicGain });
+      if (m) tone({ freq: m * octave, type: night ? 'sine' : theme.lead, start, dur: STEP * 0.9, gain: night ? 0.4 : 0.42, attack: 0.02, dest: musicGain });
       if (b) tone({ freq: b * octave, type: 'sine', start, dur: STEP * 1.6, gain: 0.45, attack: 0.03, dest: musicGain });
-      if (i % 4 === 0) tone({ freq: 2000, type: 'square', start, dur: 0.03, gain: 0.05, dest: musicGain });
+      if (theme.drums && !night) {
+        if (i % 4 === 0) tone({ freq: 90, type: 'sine', start, dur: 0.12, gain: 0.35, slideTo: 40, dest: musicGain });   // kick
+        if (i % 4 === 2) noise({ start, dur: 0.05, gain: 0.12, filter: 'highpass', freq: 6000, dest: musicGain });       // hat
+      }
+      if (night && i % 16 === 0) noise({ start, dur: STEP * 14, gain: 0.05, filter: 'lowpass', freq: 500, dest: musicGain });   // wind
       nextNoteTime += STEP;
       step++;
     }
@@ -219,7 +236,7 @@ export function createAudio() {
     },
     setMusic(on) {
       musicOn = !!on;
-      if (musicGain) musicGain.gain.value = musicOn ? 0.16 : 0;
+      if (musicGain) musicGain.gain.value = musicOn ? 0.22 : 0;
       if (musicOn) startMusic();
       else stopMusic();
     },
@@ -227,10 +244,18 @@ export function createAudio() {
     /** 'day' | 'night' | null: island ambience; night also slows the music and drops it an octave. */
     setAmbient(kind) {
       setAmbient(kind);
-      const night = kind === 'night';
-      STEP = night ? 0.42 : 0.28;
+      night = kind === 'night';
+      STEP = night ? theme.step * 1.5 : theme.step;
       octave = night ? 0.5 : 1;
-      if (musicGain) musicGain.gain.value = musicOn ? (night ? 0.1 : 0.16) : 0;
+      if (musicGain) musicGain.gain.value = musicOn ? (night ? 0.14 : 0.22) : 0;
+    },
+    /** 'dorp' | 'eiland': which tune plays (V5.6). */
+    setTheme(name) {
+      const t = THEMES[name] || THEMES.dorp;
+      if (t === theme) return;
+      theme = t;
+      STEP = night ? theme.step * 1.5 : theme.step;
+      step = 0;
     },
     pause() { stopMusic(); if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {}); },
     resume() { if (ctx) { if (ctx.state !== 'running') ctx.resume().catch(() => {}); startMusic(); } },

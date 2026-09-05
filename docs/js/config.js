@@ -32,7 +32,7 @@ export const CONFIG = Object.freeze({
   // Mentor Muntje
   mentor: {
     tipGapMs: 90 * 1000,              // at most one unsolicited line per 90 s
-    speechRate: 0.95,
+    speechRate: 1.02,                 // V5.6: a touch quicker; pitch varies per line in speech.js
   },
 
   // Avontuureiland (PLAN-V4): the backpack, prices at the campfire, tools, quests. Texts live in i18n.js.
