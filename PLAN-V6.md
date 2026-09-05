@@ -26,11 +26,27 @@ stap, e2e in GitHub Actions, Ollama voor bulkinhoud en screenshots, de lokale cr
 Johannes, 5 september: "In 99 Nights moet je echt met elkaar overleven en kun je elkaar zien. Dat mist hier compleet;
 avontuur is saai en klein." Dit is het hart van V6, vóór het dorp.
 
-**Groter.** Het Avontuureiland wordt 2,5 keer zo groot (240 × 240 m) met vijf gebieden die elk anders voelen: het
+**Groter.** Het Avontuureiland wordt vijf keer zo groot (480 × 480 m) met vijf gebieden die elk anders voelen: het
 strand en het kamp (veilig), het dennenbos (hout, spoken), het moeras (veenhout, kikkers, mist, je zakt weg als je
 stilstaat), de sneeuwberg (kou, klimschoenen, de munt op de top) en de ruïne (een verlaten dorpje met kisten en de
 schaduwwolven). Dag 8 minuten, nacht 5 minuten. Plekken om te ontdekken: een waterval, een oude mijn, een verlaten
-hut, een tweede kamp dat je kunt bouwen.
+hut, een tweede kamp dat je kunt bouwen. Techniek: de wereld in **tegels van 60 × 60 m** (64 tegels) waarvan alleen
+de negen rond de speler geladen zijn (terrein, bos, dingen), instancing per tegel, mist op 90 m, maximaal vier
+lichten in beeld; zo blijft de iPad gen 7 op 60 fps ondanks de omvang. De hoogtekaart en de plaatsing blijven puur en
+deterministisch (unit-tests per tegel).
+
+**Het vuur heeft levels.** Hoe meer hout erin, hoe groter: level 1 (tot 20 hout) een kampvuurtje, level 2 (50) een
+vuur met stenen kring, level 3 (100) een vuurkorf waar je op kunt koken (vis geroosterd = dubbele voeding), level 4
+(200) een vuurtoren-achtig baken dat de halve nacht licht geeft, level 5 (400) een vreugdevuur dat het hele kamp
+verlicht en de beer op afstand houdt. Het vuur brandt per level meer hout per nacht; zakt het onder de grens, dan zakt
+het level. Zichtbaar in het model, het licht, het geluid en de HUD.
+
+**Opdrachten die iets vragen.** De dagopdrachten van V4 ("raap vijf schelpen") waren te simpel. Muntje geeft nu
+**ketens** met stappen en een beloning die pas aan het eind komt: "Bouw een tweede kamp: 20 hout, 6 stenen, een
+vuur, en overleef er een nacht", "Vóór het donker: vang drie vissen, kook ze, en breng er een naar de hut in het
+moeras", "Vind de waterval, de mijn en de ruïne" (ontdekken), "Overleef nacht 5 zonder dat een spook iets pakt"
+(uitdaging). Elke keten heeft een kaartje op het scherm met de stappen afgevinkt. Ollama schrijft de ketens uit een
+formaat met drie voorbeelden; een unit-test controleert dat elke keten haalbaar is met wat op het eiland ligt.
 
 **Echt overleven.** Naast honger komt **kou**: 's nachts daalt je warmte weg van vuur of fakkel; onder een kwart
 loop je traag en bibbert het beeld, bij nul val je flauw (zoals honger). Het vuur is dus geen decor maar de reden om
@@ -115,6 +131,45 @@ profielen, iPad-meting door Johannes.
 | 6 | V6.6 hoofdstukken 1-4 | De helft van de campagne |
 | 7 | V6.7 hoofdstukken 5-7 + doorspelen | De eindbaas |
 | 8 | V6.8 afwerking | Rapport, CI groen |
+
+## E. Avontuur als eigen game naast Muntstad: wat we voorbereiden
+
+Besluit 5 september: Muntstad (het dorp, de les) en Avontuur worden twee spellen die elkaar kennen: dezelfde
+portemonnee, dezelfde save en Bewaar-code, dezelfde ouderpoort, en de boot in de haven als deur ertussen. Avontuur
+krijgt een eigen startscherm (`docs/avontuur.html`, zelfde map, zelfde service worker, zelfde origin dus zelfde
+opslag), een eigen icoon op het beginscherm van de iPad, en mag groeien tot een serieuze game.
+
+**Wat er klaar moet staan voordat we uitpakken:**
+
+1. **Wereld in tegels** (zie B0): één keer goed neerzetten, daarna kan elk eiland zo groot worden als we willen.
+2. **Inhoud als data.** Opdrachten, ketens, Muntje-zinnen, spullen en plekken in `docs/content/*.json`, met een
+   unit-test die elke regel controleert (Nederlands, lengte, haalbaar). Ollama vult de bestanden in bulk, Claude
+   keurt, de test bewaakt. Zo kost meer inhoud geen tokens.
+3. **Meetlat in het spel.** Een verborgen fps-teller en een **MELD-knop op PAPA** die een diagnosecode kopieert
+   (versie, iPad, fps, waar je was, wat de laatste vijf gebeurtenissen waren). Johannes plakt die code in het gesprek;
+   dan hoef ik niet te gissen zoals bij de PAK-sprong.
+4. **Tests die het spel kennen.** De e2e-tests sturen het spel via `window.__muntstad` (teleport, setPhase, spawn) in
+   plaats van via de klok; ze blijven daardoor snel en stabiel op de trage runner. Per eiland een eigen spec.
+5. **Versies.** Elke afgeronde avond een git-tag (v6.1, v6.2, …) en de Bewaar-code blijft altijd achterwaarts
+   leesbaar (unit-test met een code van elke versie).
+6. **Playtest-protocol.** Elke avond dezelfde vijf minuten: nieuw spel, eerste nacht, samen spelen met twee iPads,
+   Bewaar-code laden, offline starten. Wat afwijkt gaat in PROGRESS.md.
+
+**GitHub: twee instellingen om te veranderen** (Johannes, in de browser; ik lever de workflow):
+- **Pages pas na groene tests.** Nu deployt GitHub Pages bij elke push, ook als de tests rood zijn. Nieuwe workflow:
+  de tests draaien eerst, en pas als alle drie de iPad-profielen groen zijn, deployt een tweede job. Daarvoor moet in
+  *Settings → Pages → Build and deployment → Source* "GitHub Actions" gekozen worden in plaats van "Deploy from a
+  branch". Daarna kan een rode commit niet meer live komen.
+- **Overbodige runs afbreken.** Een `concurrency`-regel in de workflow breekt een oudere run af zodra er een nieuwe
+  push is; scheelt wachttijd. Dat is alleen een regel in het workflow-bestand, geen instelling.
+- Optioneel later: het relais automatisch naar Cloudflare deployen vanuit GitHub (een API-token als secret).
+  Niet nodig zolang het relais niet verandert.
+
+**Wat Fable 5.1, Ollama en GitHub samen aankunnen.** In de sessie van 3 tot 5 september is dit gebouwd: zes rondes
+V4, de polijstronde, de grot, zeven stappen V5, met 86 unit-tests en 30 e2e-tests groen in de cloud. Per bouwavond is
+een ronde van de omvang van V5.3 (honger, hert, gadgets, moeilijker) of V5.5 (groter dorp, twee geldmakers) haalbaar,
+inclusief tests en screenshots. De grens ligt niet bij de tokens maar bij wat er per avond echt getest kan worden op
+de iPad; daarom elke avond één speelbare stap en de MELD-knop.
 
 ## Regels die blijven
 
