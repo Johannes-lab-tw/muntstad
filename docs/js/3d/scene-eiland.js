@@ -403,9 +403,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   }
   // ---------- the shadow wolves (V6.2): a pack from night 5 that circles you in the dark and shakes your bag ----------
   const wolves = [];   // { w: { x, z, heading, state, ang, wait }, model, holder }
-  let wolfLunge = 0, wolfHowl = 0;
+  let wolfLunge = 0, wolfHowl = 0, wolvesCame = false;   // the pack comes once a night
   function spawnWolves() {
     if (wolves.length) return;
+    wolvesCame = true;
     const W = config.wolven;
     for (let i = 0; i < W.pack; i++) {
       const p = landSpot(30 + i * 3);
@@ -565,7 +566,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       if (bearNight && !guest && !finale) spawnBear();
       if (finale) setTimeout(() => { if (wasDark && !berenNacht && !bears.length) spawnBears(config.campagne.beren); }, config.campagne.berenVanaf);
       if (rules.deer && !guest) spawnDeer();
-      if (rules.wolves && !guest) setTimeout(() => { if (wasDark && !guest) spawnWolves(); }, 15000);   // the pack comes a bit into the night
+      wolvesCame = false;
+      if (rules.wolves && !guest) setTimeout(() => { if (wasDark && !guest && !wolvesCame) spawnWolves(); }, 15000);   // the pack comes a bit into the night, once
     }
     if (!isDark && wasDark) {
       wasDark = false;
