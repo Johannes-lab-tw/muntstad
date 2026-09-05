@@ -1,10 +1,14 @@
-# Unit + e2e tests in the cloud on every push, so the desktop never runs headless Chrome again.
+# Unit + e2e tests in the cloud on every push (three iPad profiles in parallel); the site deploys to GitHub Pages
+# only after all three are green (PLAN-V6 §E). A newer push cancels an older test run.
 name: tests
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -31,3 +35,25 @@ jobs:
           name: playwright-report-${{ matrix.project }}
           path: playwright-report/
           retention-days: 7
+  deploy:
+    # docs/ goes live only when every profile passed; Settings → Pages → Source must be "GitHub Actions"
+    needs: tests
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4
