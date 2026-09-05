@@ -241,5 +241,12 @@ export function createCamp(map) {
     fireLight.intensity = size * (lite ? 0.7 : 1) * (0.3 + darkness * 2.8) * (1 + Math.sin(now / 80) * 0.08 + Math.sin(now / 210) * 0.05) * 8;
     fireLight.distance = 6 + size * 18;
   }
-  return { group, update, obstacles, fireLight, chest, cave: caveInfo, firePos: new T.Vector3(CAMP.x, y0, CAMP.z), setFire(l) { level = Math.max(0, Math.min(1, l)); } };
+  /** The second hut (V5.3 upgrade): built when bought. Returns its obstacle. */
+  function addHut(x, z, rot, roof) {
+    const g = new T.Group();
+    hut(g, x, z, map.heightAt(x, z), rot, roof);
+    group.add(g);
+    return { x, z, r: 2.1, kind: 'hut' };
+  }
+  return { group, update, obstacles, fireLight, chest, cave: caveInfo, addHut, firePos: new T.Vector3(CAMP.x, y0, CAMP.z), setFire(l) { level = Math.max(0, Math.min(1, l)); } };
 }

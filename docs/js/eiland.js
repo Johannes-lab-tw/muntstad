@@ -1,24 +1,28 @@
 // eiland.js — the island's economy, pure (no DOM, no Three): the backpack, selling at the campfire, buying tools
 // with the shared wallet, and Muntje's daily quests. Numbers live in config.js (config.eiland), texts in i18n.js.
-// State slice: state.eiland = { bag, tools, quest, questN, questsDone, collected, sold, earned }
+// State slice: state.eiland = { bag, tools, quest, questN, questsDone, collected, sold, earned, chestDay, honger }
+import { perks } from './uitdaging.js';
 
 export function createEiland(config) {
   const bag = {};
   for (const id of Object.keys(config.eiland.items)) bag[id] = 0;
-  return { bag, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: { ...bag }, sold: 0, earned: 0, chestDay: '' };
+  return { bag, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: { ...bag }, sold: 0, earned: 0, chestDay: '', honger: 100 };
 }
 
 export function bagCount(e) {
   return Object.values(e.bag).reduce((n, v) => n + v, 0);
 }
+export function bagMaxOf(e, config) {
+  return perks(e, config).bagMax;
+}
 export function bagFull(e, config) {
-  return bagCount(e) >= config.eiland.bagMax;
+  return bagCount(e) >= bagMaxOf(e, config);
 }
 
 /** Put `n` of an item in the backpack (as many as fit). Returns { eiland, added, questDone } — questDone = the finished quest index or -1. */
 export function collect(e, config, item, n = 1) {
   if (!(item in e.bag)) return { eiland: e, added: 0, questDone: -1 };
-  const room = Math.max(0, config.eiland.bagMax - bagCount(e));
+  const room = Math.max(0, bagMaxOf(e, config) - bagCount(e));
   const added = Math.min(room, n);
   if (added <= 0) return { eiland: e, added: 0, questDone: -1 };
   const next = { ...e, bag: { ...e.bag, [item]: e.bag[item] + added }, collected: { ...e.collected, [item]: (e.collected[item] || 0) + added } };
@@ -112,10 +116,7 @@ export function normalizeEiland(data, config) {
   if (!data || typeof data !== 'object') return fresh;
   const num = (v, max = 1e6) => Math.min(max, Math.max(0, Math.floor(Number(v) || 0)));
   const bag = { ...fresh.bag };
-  if (data.bag && typeof data.bag === 'object') for (const id of Object.keys(bag)) bag[id] = num(data.bag[id], config.eiland.bagMax);
-  // never more than fits
-  let total = Object.values(bag).reduce((n, v) => n + v, 0);
-  for (const id of Object.keys(bag)) while (total > config.eiland.bagMax && bag[id] > 0) { bag[id]--; total--; }
+  if (data.bag && typeof data.bag === 'object') for (const id of Object.keys(bag)) bag[id] = num(data.bag[id], config.eiland.bagMaxBig);
   const tools = {};
   if (data.tools && typeof data.tools === 'object') for (const t of config.eiland.tools) if (data.tools[t.id]) tools[t.id] = true;
   const collected = { ...fresh.collected };
@@ -123,5 +124,11 @@ export function normalizeEiland(data, config) {
   const quest = num(data.quest) % Math.max(1, config.eiland.quests.length);
   const q = config.eiland.quests[quest];
   const chestDay = typeof data.chestDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data.chestDay) ? data.chestDay : '';
-  return { bag, tools, quest, questN: Math.min(q ? q.n : 0, num(data.questN)), questsDone: num(data.questsDone), collected, sold: num(data.sold), earned: num(data.earned), chestDay };
+  const honger = data.honger == null ? 100 : Math.min(100, Math.max(0, Number(data.honger) || 0));
+  const out = { bag, tools, quest, questN: Math.min(q ? q.n : 0, num(data.questN)), questsDone: num(data.questsDone), collected, sold: num(data.sold), earned: num(data.earned), chestDay, honger };
+  // never more than fits, also with the big backpack gone
+  let tot = Object.values(out.bag).reduce((n, v) => n + v, 0);
+  const max = perks(out, config).bagMax;
+  for (const id of Object.keys(out.bag)) while (tot > max && out.bag[id] > 0) { out.bag[id]--; tot--; }
+  return out;
 }

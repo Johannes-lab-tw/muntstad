@@ -1010,3 +1010,13 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .av-peers { position: absolute; right: 14px; top: calc(var(--topbar-h) + 12px); padding: 8px 16px; font-size: 26px; font-weight: 800; z-index: 20; pointer-events: none; }
 .av-emotes { position: absolute; left: 150px; bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; gap: 14px; z-index: 20; }
 .btn-emote { min-height: 82px; min-width: 150px; font-size: 26px; }
+
+/* V5.3: hunger bar, EET, the faint fade, two columns of tools at the fire */
+.av-bag .honger-bar { display: inline-block; width: 64px; height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 2px; }
+.av-bag .honger-bar b { display: block; height: 100%; background: linear-gradient(90deg, #45d65c, #8fe06f); }
+.av-bag .honger-bar.low b { background: var(--red); }
+.av-flauw { position: absolute; inset: 0; background: #05060f; z-index: 30; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
+.av-flauw.on { opacity: 1; }
+.kamp-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.kamp-tool .btn { min-width: 130px; }
+@media (max-width: 1100px) { .kamp-tools { grid-template-columns: 1fr; } }

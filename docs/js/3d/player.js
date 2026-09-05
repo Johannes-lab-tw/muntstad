@@ -145,7 +145,7 @@ export function stepPlayer(p, input, dt, env) {
   if (mag > 1) { ix /= mag; iy /= mag; mag = 1; }
   const dead = mag < 0.12;
   const wantRun = !dead && (input.run || mag >= P.runAt);
-  const target = dead ? 0 : (wantRun ? P.run : P.walk) * Math.min(1, mag / P.runAt);
+  const target = dead ? 0 : (wantRun ? P.run : P.walk) * Math.min(1, mag / P.runAt) * (env.speedMul || 1);   // shoes make you faster, hunger slower
   // move direction in the world: forward = the camera's looking direction on the ground
   // Three.js is right-handed with y up: looking along forward (fx, fz), the right-hand side is (-fz, fx)
   const fx = Math.sin(env.yaw), fz = Math.cos(env.yaw);

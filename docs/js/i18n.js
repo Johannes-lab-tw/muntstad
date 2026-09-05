@@ -114,6 +114,7 @@ export const T = {
     deerBumped: 'Het hert duwde je omver. Raap je spullen op!',
     harderNight: 'Let op! Elke nacht komen er meer spoken.',
     gadgetHint: 'Bij het vuur kun je sterke spullen kopen.',
+    dropsPicked: 'Alles weer in je rugzak. Goed zo!',
     chestEmpty: 'De kist is leeg. Kom morgen terug!',
     caveHint: 'Kijk, een grot in de heuvel. Durf jij naar binnen?',
     nightComing: 'Het wordt donker! Zorg dat het vuur blijft branden. Hout erin met STOOK.',

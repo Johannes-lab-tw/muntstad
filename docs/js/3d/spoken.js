@@ -67,6 +67,54 @@ export function bearModel() {
   return { group, update };
 }
 
+/** The Nachthert (V5.3): a slim deer with glowing eyes that runs at you in the dark and bumps you over. */
+export function deerModel() {
+  const group = new T.Group();
+  const c = '#8a6a4a', d = '#5e4630';
+  const body = new Builder({ r: 0.1 });
+  body.box(-0.32, -0.7, 0.75, 0.64, 1.4, 0.6, c, { r: 0.2 });
+  body.box(-0.16, 0.55, 1.1, 0.32, 0.5, 0.5, c, { r: 0.12 });   // neck
+  const bm = body.build();
+  group.add(bm);
+  const head = new Builder({ r: 0.06 });
+  head.box(-0.2, -0.2, 0, 0.4, 0.55, 0.36, c, { r: 0.1 });
+  head.box(-0.1, 0.3, 0.02, 0.2, 0.2, 0.2, d, { r: 0.05 });     // muzzle
+  head.box(-0.28, -0.1, 0.3, 0.1, 0.06, 0.28, d, { r: 0.02 }); // ears
+  head.box(0.18, -0.1, 0.3, 0.1, 0.06, 0.28, d, { r: 0.02 });
+  for (const sx of [-1, 1]) {                                     // antlers
+    head.cyl(sx * 0.14, -0.05, 0.36, 0.03, 0.55, d, 5);
+    head.cyl(sx * 0.14 + sx * 0.12, 0.02, 0.7, 0.025, 0.3, d, 5);
+  }
+  const hm = head.build();
+  hm.position.set(0, 1.55, 0.85);
+  group.add(hm);
+  const eyeMat = new T.MeshStandardMaterial({ color: col('#ffe066'), emissive: col('#ffb300'), emissiveIntensity: 2.2 });
+  for (const sx of [-1, 1]) { const e = new T.Mesh(new T.SphereGeometry(0.06, 7, 6), eyeMat); e.position.set(sx * 0.13, 0.25, 0.32); hm.add(e); }
+  const legs = [];
+  for (const [dx, dz] of [[-0.2, -0.45], [0.2, -0.45], [-0.2, 0.45], [0.2, 0.45]]) {
+    const l = new Builder({ r: 0.04 });
+    l.box(-0.08, -0.08, -0.78, 0.16, 0.16, 0.78, d, { r: 0.04 });
+    const m = l.build();
+    m.position.set(dx, 0.78, dz);
+    group.add(m);
+    legs.push(m);
+  }
+  function update(t, { running = true } = {}) {
+    legs.forEach((l, i) => { l.rotation.x = running ? Math.sin(t / 110 + (i % 2) * Math.PI) * 0.9 : 0; });
+    bm.position.y = running ? Math.abs(Math.sin(t / 110)) * 0.12 : 0;
+    hm.rotation.x = running ? 0.25 : Math.sin(t / 800) * 0.1;
+  }
+  return { group, update };
+}
+
+/** A small dropped thing on the ground (what the deer shook out of your bag): a coloured disc with a bob. */
+export function dropModel(colorHex) {
+  const b = new Builder({ r: 0.03 });
+  b.cyl(0, 0, 0.05, 0.22, 0.12, colorHex, 10);
+  b.sphere(0, 0, 0.22, 0.12, colorHex, 8);
+  return b.build({ shadow: false });
+}
+
 export function tentModel(color = '#ff9f2e') {
   const b = new Builder({ r: 0.04 });
   const shape = new T.Shape(); shape.moveTo(-1.6, 0); shape.lineTo(1.6, 0); shape.lineTo(0, 1.9); shape.closePath();

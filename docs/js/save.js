@@ -232,8 +232,8 @@ export function encodeCode(state, config) {
     Math.round(state.playTimeMs / 1000),
     (state.settings.voice ? 1 : 0) | (state.settings.sound ? 2 : 0) | (state.settings.music ? 4 : 0),
     // the island (since PLAN-V4 R3): bag counts in config order, owned tools as indices, quest index + progress, sold, earned
-    [Object.keys(config.eiland.items).map((id) => state.eiland.bag[id] || 0), config.eiland.tools.map((t, i) => (state.eiland.tools[t.id] ? i : -1)).filter((i) => i >= 0), state.eiland.quest, state.eiland.questN, state.eiland.questsDone, state.eiland.sold, state.eiland.earned],
-    [Math.round(state.nacht.fire), state.nacht.nights, state.nacht.stolen, state.nacht.clockOffsetMs],
+    [Object.keys(config.eiland.items).map((id) => state.eiland.bag[id] || 0), config.eiland.tools.map((t, i) => (state.eiland.tools[t.id] ? i : -1)).filter((i) => i >= 0), state.eiland.quest, state.eiland.questN, state.eiland.questsDone, state.eiland.sold, state.eiland.earned, Math.round(state.eiland.honger ?? 100)],
+    [Math.round(state.nacht.fire), state.nacht.nights, state.nacht.stolen, state.nacht.clockOffsetMs, state.nacht.fainted || 0, state.nacht.bumped || 0],
   ];
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   return `${CODE_PREFIX}.${bytesToB64(bytes)}.${checksum(bytes)}`;
@@ -287,8 +287,8 @@ export function decodeCode(code, config, now) {
       settings: { voice: !!(bits & 1), sound: !!(bits & 2), music: !!(bits & 4) },
       // a restored code is a returning player: START must say "Verder spelen", not ask for a name again
       flags: { started: true, workIntro: true },
-      eiland: { bag, tools, quest: ei[2], questN: ei[3], questsDone: ei[4], sold: ei[5], earned: ei[6] },
-      nacht: { fire: list(p[20])[0], nights: list(p[20])[1], stolen: list(p[20])[2], clockOffsetMs: list(p[20])[3] },
+      eiland: { bag, tools, quest: ei[2], questN: ei[3], questsDone: ei[4], sold: ei[5], earned: ei[6], honger: ei[7] },
+      nacht: { fire: list(p[20])[0], nights: list(p[20])[1], stolen: list(p[20])[2], clockOffsetMs: list(p[20])[3], fainted: list(p[20])[4], bumped: list(p[20])[5] },
       lastTick: now, createdAt: now,
     }, config, now);
   } catch (e) {

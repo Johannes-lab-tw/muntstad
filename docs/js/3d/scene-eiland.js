@@ -15,7 +15,8 @@ import { createTerrain } from './terrain.js';
 import { placeForest, buildForest } from './forest.js';
 import { createCamp } from './camp.js';
 import { createDayNight } from './daynight.js';
-import { ghostModel, bearModel, tentModel, torchModel, fenceModel } from './spoken.js';
+import { ghostModel, bearModel, tentModel, torchModel, fenceModel, deerModel, dropModel } from './spoken.js';
+import { perks, nightRules, hungerSpeedMul } from '../uitdaging.js';
 import { Builder, textPlane } from './build.js';
 import { isFunActive } from '../economy.js';
 import { chopRule } from '../eiland.js';
@@ -48,8 +49,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (scene.fog) scene.fog.far = t >= 2 ? 70 : 95;   // the fog exists once daynight is created
   });
   const daynight = createDayNight(scene, lights);
-  const near = createGrid([...forest.obstacles, ...camp.obstacles], 4);
-  const env = { yaw: START.heading, near, walkable: map.walkable, groundAt: map.groundAt };
+  let near = createGrid([...forest.obstacles, ...camp.obstacles], 4);
+  const env = { yaw: START.heading, near, walkable: map.walkable, groundAt: map.groundAt, speedMul: 1 };
   // things to pick up, in their own grids
   const shells = forest.placements.shell.map((s, index) => ({ ...s, index, r: 0.3, taken: false }));
   const bushes = forest.placements.bush2.map((b, index) => ({ ...b, index, r: 0.5, restUntil: 0 }));
@@ -314,9 +315,17 @@ export function createEilandScene(game, engine, controls, cb = {}) {
         gear.torches.push({ ...t, x, z });
       }
     }
-    if (tools.hek && !gear.fence) {
-      gear.fence = fenceModel(CAMP.x, CAMP.z, N.fenceRadius, map.heightAt);
+    const pk = perks(state.eiland, config);
+    if ((tools.hek || tools.hoog_hek) && gear.fenceR !== pk.fenceRadius) {
+      if (gear.fence) scene.remove(gear.fence);
+      gear.fence = fenceModel(CAMP.x, CAMP.z, pk.fenceRadius, map.heightAt);
+      gear.fenceR = pk.fenceRadius;
       scene.add(gear.fence);
+    }
+    if (tools.hut2 && !gear.hut2) {
+      gear.hut2 = camp.addHut(CAMP.x - 6.4, CAMP.z - 3.2, 1.6, '#b76cff');
+      near = createGrid([...forest.obstacles, ...camp.obstacles, gear.hut2], 4);
+      env.near = near;
     }
     lantern.visible = !!tools.lantaarn;
   }
@@ -360,15 +369,86 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   }
   function doScare() {
     if (!bear) return;
-    const gone = scareBear(bear.b, config);
+    const gone = scareBear(bear.b, config, perks(state.eiland, config).bearScares);
     cb.onSay && cb.onSay(gone ? 'lines.bearGone' : 'lines.bearScared');
+  }
+  // ---------- the Nachthert and what it shakes out of your bag (V5.3) ----------
+  let deer = null;   // { d: { x, z, heading, state, until }, model, holder }
+  const drops = [];  // { item, x, z, mesh }
+  const DROP_COLORS = { hout: '#b5763f', schelp: '#ffe6d5', bes: '#7c4dff', vis: '#7fc4ff' };
+  function spawnDeer() {
+    if (deer) return;
+    const p = landSpot(28);
+    const model = deerModel();
+    const holder = new T.Group();
+    holder.add(model.group);
+    holder.position.set(p.x, groundOf(p.x, p.z), p.z);
+    scene.add(holder);
+    deer = { d: { x: p.x, z: p.z, heading: p.heading, state: 'wander', until: 0, tx: p.x, tz: p.z }, model, holder };
+  }
+  function clearDeer() { if (deer) { scene.remove(deer.holder); deer = null; } }
+  function clearDrops() { for (const d of drops) scene.remove(d.mesh); drops.length = 0; }
+  function scatterDrops(items) {
+    for (let i = 0; i < items.length; i++) {
+      const a = (i / items.length) * Math.PI * 2 + Math.random();
+      let x = player.x + Math.cos(a) * (1.4 + Math.random() * 1.2), z = player.z + Math.sin(a) * (1.4 + Math.random() * 1.2);
+      if (!map.walkable(x, z)) { x = player.x; z = player.z; }
+      const mesh = dropModel(DROP_COLORS[items[i]] || '#ffffff');
+      mesh.position.set(x, groundOf(x, z), z);
+      scene.add(mesh);
+      drops.push({ item: items[i], x, z, mesh, ph: Math.random() * 6 });
+    }
+  }
+  function updateDeer(now, dt, lit, dark) {
+    if (!deer) return;
+    const D = config.deer, d = deer.d;
+    const pk = perks(state.eiland, config);
+    const fenceR = state.eiland.tools.hoog_hek ? pk.fenceRadius : state.eiland.tools.hek ? N.fenceRadius : 0;
+    const playerSafe = isLit(player.x, player.z, lit) || (fenceR && Math.hypot(player.x - CAMP.x, player.z - CAMP.z) < fenceR);
+    const dist = Math.hypot(player.x - d.x, player.z - d.z);
+    if (d.state === 'flee') {
+      if (now > d.until) d.state = 'wander';
+      d.x += Math.sin(d.heading) * D.speed * dt; d.z += Math.cos(d.heading) * D.speed * dt;
+      if (!map.walkable(d.x, d.z)) { d.heading += 2.5; }
+    } else if (d.state === 'charge') {
+      if (playerSafe || dist > D.sight * 1.5) { d.state = 'flee'; d.heading = Math.atan2(d.x - player.x, d.z - player.z); d.until = now + 2500; }
+      else {
+        d.heading = Math.atan2(player.x - d.x, player.z - d.z);
+        const nx = d.x + Math.sin(d.heading) * D.speed * dt, nz = d.z + Math.cos(d.heading) * D.speed * dt;
+        if (map.walkable(nx, nz)) { d.x = nx; d.z = nz; }
+        if (dist < D.reach) {
+          // the bump: you are shoved, the bag falls open, the deer runs off
+          game.audio.play('stumble');
+          const px = player.x + Math.sin(d.heading) * D.pushBack, pz = player.z + Math.cos(d.heading) * D.pushBack;
+          if (map.walkable(px, pz)) { player.x = px; player.z = pz; player.ground = map.groundAt(px, pz); }
+          const items = cb.onDeerBump ? cb.onDeerBump() : [];
+          scatterDrops(items || []);
+          d.state = 'flee'; d.heading += Math.PI; d.until = now + D.fleeMs;
+        }
+      }
+    } else {
+      // wander: amble to a spot, look around; charge when it sees you in the dark
+      if (dark > 0.5 && !playerSafe && dist < D.sight) { d.state = 'charge'; cb.onSay && cb.onSay('lines.deerComing'); }
+      else {
+        const tx = d.tx - d.x, tz = d.tz - d.z, td = Math.hypot(tx, tz);
+        if (td < 0.5 || now > d.until) { const p = landSpot(20 + Math.random() * 10); d.tx = p.x; d.tz = p.z; d.until = now + 6000 + Math.random() * 6000; }
+        else { d.heading = Math.atan2(tx, tz); const nx = d.x + Math.sin(d.heading) * 1.2 * dt, nz = d.z + Math.cos(d.heading) * 1.2 * dt; if (map.walkable(nx, nz)) { d.x = nx; d.z = nz; } }
+      }
+    }
+    deer.holder.position.set(d.x, groundOf(d.x, d.z), d.z);
+    deer.holder.rotation.y = d.heading;
+    deer.model.update(now, { running: d.state !== 'wander' });
+    for (const dr of drops) dr.mesh.position.y = groundOf(dr.x, dr.z) + Math.sin(now / 300 + dr.ph) * 0.06;
   }
   function updateNight(now, dt) {
     syncGear();
     const dark = daynight.darkness;
     const guest = samen && samen.isGuest;
+    env.speedMul = perks(state.eiland, config).speedMul * hungerSpeedMul(state.eiland, config);
+    cb.onTick && cb.onTick(dt * 1000, dark);
     if (!guest) cb.onBurn && cb.onBurn(dt * 1000, dark);
     const n = state.nacht;
+    const rules = nightRules(n.nights, config);
     camp.setFire(n.fire / 100);
     lantern.position.set(player.x, player.ground + 1.7, player.z);
     lantern.intensity = (0.2 + dark * 2.5) * 4;
@@ -377,29 +457,34 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (isDark && !wasDark) {
       wasDark = true;
       fireWasBurning = n.fire > 0;
-      ghostTimer = N.ghostEveryMs * 0.6;   // the first ghost comes soon after dark
-      const bearNight = bearTonight(n, config);
-      cb.onNight && cb.onNight(bearNight && !guest);
+      ghostTimer = rules.ghostEveryMs * 0.6;   // the first ghost comes soon after dark
+      const bearNight = bearTonight(n, config, rules.bearEvery);
+      cb.onNight && cb.onNight(bearNight && !guest, n.nights);
       if (bearNight && !guest) spawnBear();
+      if (rules.deer && !guest) spawnDeer();
     }
     if (!isDark && wasDark) {
       wasDark = false;
       cb.onDawn && cb.onDawn(fireWasBurning && n.fire > 0);
       clearNight();
+      clearDeer();
+      clearDrops();
     }
     if (isDark && n.fire <= 0) fireWasBurning = false;
     if (guest) { updateRemoteWorld(now, dt); return; }
     if (isDark) {
       ghostTimer += dt * 1000;
-      if (ghosts.length < N.ghostsMax && ghostTimer > N.ghostEveryMs) { ghostTimer = 0; spawnGhost(); }
+      if (ghosts.length < rules.ghostsMax && ghostTimer > rules.ghostEveryMs) { ghostTimer = 0; spawnGhost(); }
     }
     const lit = lightsNow();
-    const fence = state.eiland.tools.hek ? { x: CAMP.x, z: CAMP.z, r: N.fenceRadius } : null;
+    const pk = perks(state.eiland, config);
+    const fence = state.eiland.tools.hek || state.eiland.tools.hoog_hek ? { x: CAMP.x, z: CAMP.z, r: pk.fenceRadius } : null;
+    updateDeer(now, dt, lit, dark);
     for (let i = ghosts.length - 1; i >= 0; i--) {
       const gh = ghosts[i];
       const dp = Math.hypot(player.x - gh.g.x, player.z - gh.g.z);
       const target = dp < 12 ? { x: player.x, z: player.z } : { x: CAMP.x, z: CAMP.z };
-      const res = stepGhost(gh.g, { target, lights: lit, fence, dt }, config);
+      const res = stepGhost(gh.g, { target, lights: lit, fence, dt, speedMul: rules.ghostSpeed / N.ghostSpeed }, config);
       if (res === 'steal') { game.audio.play('thud'); cb.onSteal && cb.onSteal(); }
       if (res === 'gone') { scene.remove(gh.holder); ghosts.splice(i, 1); continue; }
       gh.holder.position.set(gh.g.x, groundOf(gh.g.x, gh.g.z), gh.g.z);
@@ -434,6 +519,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (bearNear()) return { type: 'boe', label: 'BOE', target: null };
     if (gear.tent && daynight.darkness > 0.5 && Math.hypot(px - TENT_AT.x, pz - TENT_AT.z) < REACH.tent) return { type: 'slaap', label: 'SLAAP', target: null };
     if (Math.hypot(px - camp.chest.pos.x, pz - camp.chest.pos.z) < 1.9) return { type: 'kist', label: camp.chest.isOpen ? 'LEEG' : 'OPEN', target: null };
+    for (const dr of drops) if (Math.hypot(px - dr.x, pz - dr.z) < 1.4) return { type: 'drop', label: 'PAK', target: dr };   // your own things, shaken out by the deer
     if (Math.hypot(px - CAMP.x, pz - CAMP.z) < REACH.camp) {
       if ((state.eiland.bag.hout || 0) > 0 && state.nacht.fire < 100 - N.woodValue) return { type: 'stook', label: 'STOOK', target: null };
       return { type: 'kamp', label: 'KAMP', target: null };
@@ -475,6 +561,15 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     switch (action.type) {
       case 'kamp': cb.onKamp && cb.onKamp(); return;
       case 'kist': cb.onChest && cb.onChest(); return;
+      case 'drop': {
+        const dr = action.target;
+        const i = drops.indexOf(dr);
+        if (i >= 0) { drops.splice(i, 1); scene.remove(dr.mesh); }
+        cb.onCollect && cb.onCollect(dr.item, 1);
+        game.audio.play('coinSoft');
+        if (!drops.length) cb.onSay && cb.onSay('lines.dropsPicked');
+        return;
+      }
       case 'stook': cb.onStoke && cb.onStoke(); return;
       case 'slaap':
         if (samen && samen.isGuest) { samen.send('sleep', {}); cb.onSay && cb.onSay('lines.sleep'); }
@@ -538,7 +633,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       }
       case 'trek':
         if (fishing && fishing.biteUntil && now < fishing.biteUntil) {
-          cb.onCollect && cb.onCollect('vis', 1);
+          cb.onCollect && cb.onCollect('vis', perks(state.eiland, config).fishPer);
           jumpFish(bobber.position, new T.Vector3(player.x, player.ground + 0.9, player.z));
           game.audio.play('splash');
           game.audio.play('buy');
@@ -823,6 +918,12 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     tapAt(x, y) { handleTap({ x, y }); },
     get fallen() { return falls.length; },
     get caveGhost() { return { x: caveGhost.x, z: caveGhost.z, state: caveGhost.state }; },
+    get deer() { return deer ? { x: deer.d.x, z: deer.d.z, state: deer.d.state } : null; },
+    get drops() { return drops.map((d) => ({ item: d.item, x: d.x, z: d.z })); },
+    get speedMul() { return env.speedMul; },
+    spawnDeer,
+    /** Put the deer right behind the player in charge mode (tests). */
+    deerAt(x, z) { spawnDeer(); deer.d.x = x; deer.d.z = z; deer.d.state = 'charge'; },
     get bats() { return batsState; },
     inCave(x, z) { return map.inCave(x, z); },
     emote,

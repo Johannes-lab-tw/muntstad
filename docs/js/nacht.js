@@ -3,12 +3,12 @@
 // moves models around and asks these functions what happens. Nobody gets hurt: losing means losing wood or coins.
 
 export function createNacht() {
-  return { fire: 60, nights: 0, stolen: 0, clockOffsetMs: 0, lastDawnPhase: 0, bearScared: 0 };
+  return { fire: 60, nights: 0, stolen: 0, clockOffsetMs: 0, lastDawnPhase: 0, bearScared: 0, fainted: 0, bumped: 0 };
 }
 
 /** The fire burns down: slowly by day, faster in the dark. fire is 0..100. */
-export function burnFire(n, config, dtMs, darkness) {
-  const rate = config.nacht.burnDay + (config.nacht.burnNight - config.nacht.burnDay) * darkness;   // units per minute
+export function burnFire(n, config, dtMs, darkness, mul = 1) {
+  const rate = (config.nacht.burnDay + (config.nacht.burnNight - config.nacht.burnDay) * darkness) * mul;   // units per minute (the fire pit slows it)
   return { ...n, fire: Math.max(0, n.fire - (rate * dtMs) / 60000) };
 }
 
@@ -37,7 +37,7 @@ export function isLit(x, z, lights) {
  * ctx = { target: {x, z}, lights, fence: {x, z, r} | null, dt }. Returns 'steal' when it reaches the target in the dark.
  */
 export function stepGhost(g, ctx, config) {
-  const speed = config.nacht.ghostSpeed;
+  const speed = config.nacht.ghostSpeed * (ctx.speedMul || 1);   // later nights: faster (uitdaging.nightRules)
   const dt = ctx.dt;
   if (g.state === 'flee') {
     g.x += Math.sin(g.heading) * speed * 1.8 * dt;
@@ -78,8 +78,8 @@ export function ghostSteal(n, e, wallet, config, pick = Math.random()) {
 }
 
 /** Which night is it (1 = the first)? The bear comes every `bearEvery`-th night. */
-export function bearTonight(n, config) {
-  return (n.nights + 1) % config.nacht.bearEvery === 0;
+export function bearTonight(n, config, every = config.nacht.bearEvery) {
+  return (n.nights + 1) % every === 0;
 }
 
 /** The bear plods to the fire; noise (BOE) scares it a bit each time; three times and it turns round. b = { x, z, heading, scared, state } */
@@ -100,10 +100,10 @@ export function stepBear(b, ctx, config) {
   b.z += (dz / d) * config.nacht.bearSpeed * dt;
   return null;
 }
-export function scareBear(b, config) {
+export function scareBear(b, config, scares = config.nacht.bearScares) {
   b.scared = (b.scared || 0) + 1;
   b.pause = 1.2;
-  if (b.scared >= config.nacht.bearScares) { b.state = 'flee'; b.heading += Math.PI; b.life = 6; return true; }
+  if (b.scared >= scares) { b.state = 'flee'; b.heading += Math.PI; b.life = 6; return true; }   // with the drum: one BOE
   return false;
 }
 
@@ -118,5 +118,5 @@ export function normalizeNacht(data) {
   const fresh = createNacht();
   if (!data || typeof data !== 'object') return fresh;
   const num = (v, max = 1e9) => Math.min(max, Math.max(0, Number(v) || 0));
-  return { fire: num(data.fire, 100), nights: Math.floor(num(data.nights)), stolen: Math.floor(num(data.stolen)), clockOffsetMs: Math.floor(Number(data.clockOffsetMs) || 0) % (9 * 60 * 1000), lastDawnPhase: 0, bearScared: 0 };
+  return { fire: num(data.fire, 100), nights: Math.floor(num(data.nights)), stolen: Math.floor(num(data.stolen)), clockOffsetMs: Math.floor(Number(data.clockOffsetMs) || 0) % (9 * 60 * 1000), lastDawnPhase: 0, bearScared: 0, fainted: Math.floor(num(data.fainted)), bumped: Math.floor(num(data.bumped)) };
 }

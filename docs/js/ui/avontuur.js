@@ -9,6 +9,7 @@ import { createKamp } from './kamp.js';
 import { setFlag, formatCoins } from '../economy.js';
 import { collect, completeQuest, currentQuest, bagCount, openChest, chestOpenedToday, todayKey } from '../eiland.js';
 import { burnFire, stokeFire, ghostSteal, dawnReward } from '../nacht.js';
+import { perks, drainHunger, eat, canEat, faint, deerBump } from '../uitdaging.js';
 import { CYCLE } from '../3d/daycycle.js';
 
 export function createAvontuur(game) {
@@ -36,6 +37,9 @@ export function createAvontuur(game) {
     game.audio.play('tap');
     game.show('stad');
   });
+  const eetBtn = document.getElementById('av-eet');
+  const flauwEl = document.getElementById('av-flauw');
+  eetBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); onEat(); });
   document.getElementById('av-zwaai').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('wave'); });
   document.getElementById('av-dans').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('dance'); });
   // keyboard: E / Enter = the action button
@@ -75,13 +79,16 @@ export function createAvontuur(game) {
     const cfg = game.config.eiland;
     const e = state.eiland;
     const fire = Math.round(state.nacht.fire);
-    const full = bagCount(e) >= cfg.bagMax;
+    const honger = Math.round(e.honger ?? 100);
+    const full = bagCount(e) >= perks(e, game.config).bagMax;
     const peers = samen && samen.active ? samen.peers.size + 1 : 0;
-    const key = `${Object.values(e.bag).join(',')}|${fire}|${e.quest}|${e.questN}|${full}|${peers}`;
+    const key = `${Object.values(e.bag).join(',')}|${fire}|${honger}|${e.quest}|${e.questN}|${full}|${peers}`;
     if (key === hudKey) return;
     hudKey = key;
     bagEl.innerHTML = Object.entries(cfg.items).map(([id, it]) => `<span title="${it.name}">${it.icon}<span class="n${full ? ' full' : ''}">${e.bag[id]}</span></span>`).join('')
-      + `<span class="fire" title="Vuur">🔥<i class="fire-bar${fire < 25 ? ' low' : ''}"><b style="width:${fire}%"></b></i></span>`;
+      + `<span class="fire" title="Vuur">🔥<i class="fire-bar${fire < 25 ? ' low' : ''}"><b style="width:${fire}%"></b></i></span>`
+      + `<span class="honger" title="Eten">🍎<i class="honger-bar${honger < game.config.honger.slowBelow ? ' low' : ''}"><b style="width:${honger}%"></b></i></span>`;
+    eetBtn.hidden = !canEat(e);
     const q = currentQuest(e, game.config);
     if (q) {
       questEl.hidden = false;
@@ -97,6 +104,51 @@ export function createAvontuur(game) {
     actieBtn.classList.toggle('pulse', !!a && (a.type === 'trek' || a.type === 'boe'));
   }
 
+  // ---------- hunger, eating, fainting, the deer (V5.3) ----------
+  let tickAcc = 0, lastHungerWarn = 0, emptySaid = false, fainting = false;
+  function onTick(dtMs, darkness) {
+    tickAcc += dtMs;
+    if (tickAcc < 1000) return;
+    const ms = tickAcc;
+    tickAcc = 0;
+    game.update((s) => ({ ...s, eiland: drainHunger(s.eiland, game.config, ms, darkness) }));
+    const h = game.state.eiland.honger;
+    const H = game.config.honger;
+    if (h <= 0 && darkness > 0.5 && !fainting) { doFaint(); return; }
+    if (h <= 0 && !emptySaid) { emptySaid = true; game.mentor.say('lines.hungerEmpty', {}, { kind: 'reaction' }); }
+    else if (h > 0 && h < H.warnBelow && game.now() - lastHungerWarn > 40000) { lastHungerWarn = game.now(); game.mentor.say('lines.hungerLow', {}, { kind: 'reaction' }); }
+    if (h > H.warnBelow) emptySaid = false;
+  }
+  function onEat() {
+    const r = eat(game.state.eiland, game.config);
+    if (!r.item) return;
+    game.audio.play('munch');
+    game.update((s) => ({ ...s, eiland: r.eiland }));
+    game.fx.floatText(window.innerWidth * 0.5, window.innerHeight * 0.4, `🍎 +${r.gain}`, '#ffffff');
+    if (r.eiland.honger >= game.config.honger.warnBelow && game.now() - lastHungerWarn > 15000) { lastHungerWarn = game.now(); game.mentor.say('lines.ate', {}, { kind: 'reaction' }); }
+  }
+  function doFaint() {
+    fainting = true;
+    game.audio.play('stumble');
+    flauwEl.hidden = false;
+    requestAnimationFrame(() => flauwEl.classList.add('on'));
+    setTimeout(() => {
+      game.update((s) => faint(s, game.config));
+      game.save();
+      const c = game.config;
+      scene3.hook.teleport(c.eiland ? scene3.hook.landmarks.CAMP.x : 48, scene3.hook.landmarks.CAMP.z + 2.4);
+      game.mentor.say('lines.fainted', {}, { kind: 'reaction' });
+      flauwEl.classList.remove('on');
+      setTimeout(() => { flauwEl.hidden = true; fainting = false; }, 700);
+    }, 900);
+  }
+  function onDeerBump() {
+    const r = deerBump(game.state, game.config);
+    game.update(() => r.state);
+    game.mentor.say('lines.deerBumped', {}, { kind: 'reaction' });
+    return r.drops;
+  }
+
   // ---------- the night ----------
   function onBurn(dtMs, darkness) {
     burnAcc += dtMs;
@@ -104,7 +156,7 @@ export function createAvontuur(game) {
     const ms = burnAcc;
     burnAcc = 0;
     const before = game.state.nacht.fire;
-    game.update((s) => ({ ...s, nacht: burnFire(s.nacht, game.config, ms, darkness) }));
+    game.update((s) => ({ ...s, nacht: burnFire(s.nacht, game.config, ms, darkness, perks(s.eiland, game.config).burnMul) }));
     const fire = game.state.nacht.fire;
     if (darkness > 0.5) {
       if (fire <= 0 && before > 0 && !fireOutSaid) { fireOutSaid = true; game.mentor.say('lines.fireOut', {}, { kind: 'reaction' }); }
@@ -115,12 +167,13 @@ export function createAvontuur(game) {
     if (Math.abs(game.state.nacht.fire - fire) < 0.5) return;
     game.update((s) => ({ ...s, nacht: { ...s.nacht, fire } }));
   }
-  function onNight(bear) {
+  function onNight(bear, nights = 0) {
     fireOutSaid = false;
     game.audio.setAmbient('night');
     if (bear) game.audio.play('growl');
     game.mentor.say(samen && samen.isGuest ? 'lines.guestNight' : 'lines.nightComing', {}, { kind: 'reaction' });
     if (bear) setTimeout(() => { if (visible) game.mentor.say('lines.bearComing', {}, { kind: 'reaction' }); }, 5000);
+    else if (nights === 1) setTimeout(() => { if (visible) game.mentor.say('lines.harderNight', {}, { kind: 'reaction' }); }, 5000);
   }
   function onDawn(fireBurned) {
     game.audio.setAmbient('day');
@@ -220,6 +273,7 @@ export function createAvontuur(game) {
       onAction,
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
       onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte, onFireSync, onRemoteStoke, onChest, onCaveGhostCaught,
+      onTick, onDeerBump,
     });
     Object.setPrototypeOf(hook, scene3.hook);   // the tests read positions and set inputs through window.__muntstad.avontuur
   }

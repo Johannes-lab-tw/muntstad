@@ -50,7 +50,17 @@ export const CONFIG = Object.freeze({
       { id: 'hek',      name: 'Hek',      icon: '🚧', price: 150, tekst: 'Een hek om het kamp. Spoken komen er niet door.' },
       { id: 'tent',     name: 'Tent',     icon: '⛺', price: 200, tekst: 'Slaap in de tent: de nacht gaat sneller.' },
       { id: 'fakkels',  name: 'Fakkels',  icon: '🔥', price: 40,  tekst: 'Vier fakkels om het kamp. Meer licht, minder spoken.' },
+      // V5.3 gadgets and camp upgrades (effects in uitdaging.js perks)
+      { id: 'rugzak',   name: 'Grote rugzak', icon: '🎒', price: 120, tekst: 'Er passen 60 dingen in.' },
+      { id: 'schoenen', name: 'Snelle schoenen', icon: '👟', price: 90, tekst: 'Je loopt en rent sneller dan het hert.' },
+      { id: 'hengel',   name: 'Hengel',   icon: '🎣', price: 70,  tekst: 'Twee vissen per vangst.' },
+      { id: 'trommel',  name: 'Trommel',  icon: '🥁', price: 110, tekst: 'Eén keer BOE en de beer is weg.' },
+      { id: 'vuurkuil', name: 'Vuurkuil', icon: '🕳️', price: 180, tekst: 'Het vuur brandt langzamer op.' },
+      { id: 'hoog_hek', name: 'Hoog hek', icon: '🏰', price: 250, tekst: 'Een groter hek: het hele kamp is veilig.' },
+      { id: 'hut2',     name: 'Tweede hut', icon: '🛖', price: 300, tekst: 'Een hut voor wie meespeelt.' },
     ],
+    bagMaxBig: 60,                    // with the big backpack
+    shoesSpeed: 1.25,                 // walk and run × this with the shoes
     chop: { hands: { taps: 3, wood: 1 }, withAxe: { taps: 1, wood: 2 } },   // taps per chop, wood per chop
     treeWood: 6,                      // a tree gives this much wood, then it falls (V5.1)
     treeFallBonus: 2,                 // extra wood when it comes down
@@ -104,6 +114,43 @@ export const CONFIG = Object.freeze({
     rewardBase: 20,                   // coins at dawn when the fire burned all night
     rewardPerNight: 5,                // ... plus this per night survived before
     sleepSkipsTo: 0.97,               // SLAAP in the tent moves the clock to just before dawn
+    firePitBurn: 0.7,                 // the fire pit: burn rate × this
+    fenceRadiusHigh: 13,              // the high fence keeps ghosts and the deer out of the whole camp
+  },
+
+  // Hunger (V5.3): a full stomach lasts about a day and a night; berries and fish fill it. Empty in the dark = you faint.
+  honger: {
+    drainDay: 4,                      // per minute by day (100 = full)
+    drainNight: 8,                    // per minute in the dark
+    slowBelow: 25,                    // under this you are slow…
+    slowSpeed: 0.6,                   // … this much
+    food: { bes: 15, vis: 40 },       // what a berry and a fish give back
+    afterFaint: 50,                   // strength when you wake up at the fire
+    warnBelow: 40,                    // Muntje's 'maag knort' under this (once per 40 s)
+  },
+
+  // The Nachthert (V5.3): from the second night, runs at you in the dark, shakes things out of your bag
+  deer: {
+    fromNight: 2,
+    speed: 4.0,                       // between your walk (2.6) and your run (4.6); the shoes beat it
+    sight: 24,                        // notices you from this far
+    reach: 1.3,
+    dropShare: 0.5,                   // half of every item falls out…
+    maxDrops: 6,                      // … at most this many things lie on the ground
+    fleeMs: 6000,
+    pushBack: 2.2,                    // how far you are shoved
+  },
+
+  // Every night harder (V5.3)
+  moeilijker: {
+    ghostsEveryNights: 2,             // +1 ghost every two nights…
+    ghostsCap: 6,                     // … up to six
+    speedPerNight: 0.06,              // ghosts 6 % faster per night…
+    speedCap: 1.6,                    // … up to 60 % faster
+    ghostEveryStepMs: 1500,           // a new ghost 1.5 s sooner per night…
+    ghostEveryMinMs: 8000,            // … never sooner than every 8 s
+    bearOftenFrom: 6,                 // from night 6 the bear comes…
+    bearEveryLater: 2,                // … every second night
   },
 
   // SAMEN SPELEN (PLAN-V4 R5): our own relay only (address set by a parent on PAPA), positions 8×/s, the host's world 4×/s.
