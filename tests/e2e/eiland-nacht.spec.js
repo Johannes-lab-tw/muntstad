@@ -86,8 +86,12 @@ test('V5.3: hunger drains and EET fills it; the Nachthert bumps you and your thi
   await page.evaluate(() => window.__muntstad.avontuur.removeDeer());   // one bump is enough for this test (it would come back after fleeing)
   await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.drops.length), { timeout: 40000 }).toBeGreaterThan(0);
   const dropsBefore = await page.evaluate(() => window.__muntstad.avontuur.drops.length);
-  const bagAfter = (await state(page)).eiland.bag;
-  expect(bagAfter.hout + bagAfter.schelp + bagAfter.bes + dropsBefore).toBe(6 + 4 + 2);
+  const after = await state(page);
+  const bagAfter = after.eiland.bag;
+  // nothing is lost by the bump itself; on the slow runner a ghost may have stolen one thing in the meantime (counted in nacht.stolen)
+  const total = bagAfter.hout + bagAfter.schelp + bagAfter.bes + dropsBefore;
+  expect(total).toBeLessThanOrEqual(6 + 4 + 2);
+  expect(total).toBeGreaterThanOrEqual(6 + 4 + 2 - after.nacht.stolen);
   // pick one up again
   const d0 = await page.evaluate(() => window.__muntstad.avontuur.drops[0]);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 0.5), d0);

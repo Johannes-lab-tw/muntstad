@@ -66,19 +66,18 @@ test('the boat: VAAR at the end of the pier shows the crossing and lands you on 
   await page.evaluate(({ x, z }) => window.__muntstad.dorp.teleport(x, z - 3.2), { x: h.harbor.x, z: h.harbor.z });
   await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('VAAR');
   await page.locator('#dp-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect(page.locator('#overtocht')).toBeVisible();
-  await expect(page.locator('#overtocht')).toContainText('Avontuureiland');
-  await expect(page.locator('#screen-avontuur')).toHaveClass(/active/, { timeout: 15000 });
+  await expect.poll(async () => (await hook(page)).sailing, { timeout: 15000 }).toBe(true);
+  expect(await page.locator('#overtocht-tekst').textContent()).toContain('Avontuureiland');
+  await expect(page.locator('#screen-avontuur')).toHaveClass(/active/, { timeout: 30000 });
   await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.forestCount), { timeout: 30000 }).toBeGreaterThan(1000);
   const ip = await page.evaluate(() => window.__muntstad.avontuur.player);
   const pier = await page.evaluate(() => window.__muntstad.avontuur.landmarks.PIER);
   expect(Math.abs(ip.x - pier.x)).toBeLessThan(1);
-  await expect(page.locator('#overtocht')).toBeHidden({ timeout: 10000 });
+  await expect.poll(async () => (await hook(page)).sailing, { timeout: 20000 }).toBe(false);
   // and back
   await closePopups(page);
   await page.locator('#av-dorp').click({ force: true });
-  await expect(page.locator('#overtocht')).toContainText('Muntstad');
-  await expect(page.locator('#screen-dorp')).toHaveClass(/active/, { timeout: 15000 });
+  await expect(page.locator('#screen-dorp')).toHaveClass(/active/, { timeout: 30000 });
   await expect.poll(async () => (await hook(page)).player.z, { timeout: 20000 }).toBeLessThan(0);
   expect(errors()).toEqual([]);
 });

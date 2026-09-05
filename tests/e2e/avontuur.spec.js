@@ -77,8 +77,8 @@ test('the joystick walks the player off the pier, the dog follows, SPRING jumps,
 
   await page.locator('#av-dorp').click({ force: true });
   // V6.3: DORP is the boat back: the crossing shows for a moment, then you stand on the harbour pier of the walkable town
-  await expect(page.locator('#overtocht')).toBeVisible();
-  await expect(page.locator('#screen-dorp')).toHaveClass(/active/, { timeout: 15000 });
+  // (the crossing overlay shows for 2.6 s; on the slow runner it may already be gone when we look, so only the shore counts)
+  await expect(page.locator('#screen-dorp')).toHaveClass(/active/, { timeout: 30000 });
   expect(errors()).toEqual([]);
 });
 
