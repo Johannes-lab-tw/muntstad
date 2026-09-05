@@ -974,23 +974,6 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .av-quest b { color: var(--ink); }
 .btn-actie { min-height: 98px; min-width: 214px; font-size: 32px; border-radius: 26px; }
 .btn-actie.pulse { animation: glow 0.9s ease-in-out infinite; }
-.av-overlay { z-index: 40; }
-.kamp { width: min(92vw, 960px); text-align: left; }
-.kamp h3 { margin: 6px 0; font-size: 26px; }
-.kamp-cols { display: flex; gap: 18px; align-items: flex-start; }
-.kamp-cols > div { flex: 1; min-width: 0; }
-.kamp-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-.kamp-item { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 700; }
-.kamp-item .ic { font-size: 34px; }
-.kamp-item .tot { margin-left: auto; font-variant-numeric: tabular-nums; }
-.kamp-total { font-size: 28px; font-weight: 800; margin: 6px 0 10px; }
-.kamp-tools { display: flex; flex-direction: column; gap: 10px; }
-.kamp-tool { display: flex; align-items: center; gap: 12px; }
-.kamp-tool .ic { font-size: 40px; }
-.kamp-tool .txt { flex: 1; min-width: 0; font-size: 20px; font-weight: 600; color: #3f475f; }
-.kamp-tool .txt b { display: block; font-size: 24px; color: var(--ink); }
-.kamp-tool .btn { min-width: 150px; }
-.kamp-foot { display: flex; justify-content: flex-end; gap: 14px; margin-top: 14px; }
 
 /* fire bar in the backpack panel (R4) */
 .av-bag .fire-bar { display: inline-block; width: 64px; height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 2px; }
@@ -1017,6 +1000,12 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .av-bag .honger-bar.low b { background: var(--red); }
 .av-flauw { position: absolute; inset: 0; background: #05060f; z-index: 30; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
 .av-flauw.on { opacity: 1; }
-.kamp-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
-.kamp-tool .btn { min-width: 130px; }
-@media (max-width: 1100px) { .kamp-tools { grid-template-columns: 1fr; } }
+/* ---------- the campfire screen (V6.1): a full layer in AVONTUUR, same bones as WINKEL ---------- */
+.kamp-screen { position: absolute; top: var(--topbar-h); left: 0; right: 0; bottom: 0; z-index: 40; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(20, 26, 68, 0.92) 0%, rgba(10, 13, 44, 0.96) 100%); padding-top: 8px; }
+.kamp-tabs { flex: none; }
+.kamp-grid { grid-template-columns: repeat(4, 1fr); grid-template-rows: minmax(0, 1fr); align-content: stretch; }
+.kamp-grid .card { justify-content: flex-start; }
+.card-emoji { font-size: 72px; line-height: 1.1; height: 84px; display: flex; align-items: center; justify-content: center; }
+.kamp-grid .card-sub { font-size: 20px; line-height: 1.15; text-align: center; }
+.kamp-empty { grid-column: 1 / -1; align-self: center; text-align: center; color: #fff; font-size: 26px; font-weight: 700; padding: 30px; }
+.kamp-screen .shop-footer .btn-lg { min-width: 180px; }

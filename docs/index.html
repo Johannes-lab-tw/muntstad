@@ -92,8 +92,20 @@
         <button class="btn btn-primary btn-actie" id="av-actie" type="button" hidden>PAK</button>
         <button class="btn btn-success btn-jump" id="av-spring" type="button">SPRING</button>
       </div>
-      <div class="overlay av-overlay" id="kamp-overlay" hidden>
-        <div class="panel popup kamp" id="kamp" role="dialog"></div>
+      <!-- the campfire: a full screen inside AVONTUUR (V6.1), laid out like WINKEL -->
+      <div class="kamp-screen" id="kamp-overlay" hidden>
+        <div class="tabs kamp-tabs">
+          <button class="btn btn-tab active" id="kamp-tab-verkopen" type="button">🎒 VERKOPEN</button>
+          <button class="btn btn-tab" id="kamp-tab-kopen" type="button">🔥 KOPEN</button>
+        </div>
+        <div class="shop-grid kamp-grid" id="kamp-grid"></div>
+        <div class="shop-footer">
+          <button class="btn btn-arrow" id="kamp-prev" type="button" aria-label="Vorige">◀</button>
+          <div class="shop-dots" id="kamp-dots"></div>
+          <button class="btn btn-arrow" id="kamp-next" type="button" aria-label="Volgende">▶</button>
+          <button class="btn btn-success btn-lg" id="kamp-alles" type="button" hidden>ALLES</button>
+          <button class="btn btn-secondary btn-lg" id="kamp-dicht" type="button">DICHT</button>
+        </div>
       </div>
     </section>
 

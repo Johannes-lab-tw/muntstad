@@ -50,6 +50,19 @@ Besluit Johannes: doorbouwen in de eigen app. Plan, werkwijze (pc vrij, tokens, 
 - [x] R5 — samen (05-09-2026): relais zonder afhankelijkheden in `server/relay/relay.js` (WebSocket-handshake en frames met de hand, ±150 regels; kamers van 4 plaatjes uit 8, max 6 spelers, eerste = gastheer, gastheerrol schuift door; alleen doorgeven, niets opslaan) + dezelfde logica als Cloudflare Worker (`server/relay/worker.js`, wrangler.toml, één Durable Object per kamer). Client `net/relay.js` (whitelist van berichttypes, alleen getallen, herverbinden) en `net/samen.js` (kamer openen/meedoen, look = kleur/hoed/skin + dier, posities 8×/s). PAPA: relais-adres (alleen ouder) + KAMER (vier plaatjes op het scherm) + STOP + status; START: SAMEN → plaatjes-toetsenblok (geen tekst). Op het eiland: medespelers als eigen avatar met naambordje dier + nummer, ZWAAI en DANS; de gastheer stuurt 4×/s de wereld (fase, vuur, spoken, beer), gasten spiegelen die en sturen STOOK/BOE/SLAAP naar de gastheer; hout van een gast gaat in het gedeelde vuur. Playwright start het relais mee; e2e `samen.spec.js` (twee browsers in één test) groen lokaal. Unit 76 groen (3 nieuw). Open: Johannes maakt een Cloudflare-account en deployt de worker (of draait `node server/relay/relay.js --host 0.0.0.0` op een pc thuis) en zet het wss://-adres op PAPA.
 - [x] R6 — afwerking (05-09-2026): lite-stand op het eiland (schaduwen uit via engine-tier, graspollen en bloemen verborgen, mist dichterbij) + `?lowres=1` (halve resolutie, alleen voor tests op software-renderers); geluid: spook (boo), beer (grom), uil, vogels, vuurgeknetter, plons, en de muziek zakt ’s nachts een octaaf en vertraagt (`audio.setAmbient`); drie stickers (eerste nacht, 100 munten op het eiland, vijf opdrachten) met Muntje-regels; PAPA: eilandcijfers (nachten, verdiend, opdrachten, gepakt door spoken, spullen) en één regel “Waar was {naam} mee bezig”; RAPPORT §0 (vierde ronde) + §1a (relais aanzetten) + Volgende versie; README. Unit 78 groen. iPad-meting: aan Johannes (§6 RAPPORT).
 
+## Run 6 (besluit 2026-09-05, middag) — Eén wereld, echt overleven, campagne
+Plan: PLAN-V6.md (na de tweede iPad-test). Pages deployt sinds 739a416 pas na groene tests op drie profielen; oudere runs worden afgebroken.
+
+- [x] V6.1 — de drie fouten (05-09-2026): (1) haperen bij de eerste stappen: het eiland wordt 2,5 s na de start gebouwd (requestIdleCallback) en de shaders worden gecompileerd met `renderer.compile` plus één warm-up-tekening in een 64×64 render target; (2) het kampvuur is een echt scherm binnen AVONTUUR (`kamp-screen`, tabs VERKOPEN/KOPEN, kaarten vier per pagina met pijltjes, VERKOOP per soort en ALLES, KOOP/✔ per stuk, DICHT); de oude popup-stijl is weg; (3) PAK/PLUK sprong naar het dorp omdat DORP onder de vinger schoof: de actieknop houdt zijn plek (visibility) en DORP negeert een tik binnen 500 ms na een actie. e2e: kampscherm-test herschreven, PAK-sprong nagespeeld. Tag v6.1.
+- [ ] V6.2 — echt overleven, samen: eiland ×5 in tegels, kou, nachtteller, wolven, SAMEN-knop, WEK, samen tillen, vuur met levels, opdrachtketens
+- [ ] V6.2b — vormgeving: HUD, titelscherm, minimap, overgangen
+- [ ] V6.3 — loopbaar dorp + haven + boot
+- [ ] V6.4 — economie: levels 6-10, Hotel/Haven/Raketbasis, showspullen, Spaarbank
+- [ ] V6.5 — Vuurtoren-eiland
+- [ ] V6.6 — campagne hoofdstukken 1-4
+- [ ] V6.7 — campagne hoofdstukken 5-7 + doorspelen
+- [ ] V6.8 — afwerking
+
 ## Run 5 (besluit 2026-09-05) — Spannender, wat zijn zoon vroeg
 Plan: PLAN-V5.md (zes punten van de speler + open punten uit RAPPORT §7). Zelfde werkwijze: Ollama voor inhoud en screenshots, e2e in GitHub Actions.
 

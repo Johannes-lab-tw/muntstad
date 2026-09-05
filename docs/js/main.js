@@ -352,6 +352,11 @@ function boot() {
   window.addEventListener('resize', () => { game.scene.resize(); game.fx.resize(); });
 
   show('start');
+  // V6.1: build the island and compile its shaders while START/STAD are on screen, so the boat lands without a stutter
+  setTimeout(() => {
+    const go = () => { try { screens.avontuur.prebuild(); } catch (e) { console.info('[muntstad] prebuild skipped:', e.message); } };
+    if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 4000 }); else go();
+  }, 2500);
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').then((reg) => {

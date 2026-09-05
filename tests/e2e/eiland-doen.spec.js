@@ -39,9 +39,14 @@ test('PAK picks a shell, HAK chops wood (three taps by hand), the backpack and t
 
   await goTo(page, 'schelp', 'PAK');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  // V6.1: the click of that same tap lands where the finger is; DORP must ignore it (it used to slide under the finger)
+  await page.locator('#av-dorp').dispatchEvent('click');
   await expect.poll(async () => (await state(page)).eiland.bag.schelp, { timeout: 20000 }).toBe(1);
-  // the shell is gone: the button no longer offers PAK for it
+  await page.waitForTimeout(300);
+  await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
+  // the shell is gone: the button no longer offers PAK for it, and it keeps its place (only invisible)
   await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).not.toBe('PAK');
+  expect(await page.locator('#av-actie').evaluate((el) => getComputedStyle(el).display)).not.toBe('none');
 
   await goTo(page, 'hout', 'HAK');
   for (let i = 0; i < 3; i++) {
@@ -127,18 +132,28 @@ test('KAMP sells the backpack for coins and the axe is bought with the shared wa
   await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('KAMP');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await expect(page.locator('#kamp-overlay')).toBeVisible();
-  await expect(page.locator('#kamp')).toContainText('Kampvuur');
+  // V6.1: a real screen with tabs; the bag has three kinds of things → three cards on VERKOPEN, then ALLES sells the rest
+  await expect(page.locator('#kamp-grid .card')).toHaveCount(3);
   const before = (await state(page)).wallet;
-  await page.locator('#kamp-verkoop').click();
+  await page.locator('#kamp-grid .card[data-id="vis"] button').click();
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 20000 }).toBe(Math.floor(before) + 8);
+  await page.locator('#kamp-alles').click();
   const expected = 5 * 2 + 4 * 3 + 1 * 8;
   await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 20000 }).toBe(Math.floor(before) + expected);
   expect((await state(page)).eiland.bag.hout).toBe(0);
+  await expect(page.locator('#kamp-alles')).toBeHidden();
   // 50 + 30 = 80 coins: the axe (60) is affordable, the lantern (80) too, the fence not
+  await page.locator('#kamp-tab-kopen').click();
+  await expect(page.locator('#kamp-grid .card')).toHaveCount(4);
   await page.locator('[data-tool="bijl"]').click();
   await expect.poll(async () => (await state(page)).eiland.tools.bijl, { timeout: 20000 }).toBe(true);
   expect(Math.floor((await state(page)).wallet)).toBe(Math.floor(before) + expected - 60);
   await expect(page.locator('[data-tool="bijl"]')).toHaveCount(0);
+  await expect(page.locator('#kamp-grid .card[data-id="bijl"]')).toHaveClass(/owned/);
+  await page.locator('#kamp-next').click();
+  await expect(page.locator('#kamp-grid .card')).toHaveCount(4);
   await page.locator('#kamp-dicht').click();
   await expect(page.locator('#kamp-overlay')).toBeHidden();
+  await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
   expect(errors()).toEqual([]);
 });

@@ -65,6 +65,12 @@ het vuur, de nacht, de nachtteller, de kisten; ieder zijn eigen rugzak en munten
 
 **Meetlat.** Zoon en papa halen samen nacht 5 in één avond en willen door naar 7.
 
+**V6.2b Vormgeving een stap vetter.** Avontuur krijgt een eigen gezicht: een titelscherm met logo en de boot, een
+HUD met de nachtteller groot in beeld, warmte en honger als ringen om de knoppen, een minimap in de hoek, een donkere
+rand die opkomt als je bevriest of honger hebt, opdrachtkaarten met afvinkstappen, en overgangen (de overtocht, de
+zonsopgang met muziek). De frontend-design-skill en de lokale criticus doen de beoordeling; de kind-UX-regels
+(knoppen ≥ 64 px, één woord, Nederlands) blijven.
+
 ## B. Eén wereld (V6.3 t/m V6.5)
 
 **V6.3 Het loopbare dorp en de haven.** Het dorpseiland wordt drie keer zo groot (60 × 40 m) met straten, stoepen,

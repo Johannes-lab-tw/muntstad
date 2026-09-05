@@ -3,6 +3,7 @@
 // VIS / KAMP / STOOK / BOE / SLAAP) does what is in front of you, ZWAAI and DANS are emotes, the backpack, the fire
 // and Muntje's quest sit under the wallet, DORP sails back. The night (fire, ghosts, bear, dawn reward) is bookkept
 // here with docs/js/nacht.js; in a room (SAMEN SPELEN) the host does that and the guests mirror the fire.
+import * as T from '../../vendor/three.module.min.js';
 import { createControls } from '../3d/controls.js';
 import { createEilandScene } from '../3d/scene-eiland.js';
 import { createKamp } from './kamp.js';
@@ -32,8 +33,11 @@ export function createAvontuur(game) {
   const spring = document.getElementById('av-spring');
   spring.addEventListener('pointerdown', (e) => { e.preventDefault(); controls.pressJump(); });
   spring.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') e.preventDefault(); });
-  actieBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); if (scene3) scene3.doAction(); });
+  actieBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); lastActionAt = performance.now(); if (scene3) scene3.doAction(); });
+  actieBtn.hidden = false;
+  actieBtn.style.visibility = 'hidden';
   document.getElementById('av-dorp').addEventListener('click', () => {
+    if (performance.now() - lastActionAt < 500) return;   // the tail of a PAK/HAK tap, not a wish to leave
     game.audio.play('tap');
     game.show('stad');
   });
@@ -98,8 +102,10 @@ export function createAvontuur(game) {
     peersEl.hidden = peers === 0;
     if (peers) peersEl.textContent = `${samen.animal} 👥 ${peers}`;
   }
+  let lastActionAt = 0;
   function onAction(a) {
-    actieBtn.hidden = !a;
+    // V6.1: the button keeps its place (visibility, not display), so DORP never slides under a finger that just tapped PAK
+    actieBtn.style.visibility = a ? 'visible' : 'hidden';
     if (a) actieBtn.textContent = a.label;
     actieBtn.classList.toggle('pulse', !!a && (a.type === 'trek' || a.type === 'boe'));
   }
@@ -265,6 +271,24 @@ export function createAvontuur(game) {
     get ready() { return !!scene3; },
     get kampOpen() { return kamp.isOpen; },
   };
+  /** V6.1: build the island while the town is still on screen and compile its shaders, so the first steps do not stutter. */
+  let warmed = false;
+  function prebuild() {
+    ensure();
+    if (warmed) return;
+    warmed = true;
+    try {
+      const r = game.engine.renderer;
+      scene3.setState(game.state);
+      r.compile(scene3.scene, scene3.camera);
+      // one warm-up draw into a tiny off-screen target: shadow map, textures and instanced buffers get uploaded now
+      const target = new T.WebGLRenderTarget(64, 64);
+      r.setRenderTarget(target);
+      r.render(scene3.scene, scene3.camera);
+      r.setRenderTarget(null);
+      target.dispose();
+    } catch (e) { /* warming up is a bonus, never a blocker */ }
+  }
   function ensure() {
     if (scene3) return;
     scene3 = createEilandScene(game, game.engine, controls, {
@@ -311,6 +335,7 @@ export function createAvontuur(game) {
     },
     render(state) { if (scene3) scene3.setState(state); if (visible) renderHud(state); },
     get visible() { return visible; },
+    prebuild,
     hook,
   };
 }
