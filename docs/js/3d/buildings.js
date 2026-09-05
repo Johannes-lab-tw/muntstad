@@ -190,13 +190,97 @@ function flat(b, group, anim, level) {
   if (level >= 5) crownAt(b, group, anim, 0, -1.05, h + 0.6);
 }
 
-const BUILDERS = { limonade, wasstraat, pizzeria, fabriek, flat };
+// ---------- IJssalon (V5.5): a cream-and-pink parlour that grows a giant cone, a terrace and a second floor ----------
+function ijssalon(b, group, anim, level) {
+  const c = '#fff0f5', trim = '#ff9fbd';
+  b.box(-1.1, -0.9, 0, 2.2, 1.8, 1.3, c, { r: 0.12 });
+  b.box(-1.2, -1.0, 1.3, 2.4, 2.0, 0.22, trim, { r: 0.06 });
+  b.face(-1.1, -0.9, 0, 2.2, 1.8, 'x', 0.65, 0, 0.5, 0.9, DOOR);
+  windowPane(b, -1.1, -0.9, 0, 2.2, 1.8, 'y', 0.2, 0.4, 0.7, 0.6);
+  windowPane(b, -1.1, -0.9, 0, 2.2, 1.8, 'y', 1.3, 0.4, 0.7, 0.6);
+  // striped awning over the front
+  for (let i = 0; i < 6; i++) b.box(-1.15 + i * 0.38, 0.9, 1.05, 0.36, 0.5, 0.06, i % 2 ? '#ffffff' : trim, { r: 0.01 });
+  // the cone on the roof: bigger with every level
+  const s = 0.55 + Math.min(level, 5) * 0.12;
+  b.cone(0, 0, 1.52, 0.32 * s, 0.9 * s, '#d9a066', 8);
+  b.sphere(0, 0, 1.52 + 0.9 * s, 0.38 * s, '#ff9fbd', 10);
+  if (level >= 2) b.sphere(0, 0, 1.52 + 0.9 * s + 0.5 * s, 0.32 * s, '#fff2b3', 10);
+  if (level >= 3) b.sphere(0, 0, 1.52 + 0.9 * s + 0.95 * s, 0.14 * s, '#ff5f5f', 8);   // the cherry
+  if (level >= 2) { b.cyl(-1.0, 1.25, 0, 0.3, 0.4, WOOD, 10); b.cyl(-1.0, 1.25, 0.4, 0.05, 1.0, METAL, 6); b.cone(-1.0, 1.25, 1.35, 0.55, 0.25, trim, 10); }   // parasol table
+  if (level >= 3) { b.cyl(1.0, 1.25, 0, 0.3, 0.4, WOOD, 10); b.cyl(1.0, 1.25, 0.4, 0.05, 1.0, METAL, 6); b.cone(1.0, 1.25, 1.35, 0.55, 0.25, '#7cc4ff', 10); }
+  if (level >= 4) {
+    b.box(-1.0, -0.8, 1.52, 2.0, 1.6, 1.0, c, { r: 0.08 });
+    windowPane(b, -1.0, -0.8, 1.52, 2.0, 1.6, 'y', 0.3, 0.25, 0.6, 0.55);
+    windowPane(b, -1.0, -0.8, 1.52, 2.0, 1.6, 'y', 1.1, 0.25, 0.6, 0.55);
+    b.box(-1.1, -0.9, 2.52, 2.2, 1.8, 0.2, trim, { r: 0.06 });
+    flagAt(b, group, anim, 1.2, -0.9, 2.7, trim);
+  }
+  if (level >= 5) crownAt(b, group, anim, -0.8, -0.7, level >= 4 ? 2.8 : 1.7);
+  // the cone turns slowly from level 3 on
+  if (level >= 3) {
+    const spin = new T.Group();
+    const cb = new Builder({ r: 0.02 });
+    for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2; cb.sphere(Math.cos(a) * 0.55, Math.sin(a) * 0.55, 0, 0.1, ['#ff5f5f', '#ffe94d', '#45d65c', '#7cc4ff'][i], 6); }
+    spin.add(cb.build({ shadow: false }));
+    spin.position.set(0, (level >= 4 ? 2.72 : 1.52) + 0.9 * s + 1.2 * s, 0);
+    group.add(spin);
+    anim.push((t) => { spin.rotation.y = t / 900; });
+  }
+}
+
+// ---------- Pretpark (V5.5): a gate, a ferris wheel that turns, a carousel, a slide, a bouncy castle, a loop ----------
+function pretpark(b, group, anim, level) {
+  // entrance arch on the road side
+  b.box(-1.5, 1.2, 0, 0.18, 0.18, 1.6, '#ffe94d', { r: 0.03 });
+  b.box(1.32, 1.2, 0, 0.18, 0.18, 1.6, '#ffe94d', { r: 0.03 });
+  b.box(-1.55, 1.15, 1.6, 3.1, 0.3, 0.35, '#ff5f5f', { r: 0.06 });
+  for (let i = 0; i < 5; i++) b.sphere(-1.2 + i * 0.6, 1.3, 1.97, 0.08, i % 2 ? '#ffe94d' : '#ffffff', 6);
+  b.slab(-1.5, -1.5, 0, 3.0, 2.6, '#d5c9a0');   // the ground of the park
+  // the ferris wheel: a hub on two legs, the wheel itself turns (grows with the level)
+  const r = 0.55 + Math.min(level, 5) * 0.08;
+  b.box(-0.9, -0.7, 0, 0.14, 0.14, r + 0.6, METAL, { r: 0.02 });
+  b.box(-0.9, -0.1, 0, 0.14, 0.14, r + 0.6, METAL, { r: 0.02 });
+  const wheel = new T.Group();
+  const wb = new Builder({ r: 0.02 });
+  wb.add(new T.TorusGeometry(r, 0.05, 6, 20), '#45b6ff');
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    wb.add(new T.BoxGeometry(0.04, r * 2, 0.04).rotateZ(a), METAL);
+    wb.add(new T.BoxGeometry(0.28, 0.24, 0.24).translate(Math.cos(a) * r, Math.sin(a) * r, 0), ['#ff5f5f', '#ffe94d', '#45d65c', '#ff9f2e', '#b76cff', '#ff6fae'][i]);
+  }
+  wheel.add(wb.build());
+  wheel.position.set(-0.9, r + 0.6, -0.4);
+  wheel.rotation.y = Math.PI / 2;
+  group.add(wheel);
+  anim.push((t) => { wheel.rotation.z = t / 2600; });
+  if (level >= 2) {
+    // carousel: a round roof on a pole with four horses that go round
+    b.cyl(0.6, -0.6, 0, 0.6, 0.12, '#ff5f5f', 14);
+    b.cyl(0.6, -0.6, 0.12, 0.06, 1.1, METAL, 6);
+    b.cone(0.6, -0.6, 1.2, 0.7, 0.4, '#ffe94d', 14);
+    const car = new T.Group();
+    const cb = new Builder({ r: 0.02 });
+    for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2; cb.box(Math.cos(a) * 0.4 - 0.1, Math.sin(a) * 0.4 - 0.07, 0.35, 0.2, 0.14, 0.2, ['#ffffff', '#ff9fbd', '#7cc4ff', '#fff2b3'][i], { r: 0.04 }); cb.cyl(Math.cos(a) * 0.4, Math.sin(a) * 0.4, 0.12, 0.02, 1.0, METAL, 5); }
+    car.add(cb.build());
+    car.position.set(0.6, 0, -0.6);
+    group.add(car);
+    anim.push((t) => { car.rotation.y = t / 1400; });
+  }
+  if (level >= 3) { b.box(0.6, 0.5, 0, 0.16, 0.16, 1.1, METAL, { r: 0.02 }); b.box(0.35, 0.55, 0.9, 0.6, 0.3, 0.1, '#ffe94d', { r: 0.03 }); for (let i = 0; i < 5; i++) b.box(0.7 + i * 0.16, 0.5, 0.9 - i * 0.18, 0.2, 0.36, 0.08, '#45d65c', { r: 0.02 }); }   // slide
+  if (level >= 4) { b.box(-1.4, -1.45, 0, 1.0, 0.8, 0.5, '#b76cff', { r: 0.18 }); for (const [dx, dy] of [[0, 0], [0.8, 0], [0, 0.6], [0.8, 0.6]]) b.cyl(-1.3 + dx, -1.35 + dy, 0.5, 0.08, 0.45, '#ff9fbd', 6); b.box(-1.4, -1.45, 0.95, 1.0, 0.8, 0.12, '#ff9fbd', { r: 0.05 }); }   // bouncy castle
+  if (level >= 5) { b.add(new T.TorusGeometry(0.55, 0.06, 8, 24).rotateY(Math.PI / 2).translate(1.05, 0.7, 0.4), '#ff5f5f'); b.box(0.9, 1.0, 0, 0.3, 0.14, 0.7, METAL, { r: 0.02 }); b.box(0.9, -0.3, 0, 0.3, 0.14, 0.7, METAL, { r: 0.02 }); crownAt(b, group, anim, 1.1, -1.2, 1.9); }   // the loop
+  if (level >= 3) flagAt(b, group, anim, -1.4, 1.2, 1.9, '#45d65c');
+}
+
+const BUILDERS = { limonade, wasstraat, pizzeria, ijssalon, fabriek, flat, pretpark };
 
 /** Height of a coin-maker in world units at a level. */
 export function makerHeight(id, level) {
   if (id === 'flat') return (3 + level) * 0.62 + (level >= 5 ? 1.9 : level >= 4 ? 1.0 : 0.6);
   if (id === 'pizzeria') return level >= 3 ? 4.4 : 3.4;
   if (id === 'fabriek') return level >= 4 ? 4.2 : 3.6;
+  if (id === 'ijssalon') return level >= 4 ? 4.6 : 3.4;
+  if (id === 'pretpark') return 2.4 + Math.min(level, 5) * 0.16;
   return level >= 5 ? 3.6 : 3.0;
 }
 

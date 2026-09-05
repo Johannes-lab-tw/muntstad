@@ -19,7 +19,7 @@ export function createScene(container, game, engine) {
   const world = createWorld(config);
   scene.add(world.group);
   const center = new T.Vector3(ISLAND.w / 2, 0, ISLAND.d / 2);
-  const lights = addLights(scene, center, 15, engine.tier);
+  const lights = addLights(scene, center, 19, engine.tier);
   engine.onTier((t) => lights.setTier(t));
   const cam = createCamera(
     { min: { x: -0.2, y: -0.4, z: -0.2 }, max: { x: ISLAND.w + 0.2, y: 2.6, z: ISLAND.d + 0.2 } },

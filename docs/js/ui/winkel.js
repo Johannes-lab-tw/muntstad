@@ -5,6 +5,7 @@ import { formatCoins, makerLevel, makerIncome, upgradePrice, isFunActive, nextMa
 import { itemSprite, makerSprite } from '../3d/thumbs.js';
 
 const PER_PAGE = 8;
+const MAKERS_PER_PAGE = 4;
 
 export function createWinkel(game) {
   const grid = document.getElementById('shop-grid');
@@ -47,7 +48,7 @@ export function createWinkel(game) {
   }
 
   function perPage() {
-    return tab === 'makers' ? game.config.makers.length : PER_PAGE;
+    return tab === 'makers' ? MAKERS_PER_PAGE : PER_PAGE;   // V5.5: seven coin-makers over two pages
   }
 
   function pageCount() {

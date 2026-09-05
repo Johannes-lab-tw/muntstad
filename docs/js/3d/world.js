@@ -4,27 +4,29 @@
 import * as T from '../../vendor/three.module.min.js';
 import { Builder, MAT, shade, col, textPlane, INK } from './build.js';
 
-export const ISLAND = { w: 16, d: 12, r: 2.4 };
+export const ISLAND = { w: 20, d: 14, r: 2.4 };   // V5.5: bigger, room for seven coin-makers
 // the loop sits well inside the plots: sidewalk edges at y 2.0/9.8 and x 2.4/13.2 leave every plot's building clear
-export const ROAD = { x: 3.4, y: 3.0, w: 8.8, d: 5.8, r: 1.4, width: 1.2 };
+export const ROAD = { x: 3.4, y: 3.0, w: 12.8, d: 7.8, r: 1.4, width: 1.2 };
 export const PLOTS = {
   limonade: [5.2, 0.9],
   wasstraat: [9.6, 0.9],
-  pizzeria: [14.4, 4.2],
-  flat: [14.2, 8.6],
-  fabriek: [1.6, 8.6],
+  ijssalon: [14.0, 0.9],
+  pizzeria: [18.4, 4.4],
+  pretpark: [18.3, 9.6],
+  flat: [13.6, 13.1],
+  fabriek: [1.6, 9.2],
 };
 export const HOUSE = [1.6, 4.4];
-export const PARK = [7.8, 5.9];
+export const PARK = [9.8, 6.9];
 export const PAVE = '#e9e2cf';
 const PAL = {
   grass: '#6fd35b', grassDark: '#55b647', sand: '#f4d98a', dirt: '#b97b4b', rock: '#8a5a3a',
   road: '#4f5766', roadLine: '#f7d24a', side: '#dcd7cb',
 };
-const TREES = [[5.3, 5.0, 0.9], [10.3, 4.6, 1], [10.2, 7.4, 0.8], [3.4, 11.2, 0.8], [12.4, 11.3, 0.9], [1.2, 1.6, 0.7], [7.6, 0.5, 0.75], [15.1, 10.6, 0.7], [0.6, 6.6, 0.6], [15.4, 0.8, 0.65]];
-const BUSHES = [[5.6, 7.2, 0.9], [11.3, 6.3, 0.7], [7.5, 11.4, 0.8], [15, 6.2, 0.6], [3.2, 0.8, 0.6], [12.2, 0.8, 0.55], [0.7, 10.8, 0.7], [8.9, 11.6, 0.6]];
-const LAMPS = [[2.2, 2.6], [13.4, 2.6], [2.2, 9.2], [13.4, 9.2]];
-const FLOWERS = [[6.6, 6.9, '#ff6fae'], [6.9, 7.2, '#ffe94d'], [9.3, 7.5, '#7c9bff'], [9.6, 7.8, '#ff6fae'], [4.2, 11.5, '#ffe94d'], [11.2, 11.6, '#ff6fae'], [15.2, 7.4, '#7c9bff'], [0.9, 3.4, '#ffe94d'], [6.2, 6.4, '#ff9f2e'], [9.9, 6.9, '#ffe94d']];
+const TREES = [[5.3, 5.0, 0.9], [13.3, 5.2, 1], [12.2, 8.9, 0.8], [3.4, 13.2, 0.8], [8.4, 13.3, 0.9], [1.2, 1.6, 0.7], [7.6, 0.5, 0.75], [19.1, 13.0, 0.7], [0.6, 6.6, 0.6], [19.4, 0.8, 0.65], [6.8, 9.2, 0.85], [15.8, 6.9, 0.8]];
+const BUSHES = [[5.6, 8.4, 0.9], [13.8, 7.6, 0.7], [7.5, 13.4, 0.8], [17.5, 7.0, 0.6], [3.2, 0.8, 0.6], [11.8, 0.9, 0.55], [0.7, 12.8, 0.7], [10.9, 13.6, 0.6]];
+const LAMPS = [[2.2, 2.6], [17.4, 2.6], [2.2, 11.2], [17.4, 11.2]];
+const FLOWERS = [[7.6, 7.9, '#ff6fae'], [7.9, 8.2, '#ffe94d'], [11.3, 8.5, '#7c9bff'], [11.6, 8.8, '#ff6fae'], [4.2, 13.5, '#ffe94d'], [11.2, 13.6, '#ff6fae'], [17.2, 8.4, '#7c9bff'], [0.9, 3.4, '#ffe94d'], [7.2, 7.4, '#ff9f2e'], [11.9, 7.9, '#ffe94d']];
 const WATER_Y = -0.55;
 
 /** Points along the road loop (world units x / old-y), with cumulative length. */
@@ -293,7 +295,7 @@ export function createWorld(config) {
     }
   }
   for (const [tx, ty, ts] of [[0.5, 0.5, 0.55], [2.6, 11.4, 0.7], [8.2, 11.6, 0.55], [15.6, 6.0, 0.6], [0.4, 8.0, 0.55], [7.0, -0.2, 0.5]]) scenery.tree(tx, ty, ts, '#45d65c');
-  for (const [fx, fy] of [[3.0, 2.2], [12.7, 2.2], [3.0, 9.8], [12.7, 9.8]]) {
+  for (const [fx, fy] of [[3.0, 2.2], [16.6, 2.2], [3.0, 11.8], [16.6, 11.8]]) {
     scenery.disc(fx, fy, 0, 0.42, '#8a5a35', 0.08, 16);
     for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; scenery.flower(fx + Math.cos(a) * 0.24, fy + Math.sin(a) * 0.24, ['#ff6fae', '#ffe94d', '#7c9bff', '#ff9f2e'][i % 4], 0.08); }
   }

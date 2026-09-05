@@ -176,8 +176,10 @@ export const CONFIG = Object.freeze({
     { id: 'limonade',  name: 'Limonadekraam',    icon: '🍋', price: 20,    income: [12, 18, 27, 41, 61] },
     { id: 'wasstraat', name: 'Wasstraat',        icon: '🚿', price: 120,   income: [50, 75, 113, 170, 250] },
     { id: 'pizzeria',  name: 'Pizzeria',         icon: '🍕', price: 400,   income: [150, 225, 338, 510, 750] },
+    { id: 'ijssalon',  name: 'IJssalon',         icon: '🍦', price: 1000,  income: [300, 450, 675, 1020, 1500] },   // V5.5
     { id: 'fabriek',   name: 'Fabriek',          icon: '🤖', price: 2000,  income: [600, 900, 1350, 2040, 3000] },
     { id: 'flat',      name: 'Flatgebouw',       icon: '🏢', price: 10000, income: [2500, 3750, 5625, 8500, 12500] },
+    { id: 'pretpark',  name: 'Pretpark',         icon: '🎡', price: 40000, income: [8000, 12000, 18000, 27200, 40000] },   // V5.5: the top of the town
   ],
 
   // LEUK catalogue: fixed prices, all visible from the start, no randomness.

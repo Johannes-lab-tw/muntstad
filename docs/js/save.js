@@ -222,7 +222,7 @@ export function encodeCode(state, config) {
     state.spentFun,
     state.spentMakers,
     state.spentFood,
-    config.makers.map((m) => state.makers[m.id] || 0),
+    Object.fromEntries(config.makers.map((m) => [m.id, state.makers[m.id] || 0])),   // by id since V5.5 (older codes: an array in the old order)
     funIdx,
     eq,
     hiddenIdx,
@@ -258,7 +258,9 @@ export function decodeCode(code, config, now) {
     const fresh = createState(config, now);
     const list = (v) => (Array.isArray(v) ? v : []);
     const makers = {};
-    config.makers.forEach((m, i) => { makers[m.id] = Math.min(config.maxLevel, Math.max(0, Number(list(p[10])[i]) || 0)); });
+    const OLD_ORDER = ['limonade', 'wasstraat', 'pizzeria', 'fabriek', 'flat'];
+    const raw = p[10] && typeof p[10] === 'object' && !Array.isArray(p[10]) ? p[10] : Object.fromEntries(OLD_ORDER.map((id, i) => [id, list(p[10])[i]]));
+    config.makers.forEach((m) => { makers[m.id] = Math.min(config.maxLevel, Math.max(0, Number(raw[m.id]) || 0)); });
     const fun = {};
     for (const i of list(p[11])) if (config.fun[i]) fun[config.fun[i].id] = true;
     const equipped = { ...fresh.equipped };
