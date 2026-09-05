@@ -15,12 +15,13 @@ import { createWater } from './terrain.js';
 import { createTiles } from './tiles.js';
 import { createCamp } from './camp.js';
 import { createDayNight } from './daynight.js';
-import { ghostModel, bearModel, tentModel, torchModel, fenceModel, deerModel, dropModel } from './spoken.js';
+import { ghostModel, bearModel, tentModel, torchModel, fenceModel, deerModel, dropModel, wolfModel } from './spoken.js';
 import { perks, nightRules, hungerSpeedMul, coldSpeedMul, isCold } from '../uitdaging.js';
 import { Builder, textPlane } from './build.js';
 import { isFunActive } from '../economy.js';
 import { chopRule } from '../eiland.js';
-import { fireRadius, fireLevel, isLit, stepGhost, bearTonight, stepBear, scareBear } from '../nacht.js';
+import { fireRadius, fireLevel, isLit, stepGhost, bearTonight, stepBear, scareBear, stepWolf, scareWolf } from '../nacht.js';
+import { plekAt } from '../ketens.js';
 import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
@@ -364,9 +365,72 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (bear) { scene.remove(bear.holder); bear = null; }
   }
   function doScare() {
-    if (!bear) return;
+    const wolvesRan = scareWolves();
+    if (!bear) { if (!wolvesRan) cb.onSay && cb.onSay('lines.bearScared'); return; }
     const gone = scareBear(bear.b, config, perks(state.eiland, config).bearScares);
     cb.onSay && cb.onSay(gone ? 'lines.bearGone' : 'lines.bearScared');
+  }
+  // ---------- the shadow wolves (V6.2): a pack from night 5 that circles you in the dark and shakes your bag ----------
+  const wolves = [];   // { w: { x, z, heading, state, ang, wait }, model, holder }
+  let wolfLunge = 0, wolfHowl = 0;
+  function spawnWolves() {
+    if (wolves.length) return;
+    const W = config.wolven;
+    for (let i = 0; i < W.pack; i++) {
+      const p = landSpot(30 + i * 3);
+      const model = wolfModel();
+      const holder = new T.Group();
+      holder.add(model.group);
+      holder.position.set(p.x, groundOf(p.x, p.z), p.z);
+      scene.add(holder);
+      wolves.push({ w: { x: p.x, z: p.z, heading: p.heading, state: 'circle', ang: (i / W.pack) * Math.PI * 2, wait: 0, dir: i % 2 ? -1 : 1 }, model, holder });
+    }
+    game.audio.play('growl');
+    cb.onSay && cb.onSay('lines.wolvesComing');
+  }
+  function clearWolves() { for (const v of wolves) scene.remove(v.holder); wolves.length = 0; }
+  function wolfNear() { return wolves.some((v) => v.w.state !== 'flee' && Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 2); }
+  function scareWolves() {
+    let any = false;
+    for (const v of wolves) if (v.w.state !== 'flee' && Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 6) { scareWolf(v.w, config); any = true; }
+    if (any) cb.onSay && cb.onSay('lines.wolvesFled');
+    return any;
+  }
+  function updateWolves(now, dt, lit, dark) {
+    if (!wolves.length) return;
+    const W = config.wolven;
+    const pk = perks(state.eiland, config);
+    const fenceR = state.eiland.tools.hoog_hek ? pk.fenceRadius : state.eiland.tools.hek ? N.fenceRadius : 0;
+    const safe = isLit(player.x, player.z, lit) || (fenceR && Math.hypot(player.x - CAMP.x, player.z - CAMP.z) < fenceR) || dark < 0.5;
+    wolfLunge += dt * 1000;
+    if (wolfLunge > W.lungeEveryMs) {
+      wolfLunge = 0;
+      if (!safe) { const c = wolves.filter((v) => v.w.state === 'circle'); if (c.length) c[Math.floor(Math.random() * c.length)].w.state = 'lunge'; }
+    }
+    wolfHowl += dt * 1000;
+    if (wolfHowl > W.howlEveryMs) { wolfHowl = 0; game.audio.play('growl'); }
+    for (let i = wolves.length - 1; i >= 0; i--) {
+      const v = wolves[i];
+      const res = stepWolf(v.w, { target: { x: player.x, z: player.z }, safe, dt: Math.min(dt, 0.1) }, config);
+      if (res === 'bite') {
+        game.audio.play('stumble');
+        const items = cb.onWolfBump ? cb.onWolfBump() : [];
+        scatterDrops(items || []);
+      } else if (res === 'gone') { scene.remove(v.holder); wolves.splice(i, 1); continue; }
+      v.holder.position.set(v.w.x, groundOf(v.w.x, v.w.z), v.w.z);
+      v.holder.rotation.y = v.w.heading;
+      v.model.update(now, { running: true });
+    }
+  }
+  // discovering places (V6.2 chains): once a second, tell the UI which place you are at
+  let ontdekAcc = 0, lastPlek = null;
+  function updateOntdek(dt) {
+    ontdekAcc += dt;
+    if (ontdekAcc < 1) return;
+    ontdekAcc = 0;
+    const p = plekAt(player.x, player.z);
+    if (p && p !== lastPlek) { lastPlek = p; cb.onOntdek && cb.onOntdek(p); }
+    if (!p) lastPlek = null;
   }
   // ---------- the Nachthert and what it shakes out of your bag (V5.3) ----------
   let deer = null;   // { d: { x, z, heading, state, until }, model, holder }
@@ -463,12 +527,14 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       cb.onNight && cb.onNight(bearNight && !guest, n.nights);
       if (bearNight && !guest) spawnBear();
       if (rules.deer && !guest) spawnDeer();
+      if (rules.wolves && !guest) setTimeout(() => { if (wasDark && !guest) spawnWolves(); }, 15000);   // the pack comes a bit into the night
     }
     if (!isDark && wasDark) {
       wasDark = false;
       cb.onDawn && cb.onDawn(fireWasBurning && n.fire > 0);
       clearNight();
       clearDeer();
+      clearWolves();
       clearDrops();
     }
     if (isDark && n.fire <= 0) fireWasBurning = false;
@@ -481,6 +547,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const pk = perks(state.eiland, config);
     const fence = state.eiland.tools.hek || state.eiland.tools.hoog_hek ? { x: CAMP.x, z: CAMP.z, r: pk.fenceRadius } : null;
     updateDeer(now, dt, lit, dark);
+    updateWolves(now, dt, lit, dark);
+    updateOntdek(dt);
     for (let i = ghosts.length - 1; i >= 0; i--) {
       const gh = ghosts[i];
       const dp = Math.hypot(player.x - gh.g.x, player.z - gh.g.z);
@@ -517,7 +585,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   function findAction(now) {
     const px = player.x, pz = player.z;
     if (fishing) return { type: fishing.biteUntil ? 'trek' : 'vis', label: fishing.biteUntil ? 'TREK' : 'WACHT', target: null };
-    if (bearNear()) return { type: 'boe', label: 'BOE', target: null };
+    if (bearNear() || wolfNear()) return { type: 'boe', label: 'BOE', target: null };
     if (gear.tent && daynight.darkness > 0.5 && Math.hypot(px - TENT_AT.x, pz - TENT_AT.z) < REACH.tent) return { type: 'slaap', label: 'SLAAP', target: null };
     if (Math.hypot(px - camp.chest.pos.x, pz - camp.chest.pos.z) < 1.9) return { type: 'kist', label: camp.chest.isOpen ? 'LEEG' : 'OPEN', target: null };
     for (const dr of drops) if (Math.hypot(px - dr.x, pz - dr.z) < 1.4) return { type: 'drop', label: 'PAK', target: dr };   // your own things, shaken out by the deer
@@ -938,6 +1006,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     cook() { cb.onCook && cb.onCook(); },
     spawnDeer,
     removeDeer: clearDeer,
+    spawnWolves,
+    removeWolves: clearWolves,
+    get wolves() { return wolves.map((v) => ({ x: v.w.x, z: v.w.z, state: v.w.state })); },
+    /** Put one wolf right behind the player, lunging (tests). */
+    wolfAt(x, z) { spawnWolves(); const v = wolves[0]; v.w.x = x; v.w.z = z; v.w.state = 'lunge'; },
     /** Put the deer right behind the player in charge mode (tests). */
     deerAt(x, z) { spawnDeer(); deer.d.x = x; deer.d.z = z; deer.d.state = 'charge'; },
     get bats() { return batsState; },

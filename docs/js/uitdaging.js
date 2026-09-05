@@ -90,14 +90,14 @@ export function faint(state, config) {
 }
 
 /** The deer's bump: the bag falls open. Returns { state, drops: [item ids] } — the drops lie on the ground to be picked up again. */
-export function deerBump(state, config) {
+export function deerBump(state, config, D = config.deer) {   // D: the deer's or the wolves' share (V6.2)
   const e = state.eiland;
   const drops = [];
   const bag = { ...e.bag };
   for (const id of Object.keys(bag)) {
-    const n = Math.ceil(bag[id] * config.deer.dropShare);
+    const n = Math.ceil(bag[id] * D.dropShare);
     let dropped = 0;
-    for (let i = 0; i < n && drops.length < config.deer.maxDrops; i++) { drops.push(id); dropped++; }
+    for (let i = 0; i < n && drops.length < D.maxDrops; i++) { drops.push(id); dropped++; }
     bag[id] -= dropped;   // only what really fell out leaves the bag
   }
   return { state: { ...state, eiland: { ...e, bag }, nacht: { ...state.nacht, bumped: (state.nacht.bumped || 0) + 1 } }, drops };
@@ -113,5 +113,6 @@ export function nightRules(nights, config) {
     ghostEveryMs: Math.max(D.ghostEveryMinMs, N.ghostEveryMs - n * D.ghostEveryStepMs),
     bearEvery: n >= D.bearOftenFrom ? D.bearEveryLater : N.bearEvery,
     deer: n + 1 >= config.deer.fromNight,
+    wolves: n + 1 >= config.wolven.fromNight,   // V6.2: the pack from night 5
   };
 }

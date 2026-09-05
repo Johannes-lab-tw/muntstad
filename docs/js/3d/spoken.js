@@ -160,3 +160,40 @@ export function fenceModel(cx, cz, r, heightAt) {
   }
   return b.build();
 }
+
+/** A shadow wolf (V6.2): low, dark, pointed ears, a tail and burning eyes; the legs run. */
+export function wolfModel() {
+  const group = new T.Group();
+  const c = '#2b2e3a', d = '#1b1d26';
+  const body = new Builder({ r: 0.08 });
+  body.box(-0.26, -0.6, 0.55, 0.52, 1.2, 0.5, c, { r: 0.16 });
+  body.box(-0.14, 0.45, 0.8, 0.28, 0.45, 0.42, c, { r: 0.1 });    // neck
+  body.box(-0.06, -0.98, 0.72, 0.12, 0.45, 0.12, d, { r: 0.04 });  // tail
+  const bm = body.build();
+  group.add(bm);
+  const head = new Builder({ r: 0.05 });
+  head.box(-0.18, -0.15, 0, 0.36, 0.5, 0.32, c, { r: 0.08 });
+  head.box(-0.1, 0.3, 0.0, 0.2, 0.25, 0.18, d, { r: 0.04 });      // snout
+  head.box(-0.2, -0.1, 0.28, 0.1, 0.08, 0.22, d, { r: 0.02 });    // ears
+  head.box(0.1, -0.1, 0.28, 0.1, 0.08, 0.22, d, { r: 0.02 });
+  const hm = head.build();
+  hm.position.set(0, 1.15, 0.7);
+  group.add(hm);
+  const eyeMat = new T.MeshStandardMaterial({ color: col('#ff7a3d'), emissive: col('#ff4a1a'), emissiveIntensity: 3 });
+  for (const sx of [-1, 1]) { const e = new T.Mesh(new T.SphereGeometry(0.055, 7, 6), eyeMat); e.position.set(sx * 0.11, 0.2, 0.3); hm.add(e); }
+  const legs = [];
+  for (const [dx, dz] of [[-0.16, -0.4], [0.16, -0.4], [-0.16, 0.4], [0.16, 0.4]]) {
+    const l = new Builder({ r: 0.03 });
+    l.box(-0.07, -0.07, -0.62, 0.14, 0.14, 0.62, d, { r: 0.03 });
+    const m = l.build();
+    m.position.set(dx, 0.62, dz);
+    group.add(m);
+    legs.push(m);
+  }
+  function update(t, { running = true } = {}) {
+    legs.forEach((l, i) => { l.rotation.x = running ? Math.sin(t / 95 + (i % 2) * Math.PI) * 1.0 : 0; });
+    bm.position.y = running ? Math.abs(Math.sin(t / 95)) * 0.1 : 0;
+    hm.rotation.x = running ? 0.15 : Math.sin(t / 700) * 0.1;
+  }
+  return { group, update };
+}

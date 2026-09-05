@@ -43,11 +43,14 @@ export function createKamp(game, onChange) {
     game.bumpWallet();
     game.update((s) => ({ ...s, wallet: s.wallet + coins, earnedWork: s.earnedWork + coins, eiland: { ...s.eiland, bag: { ...s.eiland.bag, [id]: 0 }, sold: s.eiland.sold + coins, earned: s.eiland.earned + coins } }));
     game.save();
+    onChange && onChange('sold', { item: id, n });
     afterSell();
   }
   function sellEverything() {
+    const sold = Object.entries(game.state.eiland.bag).filter(([, n]) => n > 0).map(([item, n]) => ({ item, n }));
     const r = sellAll(game.state, game.config);
     if (r.coins <= 0) return;
+    for (const s of sold) onChange && onChange('sold', s);
     game.audio.play('buy');
     for (let i = 0; i < Math.min(8, 2 + Math.floor(r.coins / 10)); i++) setTimeout(() => game.audio.play('coin'), 120 + i * 90);
     const p = game.walletPoint();
@@ -79,6 +82,7 @@ export function createKamp(game, onChange) {
     game.save();
     game.mentor.say('lines.toolBought', { ding: tool.name.toLowerCase(), tekst: tool.tekst }, { kind: 'reaction' });
     onChange && onChange('tool', id);
+    onChange && onChange('bought', { tool: id });
     build();
   }
 

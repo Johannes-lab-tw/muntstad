@@ -151,3 +151,46 @@ export function normalizeNacht(data, config = null) {
     warm: data.warm == null ? 100 : num(data.warm, 100), frozen: Math.floor(num(data.frozen)),
   };
 }
+
+/**
+ * A shadow wolf (V6.2). w = { x, z, heading, state: 'circle'|'lunge'|'flee', ang, wait, dir }.
+ * ctx = { target: {x, z}, safe (the target stands in light or behind the fence), dt }. Returns 'bite' when a lunge
+ * reaches an unsafe target, 'gone' when a fleeing wolf is far away, else null. Wolves circle at circleR (further out
+ * when the target is lit), give up after `patience` seconds in the light, and never bite a safe target.
+ */
+export function stepWolf(w, ctx, config) {
+  const W = config.wolven, dt = ctx.dt;
+  const dx = ctx.target.x - w.x, dz = ctx.target.z - w.z, d = Math.hypot(dx, dz);
+  if (w.state === 'flee') {
+    w.x += Math.sin(w.heading) * W.speed * 1.5 * dt;
+    w.z += Math.cos(w.heading) * W.speed * 1.5 * dt;
+    w.life = (w.life ?? W.fleeMs / 1000) - dt;
+    return w.life <= 0 ? 'gone' : null;
+  }
+  if (w.state === 'lunge') {
+    if (ctx.safe) { w.state = 'circle'; return null; }
+    w.heading = Math.atan2(dx, dz);
+    const step = Math.min(W.speed * 1.4 * dt, d);
+    w.x += Math.sin(w.heading) * step;
+    w.z += Math.cos(w.heading) * step;
+    if (d - step < W.reach) { w.state = 'flee'; w.heading += Math.PI; w.life = W.fleeMs / 1000; return 'bite'; }
+    return null;
+  }
+  const r = ctx.safe ? W.circleR + W.lightGap : W.circleR;
+  w.ang = (w.ang || 0) + (W.speed / r) * dt * (w.dir || 1);
+  const tx = ctx.target.x + Math.cos(w.ang) * r, tz = ctx.target.z + Math.sin(w.ang) * r;
+  const ex = tx - w.x, ez = tz - w.z, ed = Math.hypot(ex, ez);
+  const step = Math.min(W.speed * dt, ed);
+  if (ed > 1e-6) { w.x += (ex / ed) * step; w.z += (ez / ed) * step; w.heading = Math.atan2(ex, ez); }
+  if (ctx.safe) {
+    w.wait = (w.wait || 0) + dt;
+    if (w.wait > W.patience) { w.state = 'flee'; w.heading = Math.atan2(w.x - ctx.target.x, w.z - ctx.target.z); w.life = W.fleeMs / 1000; }
+  } else w.wait = 0;
+  return null;
+}
+/** BOE: the wolf turns and runs. */
+export function scareWolf(w, config) {
+  w.state = 'flee';
+  w.heading = (w.heading || 0) + Math.PI;
+  w.life = config.wolven.fleeMs / 1000;
+}

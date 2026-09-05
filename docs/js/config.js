@@ -150,6 +150,23 @@ export const CONFIG = Object.freeze({
     warnBelow: 40,                    // Muntje says 'brr' under this (once per 40 s)
   },
 
+  // The shadow wolves (V6.2): a pack from night 5 that circles you in the dark; one at a time lunges and shakes your
+  // bag. Light (fire, lantern, torch) keeps them at a distance, BOE sends them off, and in the light they give up.
+  wolven: {
+    fromNight: 5,
+    pack: 3,
+    speed: 3.4,                       // faster than your walk (2.6), slower than your run (4.6)
+    circleR: 5.5,                     // how far out they circle you
+    lightGap: 4,                      // ... plus this when you stand in the light
+    patience: 20,                     // seconds they circle a lit player before they give up
+    lungeEveryMs: 5000,               // one wolf lunges about every 5 s while you are in the dark
+    reach: 1.3,
+    dropShare: 0.4,                   // a bite shakes out 40 % of every item ...
+    maxDrops: 5,                      // ... at most five things
+    fleeMs: 6000,
+    howlEveryMs: 20000,
+  },
+
   deer: {
     fromNight: 2,
     speed: 4.0,                       // between your walk (2.6) and your run (4.6); the shoes beat it

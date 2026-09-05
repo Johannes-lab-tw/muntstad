@@ -8,7 +8,9 @@ import { createControls } from '../3d/controls.js';
 import { createEilandScene } from '../3d/scene-eiland.js';
 import { createKamp } from './kamp.js';
 import { setFlag, formatCoins } from '../economy.js';
-import { collect, completeQuest, currentQuest, bagCount, openChest, chestOpenedToday, todayKey } from '../eiland.js';
+import { collect, bagCount, openChest, chestOpenedToday, todayKey } from '../eiland.js';
+import { KETENS } from '../../content/ketens.js';
+import { currentKeten, ketenEvent, PLEKKEN } from '../ketens.js';
 import { burnFire, stokeFire, ghostSteal, dawnReward, fireLevel, levelSpan } from '../nacht.js';
 import { perks, drainHunger, eat, canEat, faint, deerBump, coolDown, freeze, cook } from '../uitdaging.js';
 import { CYCLE } from '../3d/daycycle.js';
@@ -24,11 +26,16 @@ export function createAvontuur(game) {
   let scene3 = null;   // built on first visit: the island is a few thousand things, not needed before the boat sails
   let raf = 0;
   let visible = false;
-  let questSaid = -1;
+  let questSaid = '';
   let burnAcc = 0, lastFireWarn = 0, fireOutSaid = false, lastStokeSaid = 0;
   const samen = game.samen;
 
-  const kamp = createKamp(game, (what) => { if (what === 'close') controls.setEnabled(visible); if (what === 'sell' || what === 'tool') renderHud(game.state); });
+  const kamp = createKamp(game, (what, info) => {
+    if (what === 'close') controls.setEnabled(visible);
+    if (what === 'sold') keten({ soort: 'verkoop', item: info.item, n: info.n });
+    if (what === 'bought') keten({ soort: 'koop', tool: info.tool });
+    if (what === 'sell' || what === 'tool') renderHud(game.state);
+  });
 
   const spring = document.getElementById('av-spring');
   spring.addEventListener('pointerdown', (e) => { e.preventDefault(); controls.pressJump(); });
@@ -66,25 +73,50 @@ export function createAvontuur(game) {
     if (r.added <= 0) { game.mentor.say('lines.bagFull', {}, { kind: 'reaction' }); return; }
     game.update((s) => ({ ...s, eiland: r.eiland }));
     game.fx.floatText(window.innerWidth * 0.5, window.innerHeight * 0.4, `+${r.added} ${game.config.eiland.items[item].icon}`, '#ffffff');
-    if (r.questDone >= 0) {
-      const q = completeQuest(game.state, game.config);
-      if (q.reward > 0) {
-        game.update(() => q.state);
-        game.audio.play('upgrade');
-        game.mentor.sayText(q.quest.klaar, { kind: 'reaction' });
-        const p = game.walletPoint();
-        game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(q.reward)}`, '#2a9d3a');
-        questSaid = -1;
-        setTimeout(() => { if (visible) sayQuest(); }, 3500);
-      }
-    }
+    keten({ soort: 'verzamel', item, n: r.added });
     game.save();
   }
+  // ---------- Muntje's quest chains (V6.2): the game reports what happened, ketens.js keeps the score ----------
+  function keten(ev) {
+    const r = ketenEvent(game.state, KETENS, ev);
+    if (r.state === game.state) return;
+    game.update(() => r.state);
+    if (r.ketenKlaar) {
+      game.save();
+      game.audio.play('fanfare');
+      game.mentor.sayText(r.ketenKlaar.klaar, { kind: 'reaction' });
+      const p = game.walletPoint();
+      game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(r.reward)}`, '#2a9d3a');
+      game.bumpWallet();
+      questSaid = '';
+      setTimeout(() => { if (visible) sayQuest(); }, 4000);
+    } else if (r.stapKlaar) {
+      game.audio.play('upgrade');
+      questSaid = '';
+      const cur = currentKeten(game.state.eiland, KETENS);
+      if (cur) { questSaid = `${cur.index}:${cur.stapIndex}`; game.mentor.say('lines.ketenStap', { tekst: cur.stap.tekst }, { kind: 'reaction' }); }
+    }
+    hudKey = '';
+    if (visible) renderHud(game.state);
+  }
   function sayQuest() {
-    const q = currentQuest(game.state.eiland, game.config);
-    if (!q || questSaid === q.index) return;
-    questSaid = q.index;
-    game.mentor.sayText(q.tekst, { kind: 'reaction' });
+    const cur = currentKeten(game.state.eiland, KETENS);
+    if (!cur) return;
+    const key = `${cur.index}:${cur.stapIndex}`;
+    if (questSaid === key) return;
+    questSaid = key;
+    game.mentor.sayText(cur.stapIndex === 0 ? `${cur.keten.titel}. ${cur.stap.tekst}` : cur.stap.tekst, { kind: 'reaction' });
+  }
+  const ontdektSaid = new Set();
+  function onOntdek(plek) {
+    if (!ontdektSaid.has(plek)) { ontdektSaid.add(plek); game.mentor.say('lines.ontdekt', { plek: PLEKKEN[plek].naam }, { kind: 'reaction' }); }
+    keten({ soort: 'ontdek', plek });
+  }
+  function onWolfBump() {
+    const r = deerBump(game.state, game.config, game.config.wolven);
+    game.update(() => r.state);
+    game.mentor.say('lines.wolfBite', {}, { kind: 'reaction' });
+    return r.drops;
   }
   let hudKey = '';
   function renderHud(state) {
@@ -96,7 +128,7 @@ export function createAvontuur(game) {
     const full = bagCount(e) >= perks(e, game.config).bagMax;
     const peers = samen && samen.active ? samen.peers.size + 1 : 0;
     const nights = state.nacht.nights || 0;
-    const key = `${Object.values(e.bag).join(',')}|${fire}|${honger}|${warm}|${e.quest}|${e.questN}|${full}|${peers}|${nights}|${lastDark}`;
+    const key = `${Object.values(e.bag).join(',')}|${fire}|${honger}|${warm}|${e.keten}|${e.stap}|${e.stapN}|${full}|${peers}|${nights}|${lastDark}`;
     if (key === hudKey) return;
     hudKey = key;
     // V6.2: the fire shows its level and how far it is to the next one; the cold as a blue bar
@@ -110,11 +142,16 @@ export function createAvontuur(game) {
     syncStook(state);
     nachtEl.textContent = lastDark ? `🌙 Nacht ${nights + 1}` : `☀️ Dag ${nights + 1}`;
     nachtEl.classList.toggle('night', !!lastDark);
-    const q = currentQuest(e, game.config);
-    if (q) {
+    // the chain card: the title, done steps ticked, the current step with its count, the rest greyed
+    const cur = currentKeten(e, KETENS);
+    if (cur) {
       questEl.hidden = false;
-      const plural = { hout: 'hout', schelp: 'schelpen', bes: 'bessen', vis: 'vissen' }[q.item] || q.item;
-      questEl.innerHTML = `${cfg.items[q.item].icon} <b>${q.have} / ${q.n}</b> ${plural}`;
+      questEl.innerHTML = `<b class="kt">${cur.keten.titel}</b>` + cur.keten.stappen.map((s, i) => {
+        const cls = i < cur.stapIndex ? 'done' : i === cur.stapIndex ? 'now' : 'todo';
+        const mark = i < cur.stapIndex ? '✔' : i === cur.stapIndex ? '▶' : '○';
+        const count = i === cur.stapIndex && cur.doel > 1 ? ` <i>${cur.stapN} / ${cur.doel}</i>` : '';
+        return `<span class="st ${cls}">${mark} ${s.tekst}${count}</span>`;
+      }).join('');
     } else questEl.hidden = true;
     peersEl.hidden = peers === 0;
     if (peers) peersEl.textContent = `${samen.animal} 👥 ${peers}`;
@@ -165,6 +202,7 @@ export function createAvontuur(game) {
     game.update((s) => ({ ...s, eiland: r.eiland }));
     game.fx.floatText(window.innerWidth * 0.5, window.innerHeight * 0.4, '🐟 → 🍖', '#ffffff');
     if (game.now() - lastCookSaid > 30000) { lastCookSaid = game.now(); game.mentor.say('lines.cooked', {}, { kind: 'reaction' }); }
+    keten({ soort: 'kook', n: 1 });
   }
   let lastCookSaid = 0;
   function onEat() {
@@ -174,6 +212,7 @@ export function createAvontuur(game) {
     game.update((s) => ({ ...s, eiland: r.eiland }));
     game.fx.floatText(window.innerWidth * 0.5, window.innerHeight * 0.4, `🍎 +${r.gain}`, '#ffffff');
     if (r.eiland.honger >= game.config.honger.warnBelow && game.now() - lastHungerWarn > 15000) { lastHungerWarn = game.now(); game.mentor.say('lines.ate', {}, { kind: 'reaction' }); }
+    keten({ soort: 'eet', n: 1 });
   }
   function doFaint(why = 'honger') {
     fainting = true;
@@ -229,6 +268,7 @@ export function createAvontuur(game) {
     const r = dawnReward(game.state.nacht, game.config, fireBurned);
     game.update((s) => ({ ...s, nacht: r.nacht, wallet: s.wallet + r.reward, earnedWork: s.earnedWork + r.reward }));
     game.save();
+    keten({ soort: 'nacht', vuur: !!fireBurned });
     if (r.reward > 0) {
       game.audio.play('upgrade');
       game.mentor.say('lines.dawnReward', { n: formatCoins(r.reward) }, { kind: 'reaction' });
@@ -258,6 +298,8 @@ export function createAvontuur(game) {
     const lvl = fireLevel(game.state.nacht.fire, game.config);
     if (!(samen && samen.isGuest) && lvl > fireLevel(r.nacht.fire - r.used, game.config)) { game.audio.play('upgrade'); game.mentor.say('lines.fireLevelUp', { n: lvl }, { kind: 'reaction' }); }
     else if (game.now() - lastStokeSaid > 30000) { lastStokeSaid = game.now(); game.mentor.say('lines.stoked', {}, { kind: 'reaction' }); }
+    keten({ soort: 'stook', n: r.used });
+    keten({ soort: 'vuur', level: lvl });
   }
   function onRemoteStoke(n) {
     if (n <= 0) return;
@@ -282,6 +324,7 @@ export function createAvontuur(game) {
     const p = game.walletPoint();
     game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(r.coins)}`, '#2a9d3a');
     game.bumpWallet();
+    keten({ soort: 'kist' });
   }
   function onCaveGhostCaught() {
     // the cave ghost takes shells first (up to caveGhost.steals), otherwise one thing of whatever you carry
@@ -342,7 +385,7 @@ export function createAvontuur(game) {
       onAction,
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
       onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte, onFireSync, onRemoteStoke, onChest, onCaveGhostCaught,
-      onTick, onDeerBump, onCook,
+      onTick, onDeerBump, onCook, onOntdek, onWolfBump,
     });
     Object.setPrototypeOf(hook, scene3.hook);   // the tests read positions and set inputs through window.__muntstad.avontuur
   }

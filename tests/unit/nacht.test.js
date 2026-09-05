@@ -6,7 +6,7 @@ import { CONFIG } from '../../docs/js/config.js';
 import { createState } from '../../docs/js/economy.js';
 import { encodeCode, decodeCode } from '../../docs/js/save.js';
 import { CYCLE } from '../../docs/js/3d/daycycle.js';
-import { createNacht, burnFire, stokeFire, fireRadius, fireLevel, levelSpan, isLit, stepGhost, ghostSteal, bearTonight, stepBear, scareBear, dawnReward, normalizeNacht } from '../../docs/js/nacht.js';
+import { createNacht, burnFire, stokeFire, fireRadius, fireLevel, levelSpan, isLit, stepGhost, ghostSteal, bearTonight, stepBear, scareBear, dawnReward, normalizeNacht, stepWolf, scareWolf } from '../../docs/js/nacht.js';
 
 const N = CONFIG.nacht;
 
@@ -122,4 +122,38 @@ test('dawn pays when the fire burned, more every night; the state survives the B
   assert.deepEqual(normalizeNacht({ fire: 500, nights: -1 }).fire, N.fireMax);
   assert.equal(normalizeNacht({ fire: 30 }).warm, 100, 'an old save starts warm');
   assert.deepEqual(normalizeNacht(null), createNacht());
+});
+
+test('V6.2 shadow wolves: they circle you in the dark, a lunge bites an unlit player, never a lit one; BOE and patience send them off', () => {
+  const W = CONFIG.wolven;
+  const target = { x: 0, z: 0 };
+  const w = { x: 12, z: 0, heading: 0, state: 'circle', ang: 0 };
+  for (let t = 0; t < 8; t += 1 / 30) stepWolf(w, { target, safe: false, dt: 1 / 30 }, CONFIG);
+  const d = Math.hypot(w.x, w.z);
+  assert.ok(Math.abs(d - W.circleR) < 1.0, `circles at ${d}`);
+  assert.equal(w.state, 'circle');
+  // a lit player: they keep further out and give up after their patience
+  const lit = { x: 12, z: 0, heading: 0, state: 'circle', ang: 0 };
+  let res = null;
+  for (let t = 0; t < 6; t += 1 / 30) res = stepWolf(lit, { target, safe: true, dt: 1 / 30 }, CONFIG);
+  assert.ok(Math.hypot(lit.x, lit.z) > W.circleR + 1, 'further out in the light');
+  for (let t = 0; t < W.patience + 2; t += 1 / 30) res = stepWolf(lit, { target, safe: true, dt: 1 / 30 }, CONFIG);
+  assert.equal(lit.state, 'flee');
+  // the lunge: reaches an unlit player = bite, then flees and is gone
+  const l = { x: 6, z: 0, heading: 0, state: 'lunge' };
+  let bit = false;
+  for (let t = 0; t < 5; t += 1 / 30) { if (stepWolf(l, { target, safe: false, dt: 1 / 30 }, CONFIG) === 'bite') { bit = true; break; } }
+  assert.ok(bit); assert.equal(l.state, 'flee');
+  let gone = null;
+  for (let t = 0; t < 20; t += 1 / 30) { gone = stepWolf(l, { target, safe: false, dt: 1 / 30 }, CONFIG); if (gone === 'gone') break; }
+  assert.equal(gone, 'gone');
+  // a lunge at a player who steps into the light turns back into circling
+  const l2 = { x: 6, z: 0, heading: 0, state: 'lunge' };
+  assert.equal(stepWolf(l2, { target, safe: true, dt: 1 / 30 }, CONFIG), null);
+  assert.equal(l2.state, 'circle');
+  // BOE
+  const b = { x: 3, z: 0, heading: 1, state: 'circle' };
+  scareWolf(b, CONFIG);
+  assert.equal(b.state, 'flee');
+  assert.ok(W.fromNight >= 5 && W.pack >= 3);
 });

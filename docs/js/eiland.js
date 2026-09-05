@@ -6,7 +6,7 @@ import { perks } from './uitdaging.js';
 export function createEiland(config) {
   const bag = {};
   for (const id of Object.keys(config.eiland.items)) bag[id] = 0;
-  return { bag, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: { ...bag }, sold: 0, earned: 0, chestDay: '', honger: 100 };
+  return { bag, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: { ...bag }, sold: 0, earned: 0, chestDay: '', honger: 100, keten: 0, stap: 0, stapN: 0, ketensDone: 0 };
 }
 
 export function bagCount(e) {
@@ -125,7 +125,8 @@ export function normalizeEiland(data, config) {
   const q = config.eiland.quests[quest];
   const chestDay = typeof data.chestDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data.chestDay) ? data.chestDay : '';
   const honger = data.honger == null ? 100 : Math.min(100, Math.max(0, Number(data.honger) || 0));
-  const out = { bag, tools, quest, questN: Math.min(q ? q.n : 0, num(data.questN)), questsDone: num(data.questsDone), collected, sold: num(data.sold), earned: num(data.earned), chestDay, honger };
+  const out = { bag, tools, quest, questN: Math.min(q ? q.n : 0, num(data.questN)), questsDone: num(data.questsDone), collected, sold: num(data.sold), earned: num(data.earned), chestDay, honger,
+    keten: num(data.keten, 999), stap: num(data.stap, 9), stapN: num(data.stapN, 999), ketensDone: num(data.ketensDone) };   // V6.2: the quest chains
   // never more than fits, also with the big backpack gone
   let tot = Object.values(out.bag).reduce((n, v) => n + v, 0);
   const max = perks(out, config).bagMax;
