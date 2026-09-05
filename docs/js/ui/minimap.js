@@ -1,7 +1,7 @@
 // ui/minimap.js — the little map in the corner of the island (V6.2e): the island's shape from the heightmap (sea,
 // beach, grass, swamp, rock, snow, lake, paths) drawn once, then every quarter second the camp, the places, you (a dot
 // with a heading) and your friends. Pure canvas 2D; the heights come straight from baseHeight (no tile cache needed).
-import { MAP, CAMP, LAKE, MOERAS, HILL, CAVE, RUINE, PIER, baseHeight, distToPaths } from '../3d/heightmap.js';
+import { MAP, CAMP, LAKE, MOERAS, HILL, CAVE, RUINE, PIER, VUURTOREN, baseHeight, distToPaths } from '../3d/heightmap.js';
 
 const COL = { sea: '#3f9de0', beach: '#f4d98a', grass: '#63c452', dark: '#4fae45', moeras: '#5f7a3a', rock: '#8d9199', snow: '#f7fbff', lake: '#4fc8f0', path: '#e8d5a2' };
 
@@ -39,7 +39,7 @@ export function createMinimap(canvas) {
   const k = size / MAP.size;
   const marks = [
     { x: CAMP.x, z: CAMP.z, t: '🔥' }, { x: LAKE.x, z: LAKE.z, t: '🐟' }, { x: CAVE.x, z: CAVE.z, t: '🕳️' },
-    { x: MOERAS.x, z: MOERAS.z, t: '🐸' }, { x: RUINE.x, z: RUINE.z, t: '🏚️' }, { x: HILL.x, z: HILL.z, t: '⛰️' }, { x: PIER.x, z: PIER.z, t: '⛵' },
+    { x: MOERAS.x, z: MOERAS.z, t: '🐸' }, { x: RUINE.x, z: RUINE.z, t: '🏚️' }, { x: HILL.x, z: HILL.z, t: '⛰️' }, { x: PIER.x, z: PIER.z, t: '⛵' }, { x: VUURTOREN.x, z: VUURTOREN.z, t: '🗼' },
   ];
   let last = 0;
   function update(player, remotes = [], dark = 0, extra = {}, now = performance.now()) {

@@ -10,10 +10,11 @@ import { avatarModel, lookKey } from './avatar.js';
 import { petModel } from './pets.js';
 import { createPlayer, createFollower, stepPlayer, stepFollower, turnTowards } from './player.js';
 import { addLights } from './engine.js';
-import { createHeightmap, PIER, CAMP, LAKE, CAVE, caveInner } from './heightmap.js';
+import { createHeightmap, PIER, CAMP, LAKE, CAVE, VUURTOREN, HUT, caveInner } from './heightmap.js';
 import { createWater } from './terrain.js';
 import { createTiles } from './tiles.js';
 import { createCamp } from './camp.js';
+import { createVuurtoren } from './vuurtoren.js';
 import { createDayNight } from './daynight.js';
 import { ghostModel, bearModel, tentModel, torchModel, fenceModel, deerModel, dropModel, wolfModel } from './spoken.js';
 import { perks, nightRules, hungerSpeedMul, coldSpeedMul, isCold } from '../uitdaging.js';
@@ -40,8 +41,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   scene.add(water.group);
   const camp = createCamp(map);
   scene.add(camp.group);
+  const vuurtoren = createVuurtoren(map);   // V6.5: the lighthouse and the hut on the north coast
+  scene.add(vuurtoren.group);
   // V6.2: the island in tiles round the player; the camp's things are the static obstacles every tile shares
-  const tiles = createTiles(map, { statics: camp.obstacles });
+  const tiles = createTiles(map, { statics: [...camp.obstacles, ...vuurtoren.obstacles] });
   scene.add(tiles.group);
   const lights = addLights(scene, new T.Vector3(CAMP.x, 1, CAMP.z), 20, engine.tier);
   engine.onTier((t) => {
@@ -326,7 +329,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     }
     if (tools.hut2 && !gear.hut2) {
       gear.hut2 = camp.addHut(CAMP.x - 6.4, CAMP.z - 3.2, 1.6, '#b76cff');
-      tiles.setStatics([...camp.obstacles, gear.hut2]);
+      tiles.setStatics([...camp.obstacles, ...vuurtoren.obstacles, gear.hut2]);
     }
     lantern.visible = !!tools.lantaarn;
   }
@@ -592,7 +595,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     for (const [id, r] of remotes) if ((r.down || r.pose === 'down') && Math.hypot(px - r.x, pz - r.z) < 2.6) return { type: 'wek', label: 'WEK', target: id };   // a fainted friend (V6.2)
     if (bearNear() || wolfNear()) return { type: 'boe', label: 'BOE', target: null };
     if (gear.tent && daynight.darkness > 0.5 && Math.hypot(px - TENT_AT.x, pz - TENT_AT.z) < REACH.tent) return { type: 'slaap', label: 'SLAAP', target: null };
-    if (Math.hypot(px - camp.chest.pos.x, pz - camp.chest.pos.z) < 1.9) return { type: 'kist', label: camp.chest.isOpen ? 'LEEG' : 'OPEN', target: null };
+    if (Math.hypot(px - camp.chest.pos.x, pz - camp.chest.pos.z) < 1.9) return { type: 'kist', label: camp.chest.isOpen ? 'LEEG' : 'OPEN', target: 'grot' };
+    if (Math.hypot(px - vuurtoren.chest.pos.x, pz - vuurtoren.chest.pos.z) < 1.9) return { type: 'kist', label: vuurtoren.chest.isOpen ? 'LEEG' : 'OPEN', target: 'hut' };   // V6.5
     for (const dr of drops) if (Math.hypot(px - dr.x, pz - dr.z) < 1.4) return { type: 'drop', label: 'PAK', target: dr };   // your own things, shaken out by the deer
     if (Math.hypot(px - CAMP.x, pz - CAMP.z) < REACH.camp) {
       // V6.2: STOOK is its own button at the fire (ui/avontuur.js); the action is KOOK on a big fire with fish in the bag, else KAMP
@@ -635,7 +639,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (!action) return;
     switch (action.type) {
       case 'kamp': cb.onKamp && cb.onKamp(); return;
-      case 'kist': cb.onChest && cb.onChest(); return;
+      case 'kist': cb.onChest && cb.onChest(action.target || 'grot'); return;
       case 'drop': {
         const dr = action.target;
         const i = drops.indexOf(dr);
@@ -955,6 +959,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const lite = engine.tier >= 2;
     water.update(now, lite);
     camp.update(now, daynight.darkness, lite);
+    vuurtoren.update(now, daynight.darkness);
     // the night bookkeeping (fire, hunger, ghosts, bear, deer) runs on real elapsed time, up to a second per frame,
     // so a slow frame rate (CI, an old iPad) does not slow the world down
     updateNight(now, Math.min(1.0, (now - prevNow) / 1000));
@@ -988,8 +993,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get down() { return down; },
     onLand(x, z) { return map.walkable(x, z); },
     kindAt(x, z) { return map.kindAt(x, z); },
-    landmarks: { CAMP, PIER, LAKE, TENT: TENT_AT, CHEST: camp.chest.pos, CAVE },
-    setChestOpen(open) { camp.chest.setOpen(open); },
+    landmarks: { CAMP, PIER, LAKE, TENT: TENT_AT, CHEST: camp.chest.pos, CAVE, VUURTOREN, HUT, HUTCHEST: vuurtoren.chest.pos },
+    setChestOpen(open, which = 'grot') { (which === 'hut' ? vuurtoren.chest : camp.chest).setOpen(open); },
     get forestCount() { return tiles.count; },
     get tilesLoaded() { return tiles.loaded; },
     /** Nearest untaken shell / berry bush / tree, for the tests to walk to. */
@@ -1035,5 +1040,5 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     ghostAt(x, z) { spawnGhost(); const gh = ghosts[ghosts.length - 1]; gh.g.x = x; gh.g.z = z; },
   };
 
-  return { mount, resize, render, setState, reset, doAction, emote, hook, camera, scene, setChestOpen: (o) => camp.chest.setOpen(o) };
+  return { mount, resize, render, setState, reset, doAction, emote, hook, camera, scene, setChestOpen: (o, which = 'grot') => (which === 'hut' ? vuurtoren.chest : camp.chest).setOpen(o) };
 }

@@ -357,6 +357,18 @@ export const KETENS = [
     "klaar": "Je was hoog op de berg. Knap!"
   },
   {
+    "id": "de-vuurtoren",
+    "titel": "De vuurtoren",
+    "stappen": [
+      { "soort": "ontdek", "plek": "vuurtoren", "tekst": "Loop naar de vuurtoren in het noorden." },
+      { "soort": "kist", "tekst": "Open de kist bij de oude hut." },
+      { "soort": "verzamel", "item": "hout", "n": 12, "tekst": "Hak twaalf stukken hout voor de terugweg." },
+      { "soort": "nacht", "n": 1, "tekst": "Overleef de nacht bij het vuur." }
+    ],
+    "beloning": 150,
+    "klaar": "De vuurtoren draait weer! Wat een tocht."
+  },
+  {
     "id": "grote-uitdaging",
     "titel": "De grote uitdaging",
     "stappen": [

@@ -13,12 +13,15 @@ export const LAKE = Object.freeze({ x: 330, z: 205, r: 24, level: 0.7 });
 export const HILL = Object.freeze({ x: 150, z: 135, r: 95, top: 42 });           // the mountain, snow on top
 export const MOERAS = Object.freeze({ x: 360, z: 330, r: 48 });                  // the swamp: wet, slow, misty
 export const RUINE = Object.freeze({ x: 120, z: 345, r: 22 });                   // the ruined village (chests, wolves)
+export const VUURTOREN = Object.freeze({ x: 280, z: 68, r: 13, top: 7 });         // V6.5: the lighthouse rock on the north coast
+export const HUT = Object.freeze({ x: 302, z: 90, r: 5 });                        // the abandoned hut with the chest
 export const PATHS = Object.freeze([
   [[240, 415], [240, 370], [240, 315]],             // pier (land end) → camp
   [[250, 292], [290, 250], [312, 222]],             // camp → lake shore
   [[232, 290], [205, 240], [192, 208]],             // camp → cave
   [[228, 300], [170, 330], [140, 345]],             // camp → ruin
   [[252, 306], [300, 330], [330, 335]],             // camp → swamp edge
+  [[246, 288], [262, 200], [286, 110], [300, 96]],  // camp → the hut and the lighthouse (V6.5)
 ]);
 
 // ---------- the cave: a bent tunnel into the mountain's south-east flank, ending in a round chamber ----------
@@ -116,6 +119,11 @@ export function baseHeight(x, z) {
   h = h * smoothstep(0.55, 1.1, dc) + 1.4 * (1 - smoothstep(0.55, 1.1, dc));
   const dr = Math.hypot(x - RUINE.x, z - RUINE.z) / RUINE.r;
   h = h * smoothstep(0.6, 1.1, dr) + 2.2 * (1 - smoothstep(0.6, 1.1, dr));
+  // the lighthouse rock: a steep knob with a flat top, and the hut's shelf beside it (V6.5)
+  const dvt = Math.hypot(x - VUURTOREN.x, z - VUURTOREN.z) / VUURTOREN.r;
+  h = Math.max(h, (1 - smoothstep(0.45, 1.0, dvt)) * VUURTOREN.top + (dvt < 0.45 ? 0 : 0));
+  const dhut = Math.hypot(x - HUT.x, z - HUT.z) / HUT.r;
+  h = h * smoothstep(0.7, 1.2, dhut) + 2.4 * (1 - smoothstep(0.7, 1.2, dhut));
   // the cave: a flat shelf at the mouth and a flat tunnel floor cut into the mountain
   const dv = Math.hypot(x - CAVE.x, z - CAVE.z);
   h = h * smoothstep(1.6, 3.8, dv) + CAVE.floor * (1 - smoothstep(1.6, 3.8, dv));
@@ -184,6 +192,6 @@ export function createHeightmap() {
   };
   return {
     size, tile, tiles: MAP.tiles, cell: CELL, heightAt, groundAt, slopeAt, kindAt, walkable, onPier, inCave, inChamber, tileKey, tileOf, tileHeights,
-    CAMP, PIER, LAKE, HILL, CAVE, MOERAS, RUINE, PATHS,
+    CAMP, PIER, LAKE, HILL, CAVE, MOERAS, RUINE, VUURTOREN, HUT, PATHS,
   };
 }

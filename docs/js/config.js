@@ -71,6 +71,7 @@ export const CONFIG = Object.freeze({
     fish: { waitMinMs: 2000, waitMaxMs: 4500, biteMs: 1600 },   // wait for a bite, then tap in time
     questBonus: 2,                    // quest reward = n × item price × bonus
     chest: { coins: 30 },             // the chest in the cave: this many coins, once a day
+    hutChest: { coins: 60 },          // V6.5: the chest at the lighthouse hut, once a day (a long walk north)
     caveGhost: { speed: 3.3, reach: 1.1, steals: 3, pauseMs: 2500 },   // V5.2: wakes when the chest opens, chases you to the mouth; takes shells when it catches you
     quests: [
       { item: 'hout', n: 4, tekst: 'Hak vier stukken hout bij de bomen.', klaar: 'Vier stukken hout! Goed gedaan.' },

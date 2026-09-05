@@ -362,12 +362,12 @@ export function createAvontuur(game) {
     game.audio.play('unlock');
     game.mentor.say('lines.sleep', {}, { kind: 'reaction' });
   }
-  function onChest() {
-    const r = openChest(game.state, game.config, todayKey(game.now()));
+  function onChest(which = 'grot') {
+    const r = openChest(game.state, game.config, todayKey(game.now()), which);
     if (!r.ok) { game.mentor.say('lines.chestEmpty', {}, { kind: 'reaction' }); return; }
     game.update(() => r.state);
     game.save();
-    scene3.setChestOpen(true);
+    scene3.setChestOpen(true, which);
     game.audio.play('fanfare');
     game.mentor.say('lines.chestOpen', { n: formatCoins(r.coins) }, { kind: 'reaction' });
     const p = game.walletPoint();
@@ -450,6 +450,7 @@ export function createAvontuur(game) {
       scene3.setState(game.state);
       scene3.reset();
       scene3.setChestOpen(chestOpenedToday(game.state.eiland, todayKey(game.now())));
+      scene3.setChestOpen(chestOpenedToday(game.state.eiland, todayKey(game.now()), 'hut'), 'hut');
       scene3.mount(host);
       controls.setEnabled(true);
       hudKey = '';

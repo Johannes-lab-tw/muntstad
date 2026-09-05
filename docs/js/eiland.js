@@ -6,7 +6,7 @@ import { perks } from './uitdaging.js';
 export function createEiland(config) {
   const bag = {};
   for (const id of Object.keys(config.eiland.items)) bag[id] = 0;
-  return { bag, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: { ...bag }, sold: 0, earned: 0, chestDay: '', honger: 100, keten: 0, stap: 0, stapN: 0, ketensDone: 0 };
+  return { bag, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: { ...bag }, sold: 0, earned: 0, chestDay: '', hutDay: '', honger: 100, keten: 0, stap: 0, stapN: 0, ketensDone: 0 };
 }
 
 export function bagCount(e) {
@@ -96,14 +96,16 @@ export function currentQuest(e, config) {
 }
 
 /** The chest in the cave fills once a day (local calendar day, e.g. '2026-09-05'). Returns { ok, state, coins }. */
-export function chestOpenedToday(e, today) {
-  return e.chestDay === today;
+/** which = 'grot' (the cave chest) | 'hut' (the chest at the lighthouse hut, V6.5): each fills once a day. */
+export function chestOpenedToday(e, today, which = 'grot') {
+  return (which === 'hut' ? e.hutDay : e.chestDay) === today;
 }
-export function openChest(state, config, today) {
+export function openChest(state, config, today, which = 'grot') {
   const e = state.eiland;
-  if (chestOpenedToday(e, today)) return { ok: false, state, coins: 0 };
-  const coins = config.eiland.chest.coins;
-  return { ok: true, coins, state: { ...state, wallet: state.wallet + coins, earnedWork: state.earnedWork + coins, eiland: { ...e, chestDay: today, earned: e.earned + coins } } };
+  if (chestOpenedToday(e, today, which)) return { ok: false, state, coins: 0 };
+  const coins = which === 'hut' ? config.eiland.hutChest.coins : config.eiland.chest.coins;
+  const stamp = which === 'hut' ? { hutDay: today } : { chestDay: today };
+  return { ok: true, coins, state: { ...state, wallet: state.wallet + coins, earnedWork: state.earnedWork + coins, eiland: { ...e, ...stamp, earned: e.earned + coins } } };
 }
 export function todayKey(now = Date.now()) {
   const d = new Date(now);
@@ -124,9 +126,10 @@ export function normalizeEiland(data, config) {
   const quest = num(data.quest) % Math.max(1, config.eiland.quests.length);
   const q = config.eiland.quests[quest];
   const chestDay = typeof data.chestDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data.chestDay) ? data.chestDay : '';
+  const hutDay = typeof data.hutDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data.hutDay) ? data.hutDay : '';
   const honger = data.honger == null ? 100 : Math.min(100, Math.max(0, Number(data.honger) || 0));
   const out = { bag, tools, quest, questN: Math.min(q ? q.n : 0, num(data.questN)), questsDone: num(data.questsDone), collected, sold: num(data.sold), earned: num(data.earned), chestDay, honger,
-    keten: num(data.keten, 999), stap: num(data.stap, 9), stapN: num(data.stapN, 999), ketensDone: num(data.ketensDone) };   // V6.2: the quest chains
+    keten: num(data.keten, 999), stap: num(data.stap, 9), stapN: num(data.stapN, 999), ketensDone: num(data.ketensDone), hutDay };   // V6.2: the quest chains; V6.5: the hut's chest
   // never more than fits, also with the big backpack gone
   let tot = Object.values(out.bag).reduce((n, v) => n + v, 0);
   const max = perks(out, config).bagMax;

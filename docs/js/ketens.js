@@ -2,7 +2,7 @@
 // reward at the end. The content lives in docs/content/ketens.js (written by Ollama, checked by validateKetens and the
 // unit test); the game reports what happened (ketenEvent) and this module keeps the score on state.eiland:
 // keten (index), stap (step index), stapN (progress in the step), ketensDone.
-import { LAKE, CAVE, MOERAS, RUINE, HILL, PIER } from './3d/heightmap.js';
+import { LAKE, CAVE, MOERAS, RUINE, HILL, PIER, VUURTOREN } from './3d/heightmap.js';
 
 export const SOORTEN = ['verzamel', 'stook', 'vuur', 'kook', 'eet', 'verkoop', 'koop', 'nacht', 'ontdek', 'kist'];
 /** Places you can discover: within r of the point counts. */
@@ -13,6 +13,7 @@ export const PLEKKEN = Object.freeze({
   ruine: { x: RUINE.x, z: RUINE.z, r: RUINE.r, naam: 'de ruïne' },
   berg: { x: HILL.x, z: HILL.z, r: HILL.r * 0.45, naam: 'de berg' },
   strand: { x: PIER.x, z: PIER.z - 12, r: 9, naam: 'het strand' },
+  vuurtoren: { x: VUURTOREN.x, z: VUURTOREN.z, r: VUURTOREN.r + 6, naam: 'de vuurtoren' },   // V6.5
 });
 export function plekAt(x, z) {
   for (const [id, p] of Object.entries(PLEKKEN)) if (Math.hypot(x - p.x, z - p.z) < p.r) return id;

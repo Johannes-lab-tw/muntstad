@@ -1,7 +1,7 @@
 // 3d/forest-place.js — where the forest grows, as pure numbers (no Three.js; unit-tested): a jittered grid over
 // the island, trees in the noise clumps on the grass, bushes, rocks, grass tufts and flowers elsewhere; nothing on
 // paths, in the camp, at the cave or on the pier. placeForest(map, seed) → { tree1: [{ x, z, y, s, rot }], ... }
-import { fbm, distToPaths, CAMP, CAVE, PIER, LAKE, RUINE, inCave } from './heightmap.js';
+import { fbm, distToPaths, CAMP, CAVE, PIER, LAKE, RUINE, VUURTOREN, HUT, inCave } from './heightmap.js';
 
 export const KINDS = ['tree1', 'tree2', 'tree3', 'log', 'bush1', 'bush2', 'rock1', 'rock2', 'rock3', 'grass', 'flower', 'shell', 'reed', 'crab', 'butterfly'];
 
@@ -24,6 +24,8 @@ export function placeForest(map, seed = 7, bounds = null) {
     if (Math.hypot(x - CAVE.x, z - CAVE.z) < 3.5 + margin || inCave(x, z, 3 + margin)) return false;
     if (Math.abs(x - PIER.x) < 3 + margin && z > PIER.z - PIER.len - 3) return false;
     if (RUINE && Math.hypot(x - RUINE.x, z - RUINE.z) < RUINE.r * 0.8 + margin) return false;
+    if (Math.hypot(x - VUURTOREN.x, z - VUURTOREN.z) < VUURTOREN.r * 0.75 + margin) return false;   // the lighthouse rock (V6.5)
+    if (Math.hypot(x - HUT.x, z - HUT.z) < HUT.r + 1 + margin) return false;
     return true;
   };
   const step = 1.15;

@@ -93,3 +93,25 @@ test('night 5: the shadow wolves come; one bites in the dark and your things lie
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(null));
   expect(errors()).toEqual([]);
 });
+
+test('V6.5 the lighthouse: the hut chest on the north coast pays 60 once a day and counts as a kist step; the lighthouse can be discovered', async ({ page }) => {
+  const errors = watchErrors(page);
+  // chain 14 ("De vuurtoren"): ontdek vuurtoren → kist → 12 hout → nacht
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ keten: 14 }); s.nacht = { fire: 30, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  const L = await page.evaluate(() => window.__muntstad.avontuur.landmarks);
+  await expect(page.locator('#av-quest .kt')).toHaveText('De vuurtoren');
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 16), L.VUURTOREN);
+  await expect.poll(async () => (await state(page)).eiland.stap, { timeout: 20000 }).toBe(1);
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 1.5), L.HUTCHEST);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('OPEN');
+  const wallet = (await state(page)).wallet;
+  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 20000 }).toBe(Math.floor(wallet) + 60);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('LEEG');
+  expect((await state(page)).eiland.stap).toBe(2);
+  expect((await state(page)).eiland.chestDay).toBe('');   // the cave chest is a different chest
+  expect(errors()).toEqual([]);
+});
