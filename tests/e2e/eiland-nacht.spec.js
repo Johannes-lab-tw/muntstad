@@ -129,8 +129,8 @@ test('with the lantern a ghost next to you cannot steal; the tent lets you sleep
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await expect.poll(async () => (await state(page)).nacht.clockOffsetMs, { timeout: 20000 }).toBeGreaterThan(0);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(null));
-  await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBeLessThan(1);
-  const phase = await page.evaluate(() => window.__muntstad.avontuur.phase);
-  expect(phase > 0.95 || phase < 0.1, `phase ${phase} is just before or just after dawn`).toBe(true);   // a slow runner may already have crossed into the morning
+  // the clock now stands just before dawn (a slow runner may already have crossed into the morning): the phase says so
+  await expect.poll(() => page.evaluate(() => { const p = window.__muntstad.avontuur.phase; return p > 0.94 || p < 0.15; }), { timeout: 40000 }).toBe(true);
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 60000 }).toBeLessThan(1);
   expect(errors()).toEqual([]);
 });

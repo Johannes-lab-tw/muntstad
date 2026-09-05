@@ -77,7 +77,8 @@ test('chapter 7: three bears come; BOE with the drum sends each one off; all thr
   await openAvontuur(page);
   await expect(page.locator('#av-campagne')).toContainText('7. De Nachtberen');
   const h = await hook(page);
-  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 3), h.camp);
+  // well away from the fire: on the slow runner the bears must not reach it (and eat) before the three BOEs are done
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 16), h.camp);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
   await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBe(1);
   await page.evaluate(() => window.__muntstad.avontuur.spawnBears());   // the game does this 20 s into the night; the test does not wait

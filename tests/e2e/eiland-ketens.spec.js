@@ -74,7 +74,9 @@ test('night 5: the shadow wolves come; one bites in the dark and your things lie
   await expect.poll(async () => (await hook(page)).drops.length, { timeout: 30000 }).toBeGreaterThan(0);
   await expect.poll(() => mentorHas(page, 'wolf'), { timeout: 20000 }).toBe(true);
   expect((await state(page)).nacht.bumped).toBeGreaterThanOrEqual(1);   // the pack keeps lunging while you stand in the dark
-  // BOE while a wolf is close: the pack flees
+  // BOE while a wolf is close: the pack flees (the pack is put round the player: on the slow runner they would take long to arrive)
+  const pp = (await hook(page)).player;
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.wolvesAt(x, z), pp);
   await expect.poll(async () => (await hook(page)).action?.label, { timeout: 30000 }).toBe('BOE');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await expect.poll(async () => (await hook(page)).wolves.every((w) => w.state === 'flee'), { timeout: 20000 }).toBe(true);

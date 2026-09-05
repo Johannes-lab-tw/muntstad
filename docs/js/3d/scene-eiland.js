@@ -421,10 +421,12 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   function clearWolves() { for (const v of wolves) scene.remove(v.holder); wolves.length = 0; }
   function wolfNear() { return wolves.some((v) => v.w.state !== 'flee' && Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 2); }
   function scareWolves() {
-    let any = false;
-    for (const v of wolves) if (v.w.state !== 'flee' && Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 6) { scareWolf(v.w, config); any = true; }
-    if (any) cb.onSay && cb.onSay('lines.wolvesFled');
-    return any;
+    // the pack runs together: BOE near any wolf sends them all off
+    const near = wolves.some((v) => v.w.state !== 'flee' && Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 6);
+    if (!near) return false;
+    for (const v of wolves) if (v.w.state !== 'flee') scareWolf(v.w, config);
+    cb.onSay && cb.onSay('lines.wolvesFled');
+    return true;
   }
   function updateWolves(now, dt, lit, dark) {
     if (!wolves.length) return;
@@ -1070,6 +1072,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get wolves() { return wolves.map((v) => ({ x: v.w.x, z: v.w.z, state: v.w.state })); },
     /** Put one wolf right behind the player, lunging (tests). */
     wolfAt(x, z) { spawnWolves(); const v = wolves[0]; v.w.x = x; v.w.z = z; v.w.state = 'lunge'; },
+    /** Put the whole pack round the player (tests on a slow runner: they would take long to arrive). */
+    wolvesAt(x, z) { wolves.forEach((v, i) => { v.w.x = x + Math.cos(i * 2.1) * 3; v.w.z = z + Math.sin(i * 2.1) * 3; }); },
     /** Put the deer right behind the player in charge mode (tests). */
     deerAt(x, z) { spawnDeer(); deer.d.x = x; deer.d.z = z; deer.d.state = 'charge'; },
     get bats() { return batsState; },
