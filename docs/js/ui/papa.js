@@ -168,6 +168,24 @@ export function createPapa(game) {
     setStatus(ok ? game.T.papa.codeCopied : game.T.papa.codeCopyFailed, !ok);
   });
 
+  // V6.8: MELD copies a diagnostic code (version, device, frame rate, where you are, the last events) to the clipboard
+  const meldOut = document.getElementById('meld-out');
+  const meldStatus = document.getElementById('meld-status');
+  document.getElementById('meld-btn').addEventListener('click', async () => {
+    game.audio.play('tap');
+    const code = game.meldCode();
+    meldOut.value = code;
+    meldOut.hidden = false;
+    let ok = false;
+    try {
+      meldOut.focus();
+      meldOut.select();
+      meldOut.setSelectionRange(0, code.length);
+      if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(code); ok = true; } else ok = document.execCommand('copy');
+    } catch (e) { ok = false; }
+    meldStatus.textContent = ok ? game.T.papa.meldCopied : game.T.papa.meldShown;
+  });
+
   document.getElementById('code-load').addEventListener('click', () => {
     game.audio.play('tap');
     const restored = decodeCode(codeIn.value, game.config, game.now());

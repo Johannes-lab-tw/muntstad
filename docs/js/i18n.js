@@ -219,6 +219,8 @@ export const T = {
 
   papa: {
     title: 'Voor papa en mama',
+    meldCopied: 'Gekopieerd. Plak de code in het gesprek met Claude.',
+    meldShown: 'Kopiëren lukte niet; maak een foto van de code hieronder.',
     stats: {
       earnedWork: 'Verdiend met WERK',
       earnedPassive: 'Verdiend door GELDMAKERS',

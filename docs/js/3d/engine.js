@@ -56,12 +56,13 @@ export function createEngine() {
   }
 
   // ---------- adaptive quality ----------
-  let acc = 0, n = 0, lastChange = 0;
+  let acc = 0, n = 0, lastChange = 0, lastAvgMs = 0;
   function trackFrame(dtMs, now) {
     acc += dtMs;
     n++;
     if (n < 90) return;
     const avg = acc / n;
+    lastAvgMs = avg;
     acc = 0; n = 0;
     if (forcedLite) return;
     if (avg > 26 && tier < 2 && now - lastChange > 2000) setTier(tier + 1, now);
@@ -86,6 +87,7 @@ export function createEngine() {
     get W() { return W; },
     get H() { return H; },
     get tier() { return tier; },
+    get fps() { return lastAvgMs > 0 ? Math.round(1000 / lastAvgMs) : 0; },   // V6.8: for the MELD code on PAPA
     get container() { return container; },
   };
 }

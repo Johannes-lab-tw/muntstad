@@ -74,6 +74,22 @@ const game = {
   resetAll,
   walletPoint,
   bumpWallet,
+  /** V6.8: the diagnostic code for the MELD button on PAPA: version, device, frame rate, where you are, the last events. */
+  meldCode() {
+    const s = state;
+    const av = screens.avontuur && screens.avontuur.hook && screens.avontuur.hook.ready ? screens.avontuur.hook : null;
+    const parts = [
+      `MELD ${GAME_VERSION}`,
+      `${navigator.platform || '?'} ${(navigator.userAgent.match(/(iPad|iPhone|Macintosh|Windows|Android)[^;)]*/) || ['?'])[0]} ${window.innerWidth}x${window.innerHeight} dpr${Math.round((window.devicePixelRatio || 1) * 10) / 10}`,
+      `fps ${game.engine ? game.engine.fps : 0} tier ${game.engine ? game.engine.tier : '?'} scherm ${screen}`,
+      `munten ${Math.floor(s.wallet)} makers ${Object.values(s.makers).filter((l) => l > 0).length} nacht ${s.nacht.nights} vuur ${Math.round(s.nacht.fire)} warm ${Math.round(s.nacht.warm ?? 100)} maag ${Math.round(s.eiland.honger ?? 100)} hoofdstuk ${(s.campagne ? s.campagne.hoofdstuk : 0) + 1} keten ${s.eiland.keten}/${s.eiland.stap}`,
+      av && av.player ? `eiland ${Math.round(av.player.x)},${Math.round(av.player.z)} ${av.kindAt(av.player.x, av.player.z)}` : 'eiland niet open',
+      `samen ${game.samen ? game.samen.status : 'off'}`,
+      `laatste: ${recent.slice(-5).join(' | ')}`,
+      `muntje: ${(game.mentor.log || []).slice(-3).join(' / ')}`,
+    ];
+    return parts.join('\n');
+  },
   on(ev, fn) { (listeners[ev] = listeners[ev] || []).push(fn); },
   emit(ev, ...args) { for (const fn of listeners[ev] || []) fn(...args); },
 };
@@ -252,12 +268,16 @@ function bumpWallet() {
 // ---------- screens ----------
 
 const TOPBAR_SCREENS = new Set(['stad', 'dorp', 'avontuur', 'werk', 'winkel', 'huis']);
+export const GAME_VERSION = 'v6.7';   // V6.8: shown in the MELD code on PAPA; bump with every tag
+const recent = [];                    // the last screens, for the MELD code
+function noteEvent(what) { recent.push(`${new Date().toTimeString().slice(0, 8)} ${what}`); if (recent.length > 8) recent.shift(); }
 
 function show(name) {
   if (!screens[name]) return;
   const prev = screens[screen];
   if (prev && prev.hide && screen !== name) prev.hide();
   screen = name;
+  noteEvent(`scherm ${name}`);
   for (const sec of document.querySelectorAll('.screen')) sec.classList.toggle('active', sec.dataset.screen === name);
   $('app').dataset.screen = name;
   $('topbar').hidden = !TOPBAR_SCREENS.has(name);
@@ -373,7 +393,7 @@ function boot() {
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch((e) => console.info('[muntstad] service worker not registered:', e.message));
   }
-  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 4, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook, dorp: screens.dorp.hook, get mentorLog() { return game.mentor.log; }, get samen() { return game.samen; } };
+  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 4, gameVersion: GAME_VERSION, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook, dorp: screens.dorp.hook, get mentorLog() { return game.mentor.log; }, get samen() { return game.samen; } };
 }
 
 boot();

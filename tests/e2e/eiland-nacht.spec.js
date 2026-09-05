@@ -53,11 +53,12 @@ test('night falls: Muntje warns, STOOK feeds the fire with the wood in the bag, 
   await expect.poll(async () => (await state(page)).nacht.stolen, { timeout: 20000 }).toBe(1);
   await expect.poll(() => mentorHas(page, 'spook'), { timeout: 20000 }).toBe(true);
 
-  // dawn: the fire still burns → the first night pays 20 coins
+  // dawn: the fire still burns → the first night pays 20 coins, and (V6.6) chapter 1 of the campaign pays its coin too
   const walletBefore = Math.floor((await state(page)).wallet);
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));
   await expect.poll(async () => (await state(page)).nacht.nights, { timeout: 20000 }).toBe(1);
-  expect(Math.floor((await state(page)).wallet)).toBe(walletBefore + 20);
+  expect(Math.floor((await state(page)).wallet)).toBe(walletBefore + 20 + 50);
+  expect((await state(page)).campagne.hoofdstuk).toBe(1);
   await expect.poll(async () => (await hook(page)).ghosts.length, { timeout: 20000 }).toBe(0);
   expect(errors()).toEqual([]);
 });
