@@ -99,7 +99,7 @@ export function normalize(data, config, now) {
     playTimeMs: num(data.playTimeMs),
     flags: data.flags && typeof data.flags === 'object' ? { ...data.flags } : {},
     eiland: normalizeEiland(data.eiland, config),
-    nacht: normalizeNacht(data.nacht),
+    nacht: normalizeNacht(data.nacht, config),
     settings: {
       voice: data.settings && 'voice' in data.settings ? !!data.settings.voice : true,
       sound: data.settings && 'sound' in data.settings ? !!data.settings.sound : true,

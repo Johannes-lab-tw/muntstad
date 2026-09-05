@@ -998,6 +998,13 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .av-bag .honger-bar { display: inline-block; width: 64px; height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 2px; }
 .av-bag .honger-bar b { display: block; height: 100%; background: linear-gradient(90deg, #45d65c, #8fe06f); }
 .av-bag .honger-bar.low b { background: var(--red); }
+.av-bag .warm-bar { display: inline-block; width: 64px; height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 4px; }
+.av-bag .warm-bar b { display: block; height: 100%; background: linear-gradient(90deg, #4fb8ff, #9fe0ff); }
+.av-bag .warm-bar.low b { background: var(--red); }
+.av-bag .lvl { font-weight: 900; font-size: 22px; margin: 0 4px 0 2px; color: #d9541c; }
+.av-row { display: flex; gap: 10px; align-items: center; }
+.av-nacht { padding: 6px 14px; font-size: 20px; font-weight: 800; color: #3f475f; white-space: nowrap; }
+.av-nacht.night { background: #1d2144; color: #fff; }
 .av-flauw { position: absolute; inset: 0; background: #05060f; z-index: 30; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
 .av-flauw.on { opacity: 1; }
 /* ---------- the campfire screen (V6.1): a full layer in AVONTUUR, same bones as WINKEL ---------- */

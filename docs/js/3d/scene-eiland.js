@@ -16,11 +16,11 @@ import { createTiles } from './tiles.js';
 import { createCamp } from './camp.js';
 import { createDayNight } from './daynight.js';
 import { ghostModel, bearModel, tentModel, torchModel, fenceModel, deerModel, dropModel } from './spoken.js';
-import { perks, nightRules, hungerSpeedMul } from '../uitdaging.js';
+import { perks, nightRules, hungerSpeedMul, coldSpeedMul, isCold } from '../uitdaging.js';
 import { Builder, textPlane } from './build.js';
 import { isFunActive } from '../economy.js';
 import { chopRule } from '../eiland.js';
-import { fireRadius, isLit, stepGhost, bearTonight, stepBear, scareBear } from '../nacht.js';
+import { fireRadius, fireLevel, isLit, stepGhost, bearTonight, stepBear, scareBear } from '../nacht.js';
 import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
@@ -288,7 +288,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   // ---------- the night: camp gear, lights, ghosts, the bear ----------
   const ghosts = [];   // { g, model, holder }
   let bear = null;     // { b, model, holder }
-  let ghostTimer = 0, wasDark = false, fireWasBurning = true;
+  let ghostTimer = 0, wasDark = false, fireWasBurning = true, shiver = 0;
   const lantern = new T.PointLight(0xffd080, 0, 12, 1.6);
   lantern.visible = false;
   scene.add(lantern);
@@ -441,12 +441,16 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     syncGear();
     const dark = daynight.darkness;
     const guest = samen && samen.isGuest;
-    env.speedMul = perks(state.eiland, config).speedMul * hungerSpeedMul(state.eiland, config);
-    cb.onTick && cb.onTick(dt * 1000, dark);
-    if (!guest) cb.onBurn && cb.onBurn(dt * 1000, dark);
+    env.speedMul = perks(state.eiland, config).speedMul * hungerSpeedMul(state.eiland, config) * coldSpeedMul(state.nacht, config);
+    shiver = isCold(state.nacht, config) ? 1 : 0;
     const n = state.nacht;
+    // the cold (V6.2): in the fire's light you warm up; a lantern or a torch next to you halves the loss
+    const atFire = n.fire > 0 && Math.hypot(player.x - CAMP.x, player.z - CAMP.z) < fireRadius(n, config);
+    const hasLight = !!state.eiland.tools.lantaarn || (gear.torches ? gear.torches.some((t) => Math.hypot(player.x - t.x, player.z - t.z) < N.torchRadius) : false);
+    cb.onTick && cb.onTick(dt * 1000, dark, { atFire, lit: hasLight });
+    if (!guest) cb.onBurn && cb.onBurn(dt * 1000, dark);
     const rules = nightRules(n.nights, config);
-    camp.setFire(n.fire / 100);
+    camp.setFire(fireLevel(n.fire, config), n.fire / N.fireMax);
     lantern.position.set(player.x, player.ground + 1.7, player.z);
     lantern.intensity = (0.2 + dark * 2.5) * 4;
     if (gear.torches) for (const t of gear.torches) { t.light.intensity = (0.3 + dark * 2.2) * 3; t.flame.scale.setScalar(1 + Math.sin(now / 80 + t.x) * 0.12); }
@@ -518,8 +522,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (Math.hypot(px - camp.chest.pos.x, pz - camp.chest.pos.z) < 1.9) return { type: 'kist', label: camp.chest.isOpen ? 'LEEG' : 'OPEN', target: null };
     for (const dr of drops) if (Math.hypot(px - dr.x, pz - dr.z) < 1.4) return { type: 'drop', label: 'PAK', target: dr };   // your own things, shaken out by the deer
     if (Math.hypot(px - CAMP.x, pz - CAMP.z) < REACH.camp) {
-      if ((state.eiland.bag.hout || 0) > 0 && state.nacht.fire < 100 - N.woodValue) return { type: 'stook', label: 'STOOK', target: null };
-      return { type: 'kamp', label: 'KAMP', target: null };
+      // V6.2: STOOK is its own button at the fire (ui/avontuur.js); the action is KOOK on a big fire with fish in the bag, else KAMP
+      if ((state.eiland.bag.vis || 0) > 0 && fireLevel(state.nacht.fire, config) >= N.cookLevel) return { type: 'kook', label: 'KOOK', target: null, atCamp: true };
+      return { type: 'kamp', label: 'KAMP', target: null, atCamp: true };
     }
     let best = null, bestD = Infinity;
     for (const s of tiles.nearShells(px, pz)) {
@@ -568,6 +573,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
         return;
       }
       case 'stook': cb.onStoke && cb.onStoke(); return;
+      case 'kook': cb.onCook && cb.onCook(); return;
       case 'slaap':
         if (samen && samen.isGuest) { samen.send('sleep', {}); cb.onSay && cb.onSay('lines.sleep'); }
         else cb.onSleep && cb.onSleep();
@@ -794,6 +800,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     camLook.set(player.x, py + CAM.lookUp, player.z);
     if (firstFrame) { camera.position.copy(camPos); firstFrame = false; }
     else camera.position.lerp(camPos, 1 - Math.exp(-9 * dt));
+    if (shiver) { const t = performance.now(); camera.position.y += Math.sin(t / 19) * 0.025; camLook.x += Math.sin(t / 23) * 0.03; }   // the cold: you shiver
     camera.lookAt(camLook);
   }
 
@@ -925,6 +932,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get deer() { return deer ? { x: deer.d.x, z: deer.d.z, state: deer.d.state } : null; },
     get drops() { return drops.map((d) => ({ item: d.item, x: d.x, z: d.z })); },
     get speedMul() { return env.speedMul; },
+    get fireLevel() { return camp.fireLevel; },
+    get atCamp() { return Math.hypot(player.x - CAMP.x, player.z - CAMP.z) < REACH.camp; },
+    stoke() { cb.onStoke && cb.onStoke(); },
+    cook() { cb.onCook && cb.onCook(); },
     spawnDeer,
     removeDeer: clearDeer,
     /** Put the deer right behind the player in charge mode (tests). */

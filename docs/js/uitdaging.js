@@ -1,5 +1,7 @@
 // uitdaging.js — the challenge of V5.3, pure (no DOM, no Three): hunger and eating, fainting, the perks of the gadgets
 // and camp upgrades, and how every night gets harder. Numbers in config.honger / config.deer / config.eiland.tools.
+// V6.2: the cold (config.kou) and cooking on a big fire.
+import { fireLevel } from './nacht.js';
 
 /** What the owned tools change. Everything else reads these instead of the raw config. */
 export function perks(e, config) {
@@ -36,14 +38,47 @@ export function eat(e, config) {
   const H = config.honger;
   const honger = e.honger ?? 100;
   if (honger >= 100) return { eiland: e, item: null, gain: 0 };
-  const order = honger < 50 ? ['vis', 'bes'] : ['bes', 'vis'];
+  const order = honger < 50 ? ['maal', 'vis', 'bes'] : ['bes', 'vis', 'maal'];   // really hungry: the biggest thing first
   const item = order.find((id) => (e.bag[id] || 0) > 0) || null;
   if (!item) return { eiland: e, item: null, gain: 0 };
   const gain = H.food[item];
   return { eiland: { ...e, bag: { ...e.bag, [item]: e.bag[item] - 1 }, honger: Math.min(100, honger + gain) }, item, gain };
 }
 export function canEat(e) {
-  return (e.honger ?? 100) < 100 && ((e.bag.bes || 0) > 0 || (e.bag.vis || 0) > 0);
+  return (e.honger ?? 100) < 100 && ((e.bag.bes || 0) > 0 || (e.bag.vis || 0) > 0 || (e.bag.maal || 0) > 0);
+}
+
+/** KOOK (V6.2): one fish from the bag becomes a meal, on a fire of at least config.nacht.cookLevel. Returns { eiland, ok }. */
+export function cook(e, fire, config) {
+  if (fireLevel(fire, config) < config.nacht.cookLevel || (e.bag.vis || 0) <= 0) return { eiland: e, ok: false };
+  return { eiland: { ...e, bag: { ...e.bag, vis: e.bag.vis - 1, maal: (e.bag.maal || 0) + 1 } }, ok: true };
+}
+
+/**
+ * Cold (V6.2): warmth 0..100 on nacht.warm. In the dark it drops unless you stand in the fire's light (then it rises
+ * fast); a lantern or torch halves the loss; by day it slowly comes back anywhere. Every night the cold bites harder.
+ */
+export function coolDown(n, config, dtMs, darkness, { atFire = false, lit = false } = {}) {
+  const K = config.kou;
+  const warm = n.warm ?? 100;
+  let rate;
+  if (atFire) rate = K.warmUp;
+  else if (darkness > 0.5) rate = -K.dropNight * Math.min(K.dropCap, 1 + K.dropPerNight * (n.nights || 0)) * (lit ? K.litMul : 1);
+  else rate = K.recoverDay;
+  return { ...n, warm: Math.max(0, Math.min(100, warm + (rate * dtMs) / 60000)) };
+}
+export function isCold(n, config) {
+  return (n.warm ?? 100) < config.kou.slowBelow;
+}
+export function coldSpeedMul(n, config) {
+  return isCold(n, config) ? config.kou.slowSpeed : 1;
+}
+/** Frozen: warmth at zero in the dark. Like fainting: half the bag is gone, you wake at the fire, a bit warmer. */
+export function freeze(state, config) {
+  const e = state.eiland;
+  const bag = {};
+  for (const [id, n] of Object.entries(e.bag)) bag[id] = Math.floor(n / 2);
+  return { ...state, eiland: { ...e, bag }, nacht: { ...state.nacht, warm: config.kou.afterFaint, frozen: (state.nacht.frozen || 0) + 1 } };
 }
 
 /** Fainting: an empty stomach in the dark. Half the bag is gone, you wake at the campfire with some strength back. */

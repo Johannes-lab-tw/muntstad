@@ -1,9 +1,9 @@
-// 3d/daycycle.js — the clock of the island, pure numbers (no Three.js): a cycle of 6 minutes day and 3 minutes
-// night, derived from the wall clock so every device (and later every player in a room) agrees on the time.
+// 3d/daycycle.js — the clock of the island, pure numbers (no Three.js): a cycle of 8 minutes day and 5 minutes
+// night (V6.2; was 6 + 3), derived from the wall clock so every device (and later every player in a room) agrees on the time.
 // phaseAt(now) → 0..1 (0 = sunrise, DAY_END = sunset, 1 = next sunrise); paletteAt(phase) → colours and strengths.
 
-export const CYCLE = Object.freeze({ dayMs: 6 * 60 * 1000, nightMs: 3 * 60 * 1000 });
-export const DAY_END = CYCLE.dayMs / (CYCLE.dayMs + CYCLE.nightMs);   // 0.667
+export const CYCLE = Object.freeze({ dayMs: 8 * 60 * 1000, nightMs: 5 * 60 * 1000 });
+export const DAY_END = CYCLE.dayMs / (CYCLE.dayMs + CYCLE.nightMs);   // 0.615
 
 export function phaseAt(nowMs, offsetMs = 0) {
   const total = CYCLE.dayMs + CYCLE.nightMs;

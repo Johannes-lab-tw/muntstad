@@ -43,6 +43,7 @@ export const CONFIG = Object.freeze({
       schelp: { name: 'Schelp', icon: '🐚', price: 3 },
       bes:    { name: 'Bes',    icon: '🫐', price: 1 },
       vis:    { name: 'Vis',    icon: '🐟', price: 8 },
+      maal:   { name: 'Maal',   icon: '🍖', price: 16 },   // a fish cooked on a level-3 fire (V6.2)
     },
     tools: [
       { id: 'bijl',     name: 'Bijl',     icon: '🪓', price: 60,  tekst: 'Elke hak geeft twee stukken hout.' },
@@ -92,11 +93,15 @@ export const CONFIG = Object.freeze({
   // The night on the island (PLAN-V4 R4). Balance: a night (3 min) burns ≈ 8 pieces of wood; by hand that is 24 taps,
   // with the axe 4 taps. The reward for a night with the fire still burning grows with every night.
   nacht: {
-    burnDay: 4,                       // fire units per minute by day (100 = a full fire)
-    burnNight: 30,                    // ... in the dark: a full fire lasts a whole night and a bit
-    woodValue: 12,                    // one piece of wood = 12 fire units
-    fireRadiusMin: 3,                 // light radius of a nearly-out fire
-    fireRadiusMax: 9,                 // ... of a full fire
+    // V6.2: the fire is a heap of wood (fire = pieces in it); more wood = a higher level, a bigger fire and more light
+    fireMax: 400,                     // the heap never holds more than this
+    levels: [20, 50, 100, 200],       // level 2 from 20 pieces, 3 from 50 (you can cook), 4 from 100 (beacon), 5 from 200 (bonfire)
+    levelRadius: [0, 4, 6, 9, 13, 18],// light radius per level (0 = out); level 5 lights the whole camp
+    burnDay: 0.4,                     // pieces per minute by day at level 1
+    burnNight: 2.4,                   // ... in the dark: a level-1 fire eats 12 pieces a night of 5 minutes
+    burnPerLevel: 0.35,               // every level above 1 burns 35 % more
+    ghostTakes: 3,                    // pieces a ghost pulls out of the fire
+    cookLevel: 3,                     // from this level you can cook fish (KOOK): a meal fills twice as much
     lanternRadius: 5,                 // light around the player with the lantern
     torchRadius: 4,                   // each of the four torches
     fenceRadius: 9.5,                 // the fence keeps ghosts out of the camp
@@ -110,7 +115,7 @@ export const CONFIG = Object.freeze({
     bearSpeed: 0.9,
     bearReach: 1.8,
     bearScares: 3,                    // BOE this many times and it turns round
-    bearEats: 3,                      // pieces of wood (36 fire units) it takes from the fire
+    bearEats: 8,                      // pieces of wood it takes from the fire
     rewardBase: 20,                   // coins at dawn when the fire burned all night
     rewardPerNight: 5,                // ... plus this per night survived before
     sleepSkipsTo: 0.97,               // SLAAP in the tent moves the clock to just before dawn
@@ -120,16 +125,31 @@ export const CONFIG = Object.freeze({
 
   // Hunger (V5.3): a full stomach lasts about a day and a night; berries and fish fill it. Empty in the dark = you faint.
   honger: {
-    drainDay: 4,                      // per minute by day (100 = full)
+    drainDay: 2.5,                    // per minute by day (100 = full; a day is 8 minutes since V6.2)
     drainNight: 8,                    // per minute in the dark
     slowBelow: 25,                    // under this you are slow…
     slowSpeed: 0.6,                   // … this much
-    food: { bes: 15, vis: 40 },       // what a berry and a fish give back
+    food: { bes: 15, vis: 40, maal: 80 },   // what a berry, a fish and a cooked meal give back
     afterFaint: 50,                   // strength when you wake up at the fire
     warnBelow: 40,                    // Muntje's 'maag knort' under this (once per 40 s)
   },
 
   // The Nachthert (V5.3): from the second night, runs at you in the dark, shakes things out of your bag
+  // Cold (V6.2): in the dark your warmth drops away from the fire and the torches; in the fire's light it comes back.
+  // Under a quarter you shiver and walk slowly; at zero you faint, like with an empty stomach.
+  kou: {
+    dropNight: 7,                     // warmth per minute lost in the dark, away from fire and light
+    dropPerNight: 0.08,               // ... 8 % more each night survived ...
+    dropCap: 2,                       // ... up to double
+    recoverDay: 4,                    // per minute by day, anywhere
+    warmUp: 30,                       // per minute within the fire's light
+    litMul: 0.5,                      // a lantern or a torch halves the loss
+    slowBelow: 25,                    // under this you shiver and are slow ...
+    slowSpeed: 0.65,                  // ... this much
+    afterFaint: 60,                   // warmth when you wake up at the fire
+    warnBelow: 40,                    // Muntje says 'brr' under this (once per 40 s)
+  },
+
   deer: {
     fromNight: 2,
     speed: 4.0,                       // between your walk (2.6) and your run (4.6); the shoes beat it

@@ -102,11 +102,11 @@ test('the forest grows on grass only, never on paths, in the camp, on the pier o
   for (const it of placeForest(map, 7, tile).tree1) assert.ok(it.x >= tile.x0 && it.x < tile.x1 && it.z >= tile.z0 && it.z < tile.z1, 'inside its tile');
 });
 
-test('day and night: 6 min day, 3 min night, dark palette at night', () => {
-  assert.equal(CYCLE.dayMs + CYCLE.nightMs, 9 * 60 * 1000);
-  assert.ok(Math.abs(DAY_END - 2 / 3) < 1e-9);
+test('day and night: 8 min day, 5 min night (V6.2), dark palette at night', () => {
+  assert.equal(CYCLE.dayMs + CYCLE.nightMs, 13 * 60 * 1000);
+  assert.ok(Math.abs(DAY_END - 8 / 13) < 1e-9);
   assert.equal(phaseAt(0), 0);
-  assert.ok(Math.abs(phaseAt(4.5 * 60 * 1000) - 0.5) < 1e-9);
+  assert.ok(Math.abs(phaseAt(6.5 * 60 * 1000) - 0.5) < 1e-9);
   assert.equal(darknessAt(0.3), 0);
   assert.equal(darknessAt(0.85), 1);
   const noon = paletteAt(0.4), night = paletteAt(0.85);

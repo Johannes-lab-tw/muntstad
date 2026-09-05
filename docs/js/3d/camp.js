@@ -51,6 +51,51 @@ export function createCamp(map) {
     group.add(c);
     flames.push(c);
   }
+  // V6.2: the fire grows with the wood in it. Level 2 an outer ring of big stones, level 3 an iron basket with a grill
+  // (you can cook), level 4 a tripod of tall logs (the beacon), level 5 a stack of big logs all round (the bonfire).
+  const ring2 = new Builder({ r: 0.05 });
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2 + 0.2;
+    ring2.add(new T.SphereGeometry(0.3 + (i % 3) * 0.05, 7, 6).scale(1, 0.75, 1).translate(Math.cos(a) * 1.35, 0.14, Math.sin(a) * 1.35), i % 2 ? STONE : '#7d818a');
+  }
+  const ring2M = ring2.build();
+  ring2M.position.set(CAMP.x, y0, CAMP.z);
+  group.add(ring2M);
+  const korf = new Builder({ r: 0.01 });
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    korf.add(new T.BoxGeometry(0.06, 1.05, 0.06).translate(Math.cos(a) * 0.72, 0.6, Math.sin(a) * 0.72), '#3a3d47');
+  }
+  korf.add(new T.TorusGeometry(0.72, 0.035, 6, 20).rotateX(Math.PI / 2).translate(0, 0.35, 0), '#4a4e58');
+  korf.add(new T.TorusGeometry(0.72, 0.035, 6, 20).rotateX(Math.PI / 2).translate(0, 1.1, 0), '#4a4e58');
+  for (let i = 0; i < 5; i++) korf.add(new T.BoxGeometry(1.4, 0.03, 0.04).translate(0, 1.12, -0.5 + i * 0.25), '#5b5f6a');   // the grill
+  const korfM = korf.build();
+  korfM.position.set(CAMP.x, y0, CAMP.z);
+  group.add(korfM);
+  const baken = new Builder({ r: 0.03 });
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + 0.5;
+    const g = new T.CylinderGeometry(0.09, 0.12, 3.4, 7).translate(0, 1.7, 0);
+    g.rotateX(-0.42); g.rotateY(-a + Math.PI / 2);
+    g.translate(Math.cos(a) * 1.15, 0, Math.sin(a) * 1.15);
+    baken.add(g, i % 2 ? WOOD : WOOD_L);
+  }
+  const bakenM = baken.build();
+  bakenM.position.set(CAMP.x, y0, CAMP.z);
+  group.add(bakenM);
+  const vreugde = new Builder({ r: 0.03 });
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 + 0.15;
+    const g = new T.CylinderGeometry(0.13, 0.16, 2.6, 7).translate(0, 1.3, 0);
+    g.rotateX(-0.62); g.rotateY(-a + Math.PI / 2);
+    g.translate(Math.cos(a) * 1.5, 0, Math.sin(a) * 1.5);
+    vreugde.add(g, i % 3 ? WOOD : WOOD_L);
+  }
+  const vreugdeM = vreugde.build();
+  vreugdeM.position.set(CAMP.x, y0, CAMP.z);
+  group.add(vreugdeM);
+  const levelProps = [[], [], [ring2M], [ring2M, korfM], [ring2M, korfM, bakenM], [ring2M, korfM, bakenM, vreugdeM]];
+  for (const m of [ring2M, korfM, bakenM, vreugdeM]) m.visible = false;
   const fireLight = new T.PointLight(0xffa040, 0, 24, 1.5);
   fireLight.position.set(CAMP.x, y0 + 1.2, CAMP.z);
   group.add(fireLight);
@@ -226,10 +271,10 @@ export function createCamp(map) {
   const caveInfo = { bats, chamber: ch, entry, segs, ghostAt: { x: ch.x + Math.cos(entry + Math.PI * 0.75) * (R - 0.9), z: ch.z + Math.sin(entry + Math.PI * 0.75) * (R - 0.9) } };
 
   const fireBase = y0;
-  let level = 1;   // 0 = out, 1 = a full fire (round 4: the fire wants wood)
+  let level = 1, frac = 0.1;   // V6.2: level 0..5 from the wood in the fire, frac 0..1 = how full the heap is
   function update(now, darkness = 0, lite = false) {
     for (const fn of anim) fn(now);
-    const size = level <= 0 ? 0 : 0.35 + level * 0.65;
+    const size = level <= 0 ? 0 : 0.55 + level * 0.32 + frac * 0.2;   // level 1 ≈ 0.9, level 5 ≈ 2.2
     flames.forEach((c, i) => {
       const f = (1 + Math.sin(now / 90 + i * 2.1) * 0.12 + Math.sin(now / 37 + i) * 0.06) * size;
       c.visible = size > 0;
@@ -239,7 +284,7 @@ export function createCamp(map) {
     });
     // the fire is the light of the night: warm, flickering, strong in the dark and a soft glow by day
     fireLight.intensity = size * (lite ? 0.7 : 1) * (0.3 + darkness * 2.8) * (1 + Math.sin(now / 80) * 0.08 + Math.sin(now / 210) * 0.05) * 8;
-    fireLight.distance = 6 + size * 18;
+    fireLight.distance = 4 + size * 12;
   }
   /** The second hut (V5.3 upgrade): built when bought. Returns its obstacle. */
   function addHut(x, z, rot, roof) {
@@ -248,5 +293,13 @@ export function createCamp(map) {
     group.add(g);
     return { x, z, r: 2.1, kind: 'hut' };
   }
-  return { group, update, obstacles, fireLight, chest, cave: caveInfo, addHut, firePos: new T.Vector3(CAMP.x, y0, CAMP.z), setFire(l) { level = Math.max(0, Math.min(1, l)); } };
+  /** The fire's level (0 = out .. 5 = bonfire) and how full the heap is (0..1): flames, props and light follow. */
+  function setFire(l, f = 0) {
+    const next = Math.max(0, Math.min(5, Math.floor(l)));
+    frac = Math.max(0, Math.min(1, f));
+    if (next === level) return;
+    level = next;
+    for (const m of [ring2M, korfM, bakenM, vreugdeM]) m.visible = levelProps[level].includes(m);
+  }
+  return { group, update, obstacles, fireLight, chest, cave: caveInfo, addHut, firePos: new T.Vector3(CAMP.x, y0, CAMP.z), setFire, get fireLevel() { return level; } };
 }

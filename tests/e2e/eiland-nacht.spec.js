@@ -32,15 +32,17 @@ test('night falls: Muntje warns, STOOK feeds the fire with the wood in the bag, 
   await expect.poll(async () => (await hook(page)).darkness, { timeout: 20000 }).toBe(1);
   await expect.poll(() => mentorHas(page, 'donker'), { timeout: 20000 }).toBe(true);
 
-  // STOOK at the fire: 3 pieces of wood → +36 fire units
+  // STOOK at the fire (V6.2: its own button next to EET): 3 pieces of wood → 3 more in the heap
   const h = await hook(page);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), h.camp);
-  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('STOOK');
-  const fireBefore = (await state(page)).nacht.fire;
-  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 20000 }).toBe(0);
-  expect((await state(page)).nacht.fire).toBeGreaterThan(fireBefore + 30);
   await expect.poll(async () => (await hook(page)).action?.label, { timeout: 20000 }).toBe('KAMP');
+  await expect(page.locator('#av-stook')).toBeVisible({ timeout: 20000 });
+  const fireBefore = (await state(page)).nacht.fire;
+  await page.locator('#av-stook').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 20000 }).toBe(0);
+  expect((await state(page)).nacht.fire).toBeGreaterThan(fireBefore + 2);
+  await expect(page.locator('#av-stook')).toBeHidden({ timeout: 20000 });
+  await expect(page.locator('#av-nacht')).toContainText('Nacht 1');
 
   // a ghost next to the player, far from the fire's light: it steals once
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 24), h.camp);

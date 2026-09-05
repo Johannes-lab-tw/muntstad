@@ -78,11 +78,11 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
   await expect.poll(async () => Math.round((await state(b)).nacht.fire), { timeout: 30000 }).toBeLessThanOrEqual(41);
   // the guest stokes: its wood leaves its bag and lands in the host's fire
   await b.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), hb.camp);
-  await expect.poll(async () => (await hook(b)).action?.label, { timeout: 30000 }).toBe('STOOK');
+  await expect(b.locator('#av-stook')).toBeVisible({ timeout: 30000 });
   const hostFire = (await state(a)).nacht.fire;
-  await b.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await b.locator('#av-stook').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await expect.poll(async () => (await state(b)).eiland.bag.hout, { timeout: 30000 }).toBe(0);
-  await expect.poll(async () => (await state(a)).nacht.fire, { timeout: 30000 }).toBeGreaterThan(hostFire + 30);
+  await expect.poll(async () => (await state(a)).nacht.fire, { timeout: 30000 }).toBeGreaterThan(hostFire + 2);
   await a.evaluate(() => window.__muntstad.avontuur.setPhase(null));
 
   // the guest leaves: the host's island is quiet again

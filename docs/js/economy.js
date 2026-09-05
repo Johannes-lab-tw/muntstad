@@ -371,6 +371,7 @@ export function stats(state, config) {
     questsDone: state.eiland ? state.eiland.questsDone : 0,
     tools: state.eiland ? Object.keys(state.eiland.tools).length : 0,
     fainted: state.nacht ? state.nacht.fainted || 0 : 0,
+    frozen: state.nacht ? state.nacht.frozen || 0 : 0,
     bumped: state.nacht ? state.nacht.bumped || 0 : 0,
     honger: state.eiland ? Math.round(state.eiland.honger ?? 100) : 100,
     funOwned: ownedFunIds(state, config).length,

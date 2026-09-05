@@ -1,28 +1,50 @@
 // nacht.js — the night, pure (no DOM, no Three): the campfire that eats wood, ghosts that steal in the dark, the
 // Nachtbeer, and the reward at dawn. Numbers in config.nacht; the scene (3d/scene-eiland.js + 3d/spoken.js) only
 // moves models around and asks these functions what happens. Nobody gets hurt: losing means losing wood or coins.
+// V6.2: the fire is a heap of wood. `fire` counts the pieces in it; the more wood, the higher the level (1..5), the
+// bigger the fire, the further its light reaches, and the more it eats per night. Under the limit the level drops.
+import { CYCLE } from './3d/daycycle.js';
 
 export function createNacht() {
-  return { fire: 60, nights: 0, stolen: 0, clockOffsetMs: 0, lastDawnPhase: 0, bearScared: 0, fainted: 0, bumped: 0 };
+  return { fire: 30, nights: 0, stolen: 0, clockOffsetMs: 0, lastDawnPhase: 0, bearScared: 0, fainted: 0, bumped: 0, warm: 100, frozen: 0 };
 }
 
-/** The fire burns down: slowly by day, faster in the dark. fire is 0..100. */
+/** The level of the fire from the wood in it: 0 = out, 1 = a small fire, up to 5 = a bonfire (config.nacht.levels). */
+export function fireLevel(fire, config) {
+  if (!(fire > 0)) return 0;
+  let level = 1;
+  for (const limit of config.nacht.levels) if (fire >= limit) level++;
+  return level;
+}
+/** Where this level starts and where the next one begins (for the HUD bar). */
+export function levelSpan(fire, config) {
+  const L = config.nacht.levels;
+  const level = fireLevel(fire, config);
+  const from = level <= 1 ? 0 : L[level - 2];
+  const to = level === 0 ? 1 : level - 1 < L.length ? L[level - 1] : config.nacht.fireMax;
+  return { level, from, to };
+}
+
+/** The fire burns down: slowly by day, faster in the dark, more per level. fire = pieces of wood (0..fireMax). */
 export function burnFire(n, config, dtMs, darkness, mul = 1) {
-  const rate = (config.nacht.burnDay + (config.nacht.burnNight - config.nacht.burnDay) * darkness) * mul;   // units per minute (the fire pit slows it)
+  const N = config.nacht;
+  const level = fireLevel(n.fire, config);
+  if (level <= 0) return n;
+  const rate = (N.burnDay + (N.burnNight - N.burnDay) * darkness) * (1 + (level - 1) * N.burnPerLevel) * mul;   // pieces per minute (the fire pit slows it)
   return { ...n, fire: Math.max(0, n.fire - (rate * dtMs) / 60000) };
 }
 
 /** Put wood in the fire: returns { nacht, eiland, used }. Takes up to `max` pieces from the backpack. */
 export function stokeFire(n, e, config, max = 3) {
-  const room = Math.ceil((100 - n.fire) / config.nacht.woodValue);
+  const room = Math.max(0, Math.floor(config.nacht.fireMax - n.fire));
   const used = Math.max(0, Math.min(max, e.bag.hout || 0, room));
   if (used <= 0) return { nacht: n, eiland: e, used: 0 };
-  return { nacht: { ...n, fire: Math.min(100, n.fire + used * config.nacht.woodValue) }, eiland: { ...e, bag: { ...e.bag, hout: e.bag.hout - used } }, used };
+  return { nacht: { ...n, fire: Math.min(config.nacht.fireMax, n.fire + used) }, eiland: { ...e, bag: { ...e.bag, hout: e.bag.hout - used } }, used };
 }
 
-/** How far the fire's light reaches (ghosts keep out of the light). */
+/** How far the fire's light reaches (ghosts keep out of the light): per level. */
 export function fireRadius(n, config) {
-  return n.fire <= 0 ? 0 : config.nacht.fireRadiusMin + (config.nacht.fireRadiusMax - config.nacht.fireRadiusMin) * (n.fire / 100);
+  return config.nacht.levelRadius[fireLevel(n.fire, config)] || 0;
 }
 
 /** Is a point lit? lights = [{ x, z, r }]. */
@@ -69,7 +91,7 @@ export function stepGhost(g, ctx, config) {
 /** What a ghost takes: a piece of wood from the fire, an item from the backpack, or a few coins. */
 export function ghostSteal(n, e, wallet, config, pick = Math.random()) {
   const have = Object.entries(e.bag).filter(([, v]) => v > 0);
-  if (n.fire >= config.nacht.woodValue && pick < 0.5) return { nacht: { ...n, fire: n.fire - config.nacht.woodValue, stolen: n.stolen + 1 }, eiland: e, wallet, what: 'vuur' };
+  if (n.fire >= 1 && pick < 0.5) return { nacht: { ...n, fire: Math.max(0, n.fire - config.nacht.ghostTakes), stolen: n.stolen + 1 }, eiland: e, wallet, what: 'vuur' };
   if (have.length) {
     const [id] = have[Math.floor(pick * have.length) % have.length];
     return { nacht: { ...n, stolen: n.stolen + 1 }, eiland: { ...e, bag: { ...e.bag, [id]: e.bag[id] - 1 } }, wallet, what: id };
@@ -116,9 +138,16 @@ export function dawnReward(n, config, fireWasBurning) {
   return { nacht: { ...n, nights, bearScared: 0 }, reward };
 }
 
-export function normalizeNacht(data) {
+export function normalizeNacht(data, config = null) {
   const fresh = createNacht();
   if (!data || typeof data !== 'object') return fresh;
   const num = (v, max = 1e9) => Math.min(max, Math.max(0, Number(v) || 0));
-  return { fire: num(data.fire, 100), nights: Math.floor(num(data.nights)), stolen: Math.floor(num(data.stolen)), clockOffsetMs: Math.floor(Number(data.clockOffsetMs) || 0) % (9 * 60 * 1000), lastDawnPhase: 0, bearScared: 0, fainted: Math.floor(num(data.fainted)), bumped: Math.floor(num(data.bumped)) };
+  const fireMax = config ? config.nacht.fireMax : 400;
+  const total = CYCLE.dayMs + CYCLE.nightMs;
+  return {
+    fire: num(data.fire, fireMax), nights: Math.floor(num(data.nights)), stolen: Math.floor(num(data.stolen)),
+    clockOffsetMs: Math.floor(Number(data.clockOffsetMs) || 0) % total, lastDawnPhase: num(data.lastDawnPhase, 1),
+    bearScared: Math.floor(num(data.bearScared, 9)), fainted: Math.floor(num(data.fainted)), bumped: Math.floor(num(data.bumped)),
+    warm: data.warm == null ? 100 : num(data.warm, 100), frozen: Math.floor(num(data.frozen)),
+  };
 }

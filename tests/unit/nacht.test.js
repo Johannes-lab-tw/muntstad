@@ -6,41 +6,55 @@ import { CONFIG } from '../../docs/js/config.js';
 import { createState } from '../../docs/js/economy.js';
 import { encodeCode, decodeCode } from '../../docs/js/save.js';
 import { CYCLE } from '../../docs/js/3d/daycycle.js';
-import { createNacht, burnFire, stokeFire, fireRadius, isLit, stepGhost, ghostSteal, bearTonight, stepBear, scareBear, dawnReward, normalizeNacht } from '../../docs/js/nacht.js';
+import { createNacht, burnFire, stokeFire, fireRadius, fireLevel, levelSpan, isLit, stepGhost, ghostSteal, bearTonight, stepBear, scareBear, dawnReward, normalizeNacht } from '../../docs/js/nacht.js';
 
 const N = CONFIG.nacht;
 
-test('balance: a full fire lasts a night; the wood for a night is 24 taps by hand and 4 with the axe', () => {
+test('balance: a small fire eats 10-15 pieces a night, a bonfire about twice that; a night of wood is at most 40 taps by hand and 8 with the axe', () => {
   const nightMin = CYCLE.nightMs / 60000;
-  const burned = N.burnNight * nightMin;
-  assert.ok(burned >= 80 && burned <= 110, `a night burns ${burned} of 100`);
-  const wood = Math.ceil(burned / N.woodValue);
+  const burned = N.burnNight * nightMin;   // level 1
+  assert.ok(burned >= 10 && burned <= 15, `a night at level 1 burns ${burned} pieces`);
+  const big = burned * (1 + 4 * N.burnPerLevel);   // level 5
+  assert.ok(big >= 2 * burned && big <= 3 * burned, `a bonfire burns ${big}`);
+  const wood = Math.ceil(burned);
   const tapsHand = wood * CONFIG.eiland.chop.hands.taps / CONFIG.eiland.chop.hands.wood;
   const tapsAxe = wood * CONFIG.eiland.chop.withAxe.taps / CONFIG.eiland.chop.withAxe.wood;
-  assert.ok(tapsHand >= 20 && tapsHand <= 30, `${tapsHand} taps by hand`);
-  assert.ok(tapsAxe <= 5, `${tapsAxe} taps with the axe`);
+  assert.ok(tapsHand >= 20 && tapsHand <= 40, `${tapsHand} taps by hand`);
+  assert.ok(tapsAxe <= 8, `${tapsAxe} taps with the axe`);
+  // the levels climb: 20, 50, 100, 200 pieces, the heap holds 400; the light grows with the level
+  assert.deepEqual([0, 1, 19, 20, 49, 50, 99, 100, 199, 200, 400].map((f) => fireLevel(f, CONFIG)), [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
+  assert.deepEqual(levelSpan(60, CONFIG), { level: 3, from: 50, to: 100 });
+  assert.deepEqual(levelSpan(250, CONFIG), { level: 5, from: 200, to: N.fireMax });
+  assert.deepEqual(levelSpan(0, CONFIG), { level: 0, from: 0, to: 1 });
+  for (let l = 1; l < 5; l++) assert.ok(N.levelRadius[l + 1] > N.levelRadius[l]);
+  assert.ok(N.levelRadius[5] >= 12, 'a bonfire lights the whole camp');
   // the axe pays back: three nights of rewards cover it
   const threeNights = N.rewardBase * 3 + N.rewardPerNight * 3;
   assert.ok(threeNights >= CONFIG.eiland.tools.find((t) => t.id === 'bijl').price, 'axe pays back in three nights');
 });
 
-test('the fire burns slowly by day and fast by night; wood stokes it up to 100', () => {
-  let n = createNacht();
+test('the fire burns slowly by day, fast by night and more per level; wood stokes it up to the heap limit', () => {
+  let n = { ...createNacht(), fire: 10 };   // level 1
   const day = burnFire(n, CONFIG, 60000, 0).fire;
   const night = burnFire(n, CONFIG, 60000, 1).fire;
   assert.ok(n.fire - day < n.fire - night);
-  assert.equal(n.fire - night, N.burnNight);
+  assert.ok(Math.abs((n.fire - night) - N.burnNight) < 1e-9);
+  const big = burnFire({ ...n, fire: 300 }, CONFIG, 60000, 1).fire;
+  assert.ok(Math.abs((300 - big) - N.burnNight * (1 + 4 * N.burnPerLevel)) < 1e-9, 'a bonfire eats more');
   assert.equal(burnFire({ ...n, fire: 1 }, CONFIG, 600000, 1).fire, 0);
+  assert.equal(burnFire({ ...n, fire: 0 }, CONFIG, 600000, 1).fire, 0, 'an out fire stays at zero');
   const e = { bag: { hout: 10, schelp: 0, bes: 0, vis: 0 } };
   const r = stokeFire({ ...n, fire: 50 }, e, CONFIG, 3);
   assert.equal(r.used, 3);
-  assert.equal(r.nacht.fire, 86);
+  assert.equal(r.nacht.fire, 53);
   assert.equal(r.eiland.bag.hout, 7);
-  const full = stokeFire({ ...n, fire: 100 }, e, CONFIG, 3);
-  assert.equal(full.used, 0, 'a full fire takes no wood');
+  const full = stokeFire({ ...n, fire: N.fireMax }, e, CONFIG, 3);
+  assert.equal(full.used, 0, 'a full heap takes no wood');
+  assert.equal(stokeFire({ ...n, fire: N.fireMax - 1 }, e, CONFIG, 3).used, 1, 'only the room that is left');
   assert.equal(stokeFire(n, { bag: { hout: 0 } }, CONFIG).used, 0);
   assert.ok(fireRadius({ ...n, fire: 100 }, CONFIG) > fireRadius({ ...n, fire: 10 }, CONFIG));
   assert.equal(fireRadius({ ...n, fire: 0 }, CONFIG), 0);
+  assert.equal(fireRadius({ ...n, fire: 250 }, CONFIG), N.levelRadius[5]);
 });
 
 test('a ghost drifts to the fire, stops at the light, gives up; in the dark it steals and flees', () => {
@@ -67,7 +81,7 @@ test('what a ghost steals: wood from the fire, an item from the bag, or a few co
   const e = { bag: { hout: 2, schelp: 0, bes: 0, vis: 0 } };
   const a = ghostSteal(n, e, 10, CONFIG, 0.1);
   assert.equal(a.what, 'vuur');
-  assert.equal(a.nacht.fire, 38);
+  assert.equal(a.nacht.fire, 50 - N.ghostTakes);
   const b = ghostSteal(n, e, 10, CONFIG, 0.9);
   assert.equal(b.what, 'hout');
   assert.equal(b.eiland.bag.hout, 1);
@@ -105,6 +119,7 @@ test('dawn pays when the fire burned, more every night; the state survives the B
   assert.equal(back.nacht.nights, 4);
   assert.equal(back.nacht.stolen, 2);
   assert.equal(back.nacht.clockOffsetMs, 12345);
-  assert.deepEqual(normalizeNacht({ fire: 500, nights: -1 }).fire, 100);
+  assert.deepEqual(normalizeNacht({ fire: 500, nights: -1 }).fire, N.fireMax);
+  assert.equal(normalizeNacht({ fire: 30 }).warm, 100, 'an old save starts warm');
   assert.deepEqual(normalizeNacht(null), createNacht());
 });

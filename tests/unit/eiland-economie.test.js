@@ -10,7 +10,7 @@ import { createEiland, collect, bagCount, bagValue, sellAll, buyTool, chopRule, 
 
 test('a fresh state has an empty backpack, no tools and the first quest', () => {
   const s = createState(CONFIG, 0);
-  assert.deepEqual(s.eiland.bag, { hout: 0, schelp: 0, bes: 0, vis: 0 });
+  assert.deepEqual(s.eiland.bag, { hout: 0, schelp: 0, bes: 0, vis: 0, maal: 0 });
   assert.deepEqual(s.eiland.tools, {});
   assert.equal(currentQuest(s.eiland, CONFIG).index, 0);
   assert.ok(CONFIG.eiland.quests.length >= 12, 'Ollama wrote the quests');
@@ -109,7 +109,7 @@ test('the Bewaar-code and normalize carry the island along and clamp nonsense', 
   s = buyTool(s, CONFIG, 'bijl').state;
   s.eiland = { ...s.eiland, quest: 3, questN: 2, questsDone: 3, sold: 44, earned: 60 };
   const back = decodeCode(encodeCode(s, CONFIG), CONFIG, 0);
-  assert.deepEqual(back.eiland.bag, { hout: 0, schelp: 0, bes: 0, vis: 4 });
+  assert.deepEqual(back.eiland.bag, { hout: 0, schelp: 0, bes: 0, vis: 4, maal: 0 });
   assert.deepEqual(back.eiland.tools, { bijl: true });
   assert.equal(back.eiland.quest, 3);
   assert.equal(back.eiland.questN, 2);

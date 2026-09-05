@@ -8,14 +8,14 @@ import { CYCLE } from '../../docs/js/3d/daycycle.js';
 import { createEiland, collect, bagMaxOf, normalizeEiland } from '../../docs/js/eiland.js';
 import { burnFire } from '../../docs/js/nacht.js';
 import { encodeCode, decodeCode } from '../../docs/js/save.js';
-import { perks, drainHunger, isHungry, hungerSpeedMul, eat, canEat, faint, deerBump, nightRules } from '../../docs/js/uitdaging.js';
+import { perks, drainHunger, isHungry, hungerSpeedMul, eat, canEat, faint, deerBump, nightRules, cook, coolDown, isCold, coldSpeedMul, freeze } from '../../docs/js/uitdaging.js';
 
 const H = CONFIG.honger;
 
 test('balance: a full stomach lasts a day and a night without eating, and a fish plus a few berries fills it again', () => {
   const dayMin = CYCLE.dayMs / 60000, nightMin = CYCLE.nightMs / 60000;
   const used = H.drainDay * dayMin + H.drainNight * nightMin;
-  assert.ok(used >= 40 && used <= 60, `a day and a night use ${used} of 100`);
+  assert.ok(used >= 40 && used <= 70, `a day and a night use ${used} of 100`);
   assert.ok(H.food.vis + 3 * H.food.bes >= 60);
   assert.ok(H.slowBelow > 0 && H.slowSpeed < 1);
 });
@@ -106,4 +106,46 @@ test('hunger and the counters survive the Bewaar-code and normalize', () => {
   const big = normalizeEiland({ bag: { hout: 55 }, tools: { rugzak: 1 } }, CONFIG);
   assert.equal(big.bag.hout, 55, 'with the big backpack 55 fits');
   assert.equal(normalizeEiland({ bag: { hout: 55 } }, CONFIG).bag.hout, 30, 'without it 30');
+});
+
+test('V6.2 cold: warmth drops in the dark away from the fire (less with a lantern), comes back at the fire; zero = frozen, half the bag gone', () => {
+  const K = CONFIG.kou;
+  const n = { warm: 100, nights: 0 };
+  const dark = coolDown(n, CONFIG, 60000, 1).warm;
+  assert.ok(Math.abs((100 - dark) - K.dropNight) < 1e-9, `a dark minute costs ${100 - dark}`);
+  const lit = coolDown(n, CONFIG, 60000, 1, { lit: true }).warm;
+  assert.ok(100 - lit < 100 - dark, 'a lantern helps');
+  assert.equal(coolDown({ warm: 50, nights: 0 }, CONFIG, 60000, 1, { atFire: true }).warm, Math.min(100, 50 + K.warmUp));
+  assert.equal(coolDown({ warm: 50, nights: 0 }, CONFIG, 60000, 0).warm, 50 + K.recoverDay, 'by day it slowly comes back');
+  const later = coolDown({ warm: 100, nights: 6 }, CONFIG, 60000, 1).warm;
+  assert.ok(100 - later > 100 - dark, 'night 7 is colder than night 1');
+  assert.ok(100 - coolDown({ warm: 100, nights: 99 }, CONFIG, 60000, 1).warm <= K.dropNight * K.dropCap + 1e-9, 'but never more than double');
+  // a whole night away from the fire is survivable on night 1 only with a lantern
+  const nightMin = CYCLE.nightMs / 60000;
+  assert.ok(K.dropNight * nightMin > 30 && K.dropNight * nightMin < 100, `a first night away from the fire costs ${K.dropNight * nightMin}`);
+  assert.ok(isCold({ warm: K.slowBelow - 1 }, CONFIG) && !isCold({ warm: K.slowBelow }, CONFIG));
+  assert.equal(coldSpeedMul({ warm: 5 }, CONFIG), K.slowSpeed);
+  assert.equal(coldSpeedMul({ warm: 80 }, CONFIG), 1);
+  const s = { eiland: { ...createEiland(CONFIG), bag: { hout: 7, schelp: 4, bes: 1, vis: 0 } }, nacht: { warm: 0, frozen: 0, fainted: 0 } };
+  const f = freeze(s, CONFIG);
+  assert.deepEqual(f.eiland.bag, { hout: 3, schelp: 2, bes: 0, vis: 0 });
+  assert.equal(f.nacht.warm, K.afterFaint);
+  assert.equal(f.nacht.frozen, 1);
+  assert.equal(f.nacht.fainted, 0, 'the cold counts apart from the hunger');
+});
+
+test('V6.2 KOOK: a fish becomes a meal on a level-3 fire, never on a smaller one; a meal fills twice a fish and is eaten first when starving', () => {
+  const e = { ...createEiland(CONFIG), bag: { hout: 0, schelp: 0, bes: 2, vis: 2, maal: 0 }, honger: 30 };
+  assert.equal(cook(e, 30, CONFIG).ok, false, 'level 2: no cooking');
+  const r = cook(e, 60, CONFIG);
+  assert.ok(r.ok);
+  assert.equal(r.eiland.bag.vis, 1);
+  assert.equal(r.eiland.bag.maal, 1);
+  assert.equal(cook({ ...e, bag: { ...e.bag, vis: 0 } }, 60, CONFIG).ok, false, 'no fish, no meal');
+  assert.ok(CONFIG.honger.food.maal >= 2 * CONFIG.honger.food.vis);
+  const ate = eat(r.eiland, CONFIG);
+  assert.equal(ate.item, 'maal', 'starving: the meal first');
+  assert.equal(ate.gain, CONFIG.honger.food.maal);
+  assert.ok(canEat({ honger: 50, bag: { maal: 1 } }));
+  assert.ok(CONFIG.eiland.items.maal.price > CONFIG.eiland.items.vis.price, 'a meal sells for more than a fish');
 });

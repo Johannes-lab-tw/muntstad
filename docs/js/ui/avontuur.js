@@ -9,8 +9,8 @@ import { createEilandScene } from '../3d/scene-eiland.js';
 import { createKamp } from './kamp.js';
 import { setFlag, formatCoins } from '../economy.js';
 import { collect, completeQuest, currentQuest, bagCount, openChest, chestOpenedToday, todayKey } from '../eiland.js';
-import { burnFire, stokeFire, ghostSteal, dawnReward } from '../nacht.js';
-import { perks, drainHunger, eat, canEat, faint, deerBump } from '../uitdaging.js';
+import { burnFire, stokeFire, ghostSteal, dawnReward, fireLevel, levelSpan } from '../nacht.js';
+import { perks, drainHunger, eat, canEat, faint, deerBump, coolDown, freeze, cook } from '../uitdaging.js';
 import { CYCLE } from '../3d/daycycle.js';
 
 export function createAvontuur(game) {
@@ -47,6 +47,9 @@ export function createAvontuur(game) {
     game.show('stad');
   });
   const eetBtn = document.getElementById('av-eet');
+  const stookBtn = document.getElementById('av-stook');   // V6.2: wood into the fire, its own button at the fire
+  stookBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); if (scene3) scene3.hook.stoke(); });
+  const nachtEl = document.getElementById('av-nacht');
   const flauwEl = document.getElementById('av-flauw');
   eetBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); onEat(); });
   document.getElementById('av-zwaai').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('wave'); });
@@ -89,15 +92,24 @@ export function createAvontuur(game) {
     const e = state.eiland;
     const fire = Math.round(state.nacht.fire);
     const honger = Math.round(e.honger ?? 100);
+    const warm = Math.round(state.nacht.warm ?? 100);
     const full = bagCount(e) >= perks(e, game.config).bagMax;
     const peers = samen && samen.active ? samen.peers.size + 1 : 0;
-    const key = `${Object.values(e.bag).join(',')}|${fire}|${honger}|${e.quest}|${e.questN}|${full}|${peers}`;
+    const nights = state.nacht.nights || 0;
+    const key = `${Object.values(e.bag).join(',')}|${fire}|${honger}|${warm}|${e.quest}|${e.questN}|${full}|${peers}|${nights}|${lastDark}`;
     if (key === hudKey) return;
     hudKey = key;
-    bagEl.innerHTML = Object.entries(cfg.items).map(([id, it]) => `<span title="${it.name}">${it.icon}<span class="n${full ? ' full' : ''}">${e.bag[id]}</span></span>`).join('')
-      + `<span class="fire" title="Vuur">🔥<i class="fire-bar${fire < 25 ? ' low' : ''}"><b style="width:${fire}%"></b></i></span>`
-      + `<span class="honger" title="Eten">🍎<i class="honger-bar${honger < game.config.honger.slowBelow ? ' low' : ''}"><b style="width:${honger}%"></b></i></span>`;
+    // V6.2: the fire shows its level and how far it is to the next one; the cold as a blue bar
+    const span = levelSpan(state.nacht.fire, game.config);
+    const pct = span.level === 0 ? 0 : Math.round(((state.nacht.fire - span.from) / Math.max(1, span.to - span.from)) * 100);
+    bagEl.innerHTML = Object.entries(cfg.items).filter(([id]) => id !== 'maal' || (e.bag.maal || 0) > 0).map(([id, it]) => `<span title="${it.name}">${it.icon}<span class="n${full ? ' full' : ''}">${e.bag[id] || 0}</span></span>`).join('')
+      + `<span class="fire" title="Vuur level ${span.level}">🔥<b class="lvl">${span.level}</b><i class="fire-bar${span.level <= 1 ? ' low' : ''}"><b style="width:${pct}%"></b></i></span>`
+      + `<span class="honger" title="Eten">🍎<i class="honger-bar${honger < game.config.honger.slowBelow ? ' low' : ''}"><b style="width:${honger}%"></b></i></span>`
+      + `<span class="warm" title="Warmte">🌡️<i class="warm-bar${warm < game.config.kou.slowBelow ? ' low' : ''}"><b style="width:${warm}%"></b></i></span>`;
     eetBtn.hidden = !canEat(e);
+    syncStook(state);
+    nachtEl.textContent = lastDark ? `🌙 Nacht ${nights + 1}` : `☀️ Dag ${nights + 1}`;
+    nachtEl.classList.toggle('night', !!lastDark);
     const q = currentQuest(e, game.config);
     if (q) {
       questEl.hidden = false;
@@ -107,29 +119,54 @@ export function createAvontuur(game) {
     peersEl.hidden = peers === 0;
     if (peers) peersEl.textContent = `${samen.animal} 👥 ${peers}`;
   }
-  let lastActionAt = 0, dorpArmed = false;
+  let lastActionAt = 0, dorpArmed = false, lastAction = null, lastDark = 0;
   function onAction(a) {
     // V6.1: the button keeps its place (visibility, not display), so DORP never slides under a finger that just tapped PAK
     actieBtn.style.visibility = a ? 'visible' : 'hidden';
     if (a) actieBtn.textContent = a.label;
     actieBtn.classList.toggle('pulse', !!a && (a.type === 'trek' || a.type === 'boe'));
+    lastAction = a;
+    syncStook(game.state);
+  }
+  /** STOOK shows at the fire while there is wood in the bag and room in the heap. */
+  function syncStook(state) {
+    const atCamp = !!(lastAction && lastAction.atCamp);
+    stookBtn.hidden = !(atCamp && (state.eiland.bag.hout || 0) > 0 && state.nacht.fire < game.config.nacht.fireMax);
   }
 
   // ---------- hunger, eating, fainting, the deer (V5.3) ----------
-  let tickAcc = 0, lastHungerWarn = 0, emptySaid = false, fainting = false;
-  function onTick(dtMs, darkness) {
+  let tickAcc = 0, lastHungerWarn = 0, emptySaid = false, fainting = false, lastColdWarn = 0, coldSaid = false;
+  function onTick(dtMs, darkness, ctx = {}) {
+    const dark = darkness > 0.5 ? 1 : 0;
+    if (dark !== lastDark) { lastDark = dark; hudKey = ''; renderHud(game.state); }
     tickAcc += dtMs;
     if (tickAcc < 1000) return;
     const ms = tickAcc;
     tickAcc = 0;
-    game.update((s) => ({ ...s, eiland: drainHunger(s.eiland, game.config, ms, darkness) }));
+    game.update((s) => ({ ...s, eiland: drainHunger(s.eiland, game.config, ms, darkness), nacht: coolDown(s.nacht, game.config, ms, darkness, ctx) }));
     const h = game.state.eiland.honger;
     const H = game.config.honger;
-    if (h <= 0 && darkness > 0.5 && !fainting) { doFaint(); return; }
+    if (h <= 0 && darkness > 0.5 && !fainting) { doFaint('honger'); return; }
     if (h <= 0 && !emptySaid) { emptySaid = true; game.mentor.say('lines.hungerEmpty', {}, { kind: 'reaction' }); }
     else if (h > 0 && h < H.warnBelow && game.now() - lastHungerWarn > 40000) { lastHungerWarn = game.now(); game.mentor.say('lines.hungerLow', {}, { kind: 'reaction' }); }
     if (h > H.warnBelow) emptySaid = false;
+    // the cold (V6.2)
+    const w = game.state.nacht.warm ?? 100;
+    const K = game.config.kou;
+    if (w <= 0 && darkness > 0.5 && !fainting) { doFaint('kou'); return; }
+    if (w <= 0 && !coldSaid) { coldSaid = true; game.mentor.say('lines.coldEmpty', {}, { kind: 'reaction' }); }
+    else if (w > 0 && w < K.warnBelow && game.now() - lastColdWarn > 40000) { lastColdWarn = game.now(); game.mentor.say('lines.coldLow', {}, { kind: 'reaction' }); }
+    if (w > K.warnBelow) coldSaid = false;
   }
+  function onCook() {
+    const r = cook(game.state.eiland, game.state.nacht.fire, game.config);
+    if (!r.ok) return;
+    game.audio.play('buy');
+    game.update((s) => ({ ...s, eiland: r.eiland }));
+    game.fx.floatText(window.innerWidth * 0.5, window.innerHeight * 0.4, '🐟 → 🍖', '#ffffff');
+    if (game.now() - lastCookSaid > 30000) { lastCookSaid = game.now(); game.mentor.say('lines.cooked', {}, { kind: 'reaction' }); }
+  }
+  let lastCookSaid = 0;
   function onEat() {
     const r = eat(game.state.eiland, game.config);
     if (!r.item) return;
@@ -138,17 +175,16 @@ export function createAvontuur(game) {
     game.fx.floatText(window.innerWidth * 0.5, window.innerHeight * 0.4, `🍎 +${r.gain}`, '#ffffff');
     if (r.eiland.honger >= game.config.honger.warnBelow && game.now() - lastHungerWarn > 15000) { lastHungerWarn = game.now(); game.mentor.say('lines.ate', {}, { kind: 'reaction' }); }
   }
-  function doFaint() {
+  function doFaint(why = 'honger') {
     fainting = true;
     game.audio.play('stumble');
     flauwEl.hidden = false;
     requestAnimationFrame(() => flauwEl.classList.add('on'));
     setTimeout(() => {
-      game.update((s) => faint(s, game.config));
+      game.update((s) => (why === 'kou' ? freeze(s, game.config) : faint(s, game.config)));
       game.save();
-      const c = game.config;
-      scene3.hook.teleport(c.eiland ? scene3.hook.landmarks.CAMP.x : 48, scene3.hook.landmarks.CAMP.z + 2.4);
-      game.mentor.say('lines.fainted', {}, { kind: 'reaction' });
+      scene3.hook.teleport(scene3.hook.landmarks.CAMP.x, scene3.hook.landmarks.CAMP.z + 2.4);
+      game.mentor.say(why === 'kou' ? 'lines.frozen' : 'lines.fainted', {}, { kind: 'reaction' });
       flauwEl.classList.remove('on');
       setTimeout(() => { flauwEl.hidden = true; fainting = false; }, 700);
     }, 900);
@@ -169,9 +205,11 @@ export function createAvontuur(game) {
     const before = game.state.nacht.fire;
     game.update((s) => ({ ...s, nacht: burnFire(s.nacht, game.config, ms, darkness, perks(s.eiland, game.config).burnMul) }));
     const fire = game.state.nacht.fire;
+    const lvlBefore = fireLevel(before, game.config), lvlNow = fireLevel(fire, game.config);
     if (darkness > 0.5) {
       if (fire <= 0 && before > 0 && !fireOutSaid) { fireOutSaid = true; game.mentor.say('lines.fireOut', {}, { kind: 'reaction' }); }
-      else if (fire > 0 && fire < 25 && game.now() - lastFireWarn > 40000) { lastFireWarn = game.now(); game.mentor.say('lines.fireLow', {}, { kind: 'reaction' }); }
+      else if (lvlNow >= 1 && lvlNow < lvlBefore && game.now() - lastFireWarn > 20000) { lastFireWarn = game.now(); game.mentor.say('lines.fireLevelDown', { n: lvlNow }, { kind: 'reaction' }); }
+      else if (fire > 0 && fire < 10 && game.now() - lastFireWarn > 40000) { lastFireWarn = game.now(); game.mentor.say('lines.fireLow', {}, { kind: 'reaction' }); }
     }
   }
   function onFireSync(fire) {
@@ -217,11 +255,13 @@ export function createAvontuur(game) {
       samen.send('stoke', { n: r.used });
     } else game.update((s) => ({ ...s, nacht: r.nacht, eiland: r.eiland }));
     game.fx.floatText(window.innerWidth * 0.5, window.innerHeight * 0.4, `🔥 +${r.used} 🪵`, '#ffffff');
-    if (game.now() - lastStokeSaid > 30000) { lastStokeSaid = game.now(); game.mentor.say('lines.stoked', {}, { kind: 'reaction' }); }
+    const lvl = fireLevel(game.state.nacht.fire, game.config);
+    if (!(samen && samen.isGuest) && lvl > fireLevel(r.nacht.fire - r.used, game.config)) { game.audio.play('upgrade'); game.mentor.say('lines.fireLevelUp', { n: lvl }, { kind: 'reaction' }); }
+    else if (game.now() - lastStokeSaid > 30000) { lastStokeSaid = game.now(); game.mentor.say('lines.stoked', {}, { kind: 'reaction' }); }
   }
   function onRemoteStoke(n) {
     if (n <= 0) return;
-    game.update((s) => ({ ...s, nacht: { ...s.nacht, fire: Math.min(100, s.nacht.fire + n * game.config.nacht.woodValue) } }));
+    game.update((s) => ({ ...s, nacht: { ...s.nacht, fire: Math.min(game.config.nacht.fireMax, s.nacht.fire + n) } }));
   }
   function onSleep() {
     const total = CYCLE.dayMs + CYCLE.nightMs;
@@ -255,7 +295,7 @@ export function createAvontuur(game) {
     game.mentor.say(taken ? 'lines.caveGhostCaught' : 'lines.ghostNothing', {}, { kind: 'reaction' });
   }
   function onBearAte() {
-    game.update((s) => ({ ...s, nacht: { ...s.nacht, fire: Math.max(0, s.nacht.fire - game.config.nacht.bearEats * game.config.nacht.woodValue) } }));
+    game.update((s) => ({ ...s, nacht: { ...s.nacht, fire: Math.max(0, s.nacht.fire - game.config.nacht.bearEats) } }));
     game.audio.play('thud');
     game.mentor.say('lines.bearAte', {}, { kind: 'reaction' });
   }
@@ -302,7 +342,7 @@ export function createAvontuur(game) {
       onAction,
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
       onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte, onFireSync, onRemoteStoke, onChest, onCaveGhostCaught,
-      onTick, onDeerBump,
+      onTick, onDeerBump, onCook,
     });
     Object.setPrototypeOf(hook, scene3.hook);   // the tests read positions and set inputs through window.__muntstad.avontuur
   }
