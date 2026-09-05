@@ -36,6 +36,8 @@ export function createControls(el, { stick, knob } = {}) {
     return e.clientX < r.left + r.width * 0.5;
   }
 
+  let lookDown = null;   // { x, y, t } for tap detection: a short touch that barely moved = a tap on the world
+  let tap = null;
   function down(e) {
     if (!enabled) return;
     if (e.target.closest('button, .mentor')) return;
@@ -51,6 +53,7 @@ export function createControls(el, { stick, knob } = {}) {
     } else if (lookId === null) {
       lookId = e.pointerId;
       lastLook = { x: e.clientX, y: e.clientY };
+      lookDown = { x: e.clientX, y: e.clientY, t: performance.now() };
     } else return;
     try { el.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointers */ }
     e.preventDefault();
@@ -71,7 +74,14 @@ export function createControls(el, { stick, knob } = {}) {
   }
   function up(e) {
     if (e.pointerId === stickId) { stickId = null; hideStick(); }
-    else if (e.pointerId === lookId) { lookId = null; }
+    else if (e.pointerId === lookId) {
+      lookId = null;
+      if (lookDown && performance.now() - lookDown.t < 300 && Math.hypot(e.clientX - lookDown.x, e.clientY - lookDown.y) < 14) {
+        const r = el.getBoundingClientRect();
+        tap = { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+      lookDown = null;
+    }
     try { el.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
   }
   el.addEventListener('pointerdown', down);
@@ -107,9 +117,10 @@ export function createControls(el, { stick, knob } = {}) {
       if (keys.has('down')) y -= 1;
       run = keys.has('run');
     }
-    const out = { x, y, run, jump: jumpQueued, lookDx, lookDy, looking: lookId !== null, stick: stickId !== null };
+    const out = { x, y, run, jump: jumpQueued, lookDx, lookDy, looking: lookId !== null, stick: stickId !== null, tap };
     jumpQueued = false;
     lookDx = 0; lookDy = 0;
+    tap = null;
     return out;
   }
 

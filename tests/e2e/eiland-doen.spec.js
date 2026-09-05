@@ -51,6 +51,25 @@ test('PAK picks a shell, HAK chops wood (three taps by hand), the backpack and t
   expect(errors()).toEqual([]);
 });
 
+test('a tree falls after six pieces of wood: bonus wood, a stump, HAK no longer offered there', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 100; s.earnedWork = 100; s.eiland = { bag: { hout: 0, schelp: 0, bes: 0, vis: 0 }, tools: { bijl: true }, quest: 0, questN: 0, questsDone: 0, collected: {}, sold: 0, earned: 0 }; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  await goTo(page, 'hout', 'HAK');
+  // with the axe: one tap = two pieces, three taps = six = the tree comes down (+2 bonus)
+  for (let i = 0; i < 3; i++) {
+    await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+    await page.waitForTimeout(200);
+  }
+  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 20000 }).toBe(8);
+  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.fallen), { timeout: 20000 }).toBeGreaterThan(0);
+  // (the forest is dense: another tree may well offer HAK from the same spot, so no assertion on the label)
+  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('Timmer'))), { timeout: 20000 }).toBe(true);
+  expect(errors()).toEqual([]);
+});
+
 test('the chest in the cave: OPEN pays 30 coins once, then the chest is LEEG; a wall stops you at the side', async ({ page }) => {
   const errors = watchErrors(page);
   await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; return s; });

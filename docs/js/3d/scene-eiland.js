@@ -119,6 +119,37 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       if (f >= 1) wobbles.splice(i, 1);
     }
   }
+  // a felled tree leans over away from you, thuds and sinks; a stump stays; a new tree grows back after the rest
+  const falls = [];   // { o, t, yaw, stump, restUntil, thud, gone }
+  const stumpPool = [];
+  function stumpMesh() { const b = new Builder({ r: 0.03 }); b.cyl(0, 0, 0, 0.3, 0.45, '#7a4f2e', 8); b.cyl(0, 0, 0.45, 0.3, 0.04, '#c9a47a', 8); return b.build(); }
+  function fellTree(o, awayFrom, now) {
+    const yaw = Math.atan2(o.x - awayFrom.x, o.z - awayFrom.z);
+    const stump = stumpPool.pop() || stumpMesh();
+    stump.position.set(o.x, groundOf(o.x, o.z) - 0.05, o.z);
+    scene.add(stump);
+    for (let i = wobbles.length - 1; i >= 0; i--) if (wobbles[i].kind === o.kind && wobbles[i].index === o.index) wobbles.splice(i, 1);
+    o.rFull = o.rFull || o.r;
+    o.r = 0.3;   // only the stump is in the way now
+    falls.push({ o, t: 0, yaw, stump, restUntil: now + E.treeRestMs, thud: false, gone: false });
+  }
+  function updateFalls(now, dt) {
+    for (let i = falls.length - 1; i >= 0; i--) {
+      const f = falls[i];
+      f.t += dt;
+      if (f.t < 1.0) {
+        const k = f.t;
+        forest.setPose(f.o.kind, f.o.index, 1, Math.min(1.5, k * k * 1.6), f.yaw);
+        if (!f.thud && k > 0.85) { f.thud = true; game.audio.play('thud'); }
+      } else if (f.t < 2.2) forest.setPose(f.o.kind, f.o.index, Math.max(0.001, 1 - (f.t - 1.0) / 1.2), 1.5, f.yaw);
+      else if (now < f.restUntil) { if (!f.gone) { f.gone = true; forest.setPose(f.o.kind, f.o.index, 0.001); } }
+      else {
+        const g = Math.min(1, (now - f.restUntil) / 2000);
+        forest.setPose(f.o.kind, f.o.index, 0.05 + g * 0.95);
+        if (g >= 1) { f.o.r = f.o.rFull; scene.remove(f.stump); stumpPool.push(f.stump); falls.splice(i, 1); }
+      }
+    }
+  }
   const fishMesh = (() => { const b = new Builder({ r: 0.03 }); b.add(new T.SphereGeometry(0.16, 8, 6).scale(1.7, 0.7, 0.9), '#7fc4ff'); b.add(new T.ConeGeometry(0.12, 0.22, 4).rotateZ(Math.PI / 2).translate(-0.3, 0, 0), '#5aa9ef'); b.sphere(0.16, 0.07, 0.06, 0.035, '#1b1f3b', 5); const m = b.build({ shadow: false }); m.visible = false; scene.add(m); return m; })();
   let fishJump = null;   // { from, to, t }
   function jumpFish(fromV, toV) { fishJump = { from: fromV.clone(), to: toV.clone(), t: 0 }; fishMesh.visible = true; }
@@ -421,6 +452,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (best) return best;
     for (const o of near(px, pz)) {
       if (!o.kind || !o.kind.startsWith('tree')) continue;
+      const ts = trees.get(`${o.kind}:${o.index}`);
+      if (ts && ts.restUntil > now) continue;   // a stump: nothing to chop
       const d = Math.hypot(px - o.x, pz - o.z) - o.r;
       if (d < REACH.tree && d < bestD) { best = { type: 'hak', label: 'HAK', target: o }; bestD = d; }
     }
@@ -482,7 +515,15 @@ export function createEilandScene(game, engine, controls, cb = {}) {
           t.wood += rule.wood;
           burstChips(action.target.x, player.ground, action.target.z);
           cb.onCollect && cb.onCollect('hout', rule.wood);
-          if (t.wood >= E.treeWood) { t.wood = 0; t.restUntil = now + E.treeRestMs; }
+          if (t.wood >= E.treeWood) {
+            // timber! the tree comes down with a bonus, leaves a stump and grows back after the rest
+            t.wood = 0;
+            t.restUntil = now + E.treeRestMs + 2500;
+            fellTree(action.target, player, now);
+            burstChips(action.target.x, player.ground + 0.5, action.target.z);
+            cb.onCollect && cb.onCollect('hout', E.treeFallBonus);
+            cb.onSay && cb.onSay('lines.treeFell');
+          }
         }
         return;
       }
@@ -505,6 +546,34 @@ export function createEilandScene(game, engine, controls, cb = {}) {
         stopFishing();
         return;
       default: return;
+    }
+  }
+  // a tap on a thing in the world (tree, shell, berry bush) within reach does what the button would do
+  const raycaster = new T.Raycaster();
+  const ndc = new T.Vector2();
+  function handleTap(tp) {
+    if (!W || !H) return;
+    ndc.set((tp.x / W) * 2 - 1, -(tp.y / H) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const kinds = ['tree1', 'tree2', 'tree3', 'shell', 'bush2'].filter((k) => forest.meshes[k]);
+    const hits = raycaster.intersectObjects(kinds.map((k) => forest.meshes[k]), false);
+    const now = performance.now();
+    for (const h of hits) {
+      const kind = kinds.find((k) => forest.meshes[k] === h.object);
+      const idx = h.instanceId;
+      let picked = null;
+      if (kind === 'shell') {
+        const s = shells[idx];
+        if (s && !s.taken && Math.hypot(s.x - player.x, s.z - player.z) < REACH.shell + 0.8) picked = { type: 'schelp', label: 'PAK', target: s };
+      } else if (kind === 'bush2') {
+        const b = bushes[idx];
+        if (b && b.restUntil <= now && Math.hypot(b.x - player.x, b.z - player.z) - b.r < REACH.bush + 0.8) picked = { type: 'bes', label: 'PLUK', target: b };
+      } else {
+        const o = forest.obstacles.find((ob) => ob.kind === kind && ob.index === idx);
+        const ts = o && trees.get(`${o.kind}:${o.index}`);
+        if (o && !(ts && ts.restUntil > now) && Math.hypot(o.x - player.x, o.z - player.z) - o.r < REACH.tree + 1.0) picked = { type: 'hak', label: 'HAK', target: o };
+      }
+      if (picked) { action = picked; doAction(); return; }
     }
   }
   function stopFishing() { fishing = null; bobber.visible = false; }
@@ -581,8 +650,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     updateFishing(now);
     updateChips(dt);
     updateWobbles(dt);
+    updateFalls(now, dt);
     updateFish(dt);
     forest.animate(now, dt, daynight.darkness);
+    if (input.tap) handleTap(input.tap);
     const next = findAction(now);
     const key = next ? `${next.type}:${next.label}` : '';
     if (key !== lastActionKey) { lastActionKey = key; action = next; cb.onAction && cb.onAction(next); }
@@ -650,6 +721,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     setPhase(p) { phaseOverride = p; daynight.setOverride(p); },
     teleport(x, z) { player.x = x; player.z = z; player.ground = map.groundAt(x, z); firstFrame = true; },
     act() { doAction(); },
+    tapAt(x, y) { handleTap({ x, y }); },
+    get fallen() { return falls.length; },
     emote,
     bite() { if (fishing && !fishing.biteUntil) fishing.until = 0; },
     spawnGhost, spawnBear,

@@ -109,9 +109,10 @@ export function buildForest(placements) {
   const m = new T.Matrix4(), q = new T.Quaternion(), p = new T.Vector3(), sc = new T.Vector3();
   const up = new T.Vector3(0, 1, 0);
   const tiltQ = new T.Quaternion(), tiltAxis = new T.Vector3(1, 0, 0);
-  function place(mesh, it, i, scale, tilt = 0) {
-    q.setFromAxisAngle(up, it.rot);
-    if (tilt) { tiltQ.setFromAxisAngle(tiltAxis, tilt); q.multiply(tiltQ); }   // a chopped tree wobbles
+  /** tilt about the local x axis (wobble); with tiltYaw the tree leans towards world direction (sin yaw, cos yaw): a fall. */
+  function place(mesh, it, i, scale, tilt = 0, tiltYaw = null) {
+    q.setFromAxisAngle(up, tiltYaw == null ? it.rot : tiltYaw);
+    if (tilt) { tiltQ.setFromAxisAngle(tiltAxis, tilt); q.multiply(tiltQ); }
     p.set(it.x, it.y - 0.05, it.z);
     sc.set(it.s * scale, it.s * scale, it.s * scale);
     m.compose(p, q, sc);
@@ -179,5 +180,12 @@ export function buildForest(placements) {
     place(mesh, placements[kind][i], i, 1, tilt);
     mesh.instanceMatrix.needsUpdate = true;
   }
-  return { group, obstacles, meshes, placements, setScale, setTilt, animate };
+  /** Full pose: scale, lean angle and the world direction it leans to (a falling tree, a regrowing one). */
+  function setPose(kind, i, scale, tilt = 0, tiltYaw = null) {
+    const mesh = meshes[kind];
+    if (!mesh) return;
+    place(mesh, placements[kind][i], i, scale, tilt, tiltYaw);
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+  return { group, obstacles, meshes, placements, setScale, setTilt, setPose, animate };
 }

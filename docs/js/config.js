@@ -52,8 +52,9 @@ export const CONFIG = Object.freeze({
       { id: 'fakkels',  name: 'Fakkels',  icon: '🔥', price: 40,  tekst: 'Vier fakkels om het kamp. Meer licht, minder spoken.' },
     ],
     chop: { hands: { taps: 3, wood: 1 }, withAxe: { taps: 1, wood: 2 } },   // taps per chop, wood per chop
-    treeWood: 6,                      // a tree gives this much wood, then rests
-    treeRestMs: 90 * 1000,
+    treeWood: 6,                      // a tree gives this much wood, then it falls (V5.1)
+    treeFallBonus: 2,                 // extra wood when it comes down
+    treeRestMs: 90 * 1000,            // a stump for this long, then a new tree grows
     berries: 2,                       // berries per bush
     bushRestMs: 60 * 1000,
     fish: { waitMinMs: 2000, waitMaxMs: 4500, biteMs: 1600 },   // wait for a bite, then tap in time

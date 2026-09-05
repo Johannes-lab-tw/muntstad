@@ -100,6 +100,7 @@ export const T = {
     fishWait: 'Stil wachten… tik als de dobber duikt!',
     treeRest: 'Deze boom heeft even rust nodig. Zoek een andere.',
     chestOpen: 'Een schatkist! {n} munten. Morgen zit er weer wat in.',
+    treeFell: 'Timmer! Daar gaat hij. Extra hout voor jou.',
     chestEmpty: 'De kist is leeg. Kom morgen terug!',
     caveHint: 'Kijk, een grot in de heuvel. Durf jij naar binnen?',
     nightComing: 'Het wordt donker! Zorg dat het vuur blijft branden. Hout erin met STOOK.',

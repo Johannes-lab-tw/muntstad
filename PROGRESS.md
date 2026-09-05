@@ -50,6 +50,17 @@ Besluit Johannes: doorbouwen in de eigen app. Plan, werkwijze (pc vrij, tokens, 
 - [x] R5 — samen (05-09-2026): relais zonder afhankelijkheden in `server/relay/relay.js` (WebSocket-handshake en frames met de hand, ±150 regels; kamers van 4 plaatjes uit 8, max 6 spelers, eerste = gastheer, gastheerrol schuift door; alleen doorgeven, niets opslaan) + dezelfde logica als Cloudflare Worker (`server/relay/worker.js`, wrangler.toml, één Durable Object per kamer). Client `net/relay.js` (whitelist van berichttypes, alleen getallen, herverbinden) en `net/samen.js` (kamer openen/meedoen, look = kleur/hoed/skin + dier, posities 8×/s). PAPA: relais-adres (alleen ouder) + KAMER (vier plaatjes op het scherm) + STOP + status; START: SAMEN → plaatjes-toetsenblok (geen tekst). Op het eiland: medespelers als eigen avatar met naambordje dier + nummer, ZWAAI en DANS; de gastheer stuurt 4×/s de wereld (fase, vuur, spoken, beer), gasten spiegelen die en sturen STOOK/BOE/SLAAP naar de gastheer; hout van een gast gaat in het gedeelde vuur. Playwright start het relais mee; e2e `samen.spec.js` (twee browsers in één test) groen lokaal. Unit 76 groen (3 nieuw). Open: Johannes maakt een Cloudflare-account en deployt de worker (of draait `node server/relay/relay.js --host 0.0.0.0` op een pc thuis) en zet het wss://-adres op PAPA.
 - [x] R6 — afwerking (05-09-2026): lite-stand op het eiland (schaduwen uit via engine-tier, graspollen en bloemen verborgen, mist dichterbij) + `?lowres=1` (halve resolutie, alleen voor tests op software-renderers); geluid: spook (boo), beer (grom), uil, vogels, vuurgeknetter, plons, en de muziek zakt ’s nachts een octaaf en vertraagt (`audio.setAmbient`); drie stickers (eerste nacht, 100 munten op het eiland, vijf opdrachten) met Muntje-regels; PAPA: eilandcijfers (nachten, verdiend, opdrachten, gepakt door spoken, spullen) en één regel “Waar was {naam} mee bezig”; RAPPORT §0 (vierde ronde) + §1a (relais aanzetten) + Volgende versie; README. Unit 78 groen. iPad-meting: aan Johannes (§6 RAPPORT).
 
+## Run 5 (besluit 2026-09-05) — Spannender, wat zijn zoon vroeg
+Plan: PLAN-V5.md (zes punten van de speler + open punten uit RAPPORT §7). Zelfde werkwijze: Ollama voor inhoud en screenshots, e2e in GitHub Actions.
+
+- [x] V5.1 — bomen en tikken (05-09-2026): na 6 hout valt de boom om (leunt van je af, plof, +2 hout, stronk uit een pool, na 90 s groeit een nieuwe boom van klein naar groot; `forest.setPose` met valrichting); tikken op een boom, schelp of bessenstruik binnen bereik = de actie (`controls` meldt een korte tik op de kijkhelft, `handleTap` raycast op de InstancedMeshes). e2e: bijl, drie tikken, 8 hout, gevallen.
+- [ ] V5.2 — de grot: gang met bocht, kamer, vleermuizen, druppels, grotspook
+- [ ] V5.3 — uitdaging: honger/EET, flauwvallen, Nachthert, zwaarder per nacht, gadgets en kampupgrades
+- [ ] V5.4 — wasstraat groeit mee met het level (WERK)
+- [ ] V5.5 — dorp groter: IJssalon en Pretpark, eiland 20 × 14, balans
+- [ ] V5.6 — stem en muziek
+- [ ] V5.7 — afwerking: PAPA, RAPPORT, README, CI groen
+
 ## Toolbox (checked 2026-09-02)
 - node v24.20.0 — was NOT installed; installed as a portable build in C:\Users\jgsno\.local\node (SHA256 verified against nodejs.org) and added to the user PATH. New terminals see it; this session uses the absolute path.
 - npm 11.19.0
