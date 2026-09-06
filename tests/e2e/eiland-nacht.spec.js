@@ -50,7 +50,8 @@ test('night falls: Muntje warns, STOOK feeds the fire with the wood in the bag, 
   const p = (await hook(page)).player;
   expect((await hook(page)).lights.some((l) => Math.hypot(l.x - p.x, l.z - p.z) < l.r)).toBe(false);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.ghostAt(x, z + 1.0), p);
-  await expect.poll(async () => (await state(page)).nacht.stolen, { timeout: 40000 }).toBe(1);
+  // at least once: on the slow CI runner (ipad-mini) the dark lasts long enough for a second steal (6 sep: 2 instead of 1)
+  await expect.poll(async () => (await state(page)).nacht.stolen, { timeout: 40000 }).toBeGreaterThanOrEqual(1);
   await expect.poll(() => mentorHas(page, 'spook'), { timeout: 40000 }).toBe(true);
 
   // dawn: the fire still burns → the first night pays 20 coins, and (V6.6) chapter 1 of the campaign pays its coin too
