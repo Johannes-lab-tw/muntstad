@@ -149,7 +149,10 @@ Plan: PLAN-V5.md (zes punten van de speler + open punten uit RAPPORT §7). Zelfd
 - 2026-09-02 Buttons hebben witte, omlijnde letters (text-shadow in 8 richtingen); het toetsenblok van de ouderpoort houdt donkere cijfers op wit voor leesbaarheid.
 - 2026-09-06 Op het eiland staan de campagne- en ketenkaart standaard dichtgevouwen op één regel (tik = 8 s open, stap af = 5 s open); een scène past het canvas alleen aan als ze het zelf heeft (`engine.container === host`), een resize claimt nooit het canvas.
 
-## Volgende sessie (stand 5 september 2026, avond)
+## Volgende sessie (stand 6 september 2026, middag)
+
+**V7.0 staat live:** run 34029308120 van 6 september groen op zes jobs, site gedeployd met sw.js muntstad-v38 en GAME_VERSION v7.0, tag v7.0 gezet. Twee testen zijn robuuster gemaakt voor de trage mini-runner (nacht: spook mag twee keer stelen; avontuur: DORP-tik wordt herhaald als de dageraad-sticker hem opslokt). Nog open: de MELD-code en de punten van Johannes' zoon voor PLAN-V7.md.
+
 
 **Klaar en op GitHub (main):** PLAN-V6 V6.1 t/m V6.8 (Run 6) en V7.0, de twee iPad-fouten van 6 september (Run 7). Lokaal: unit 99 groen, alle 38 e2e-tests groen op de drie iPad-profielen. CI: zes jobs (drie profielen × dorp/eiland, één worker, 75 minuten grens); run 33990183634 van 5 september 21:06 UTC is helemaal groen en de site is gedeployd (sw.js muntstad-v36). Tags v6.2, v6.3, v6.4, v6.5, v6.7 en v6.8 staan op GitHub; `GAME_VERSION` in main.js staat sinds 6 september op v6.8 (sw.js muntstad-v37).
 
