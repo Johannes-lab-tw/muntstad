@@ -75,10 +75,15 @@ test('the joystick walks the player off the pier, the dog follows, SPRING jumps,
   await page.waitForTimeout(800);
   await closePopups(page);
 
-  await page.locator('#av-dorp').click({ force: true });
   // V6.3: DORP is the boat back: the crossing shows for a moment, then you stand on the harbour pier of the walkable town
-  // (the crossing overlay shows for 2.6 s; on the slow runner it may already be gone when we look, so only the shore counts)
-  await expect(page.locator('#screen-dorp')).toHaveClass(/active/, { timeout: 30000 });
+  // (the crossing overlay shows for 2.6 s; on the slow runner it may already be gone when we look, so only the shore counts).
+  // The dawn sticker can pop up late on the slow runner (ipad-mini, 6 sep) and swallow the tap: close and tap again;
+  // vaar() ignores a second call while the boat is sailing
+  for (let i = 0; i < 4; i++) {
+    await closePopups(page);
+    await page.locator('#av-dorp').click({ force: true });
+    try { await expect(page.locator('#screen-dorp')).toHaveClass(/active/, { timeout: 12000 }); break; } catch (e) { if (i === 3) throw e; }
+  }
   expect(errors()).toEqual([]);
 });
 
