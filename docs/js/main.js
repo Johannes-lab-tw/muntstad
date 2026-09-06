@@ -268,7 +268,7 @@ function bumpWallet() {
 // ---------- screens ----------
 
 const TOPBAR_SCREENS = new Set(['stad', 'dorp', 'avontuur', 'werk', 'winkel', 'huis']);
-export const GAME_VERSION = 'v6.8';   // V6.8: shown in the MELD code on PAPA; bump with every tag
+export const GAME_VERSION = 'v7.0';   // V6.8: shown in the MELD code on PAPA; bump with every tag
 const recent = [];                    // the last screens, for the MELD code
 function noteEvent(what) { recent.push(`${new Date().toTimeString().slice(0, 8)} ${what}`); if (recent.length > 8) recent.shift(); }
 
@@ -379,6 +379,8 @@ function boot() {
     }
   });
   window.addEventListener('resize', () => { game.scene.resize(); game.fx.resize(); });
+  // V7.0: iPadOS reports the old size in the first resize after a rotation; measure again once the layout has settled
+  window.addEventListener('orientationchange', () => { setTimeout(() => window.dispatchEvent(new Event('resize')), 400); });
 
   show('start');
   // V6.1: build the island and compile its shaders while START/STAD are on screen, so the boat lands without a stutter

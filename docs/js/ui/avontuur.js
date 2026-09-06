@@ -176,6 +176,19 @@ export function createAvontuur(game) {
     game.mentor.say('lines.wolfBite', {}, { kind: 'reaction' });
     return r.drops;
   }
+  // V7.0: the campaign and chain cards start folded (one line) so the island stays visible; a tap unfolds them for a
+  // few seconds, and the chain card unfolds by itself when a step is done so the tick is seen
+  let questTimer = 0, campTimer = 0, lastStepKey = '';
+  function unfold(el, ms) { el.classList.add('open'); return setTimeout(() => el.classList.remove('open'), ms); }
+  function foldToggle(el, e) {
+    e.stopPropagation(); e.preventDefault();   // not a joystick touch
+    clearTimeout(el === questEl ? questTimer : campTimer);
+    let timer = 0;
+    if (el.classList.contains('open')) el.classList.remove('open'); else timer = unfold(el, 8000);
+    if (el === questEl) questTimer = timer; else campTimer = timer;
+  }
+  questEl.addEventListener('pointerdown', (e) => foldToggle(questEl, e));
+  campEl.addEventListener('pointerdown', (e) => foldToggle(campEl, e));
   let hudKey = '';
   function renderHud(state) {
     const cfg = game.config.eiland;
@@ -213,6 +226,9 @@ export function createAvontuur(game) {
     nachtEl.classList.toggle('night', !!lastDark);
     // the chain card: the title, done steps ticked, the current step with its count, the rest greyed
     const cur = currentKeten(e, KETENS);
+    const stepKey = `${e.keten}:${e.stap}`;
+    if (lastStepKey && stepKey !== lastStepKey) { clearTimeout(questTimer); questTimer = unfold(questEl, 5000); }   // a step done: show the tick
+    lastStepKey = stepKey;
     if (cur) {
       questEl.hidden = false;
       questEl.innerHTML = `<b class="kt">${cur.keten.titel}</b>` + cur.keten.stappen.map((s, i) => {

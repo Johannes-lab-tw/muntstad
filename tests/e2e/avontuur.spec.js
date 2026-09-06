@@ -104,3 +104,27 @@ test('WASD walks, space jumps, and the player never walks into the sea or up the
   expect(end.onLand, `on land (${end.kind})`).toBe(true);
   expect(errors()).toEqual([]);
 });
+
+// V7.0: rotating the iPad to portrait and back left the island blue: the window resize made the town scene pull the
+// shared canvas into its own (hidden) container. After the turn the canvas must still sit in #avontuur, landscape-sized.
+test('rotating to portrait and back keeps the 3D view on the island', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 130; s.earnedWork = 130; s.makers.limonade = 1; s.milestones = ['eerste-geldmaker']; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  const size = page.viewportSize();
+  await page.setViewportSize({ width: size.height, height: size.width });
+  await expect(page.locator('#rotate')).toBeVisible();
+  await page.waitForTimeout(1500);
+  await page.setViewportSize(size);
+  await expect(page.locator('#rotate')).toBeHidden();
+  const canvas = () => page.evaluate(() => {
+    const c = document.querySelector('canvas.gl');
+    const host = document.getElementById('avontuur');
+    return { parent: c && c.parentElement.id, w: c ? c.width : 0, h: c ? c.height : 0, hostW: host.clientWidth, hostH: host.clientHeight };
+  });
+  await expect.poll(async () => (await canvas()).parent, { timeout: 40000 }).toBe('avontuur');
+  await expect.poll(async () => { const c = await canvas(); return c.w > c.h && Math.abs(c.w / c.h - c.hostW / c.hostH) < 0.05; }, { timeout: 40000 }).toBe(true);
+  expect(errors()).toEqual([]);
+});

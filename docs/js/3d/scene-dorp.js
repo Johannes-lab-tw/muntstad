@@ -94,8 +94,8 @@ export function createDorpScene(game, engine, controls, cb = {}) {
   function mount(el) { host = el; engine.mount(el); resize(); }
   function resize() {
     if (!host) return;
-    if (engine.container !== host) engine.mount(host);
-    else engine.resize();
+    if (engine.container !== host) return;   // V7.0: another screen owns the canvas; never pull it over (rotating the iPad on the island left it blue)
+    engine.resize();
     W = engine.W; H = engine.H;
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
@@ -105,6 +105,7 @@ export function createDorpScene(game, engine, controls, cb = {}) {
   const SUBSTEP = 1 / 60;
   let lastTime = 0, prevNow = 0, simAcc = 0, jumps = 0, pendingJump = false;
   function render(now) {
+    if (engine.checkSize()) resize();   // V7.0: the container changed size without a usable resize event (iPad rotation)
     if (!state || !W) return;
     const dt = Math.min(0.05, lastTime ? (now - lastTime) / 1000 : 0.016);
     if (lastTime) engine.trackFrame(now - lastTime, now);

@@ -54,6 +54,13 @@ export function createEngine() {
     container = el;
     resize();
   }
+  // V7.0: iPadOS sometimes reports the old size in the resize event after a rotation; the scenes ask every 20th frame
+  // whether the container has quietly changed size and resize themselves if so (a reflow every third of a second is cheap)
+  let sizeTick = 0;
+  function checkSize() {
+    if (!container || (++sizeTick % 20) !== 0) return false;
+    return Math.max(320, container.clientWidth || window.innerWidth) !== W || Math.max(240, container.clientHeight || window.innerHeight) !== H;
+  }
 
   // ---------- adaptive quality ----------
   let acc = 0, n = 0, lastChange = 0, lastAvgMs = 0;
@@ -82,7 +89,7 @@ export function createEngine() {
   }
 
   return {
-    renderer, canvas, mount, resize, render, trackFrame,
+    renderer, canvas, mount, resize, render, trackFrame, checkSize,
     onTier(fn) { tierListeners.push(fn); fn(tier); },
     get W() { return W; },
     get H() { return H; },

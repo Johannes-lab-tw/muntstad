@@ -981,15 +981,19 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 
 
 /* ---------- AVONTUUR round 3: backpack, quest, action button, campfire panel ---------- */
-.av-left { position: absolute; left: 14px; top: calc(var(--topbar-h) + 12px); display: flex; flex-direction: column; align-items: flex-start; gap: 10px; z-index: 20; pointer-events: none; max-width: 52vw; }
-.av-bag { display: flex; flex-wrap: wrap; gap: 10px 14px; padding: 8px 16px; font-size: 26px; font-weight: 800; }
+/* V7.0: the HUD stays in the top-left corner (bag max 56 % of the width, cards 30-40 %) and the cards start folded to one line, so the island stays visible */
+.av-left { position: absolute; left: 14px; top: calc(var(--topbar-h) + 12px); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; z-index: 20; pointer-events: none; max-width: 56vw; }
+.av-bag { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 5px 12px; font-size: 21px; font-weight: 800; }
 .av-bag span { display: inline-flex; align-items: center; gap: 4px; }
 .av-bag .n { font-variant-numeric: tabular-nums; min-width: 1.4em; text-align: right; }
 .av-bag .full { color: var(--red); }
-.av-quest { padding: 8px 16px; font-size: 19px; font-weight: 700; color: #2f3650; max-width: 100%; display: flex; flex-direction: column; gap: 3px; min-width: 250px; }
+.av-quest { padding: 6px 14px; font-size: 19px; font-weight: 700; color: #2f3650; max-width: 100%; display: flex; flex-direction: column; gap: 3px; pointer-events: auto; cursor: pointer; border-radius: 22px; }
+.av-quest .kt, .av-quest .st.done, .av-quest .st.todo { display: none; }
+.av-quest.open .kt, .av-quest.open .st.done, .av-quest.open .st.todo { display: block; }
+.av-quest.open { min-width: 250px; }
 .av-quest b { color: var(--ink); }
 .av-quest .kt { font-size: 22px; margin-bottom: 2px; }
-.av-quest .st { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
+.av-quest .st { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw; }
 .av-quest .st.done { color: #2a9d3a; text-decoration: line-through; opacity: 0.8; }
 .av-quest .st.now { color: var(--ink); }
 .av-quest .st.now i { font-style: normal; color: #d9541c; }
@@ -998,7 +1002,7 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .btn-actie.pulse { animation: glow 0.9s ease-in-out infinite; }
 
 /* fire bar in the backpack panel (R4) */
-.av-bag .fire-bar { display: inline-block; width: 64px; height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 2px; }
+.av-bag .fire-bar { display: inline-block; width: 46px; height: 13px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 2px; }
 .av-bag .fire-bar b { display: block; height: 100%; background: linear-gradient(90deg, #ff9f2e, #ffd23f); }
 .av-bag .fire-bar.low b { background: var(--red); }
 
@@ -1025,17 +1029,19 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .btn-emote { min-height: 82px; min-width: 150px; font-size: 26px; }
 
 /* V5.3: hunger bar, EET, the faint fade, two columns of tools at the fire */
-.av-bag .honger-bar { display: inline-block; width: 64px; height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 2px; }
+.av-bag .honger-bar { display: inline-block; width: 46px; height: 13px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 2px; }
 .av-bag .honger-bar b { display: block; height: 100%; background: linear-gradient(90deg, #45d65c, #8fe06f); }
 .av-bag .honger-bar.low b { background: var(--red); }
-.av-bag .warm-bar { display: inline-block; width: 64px; height: 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 4px; }
+.av-bag .warm-bar { display: inline-block; width: 46px; height: 13px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; overflow: hidden; vertical-align: middle; margin-left: 4px; }
 .av-bag .warm-bar b { display: block; height: 100%; background: linear-gradient(90deg, #4fb8ff, #9fe0ff); }
 .av-bag .warm-bar.low b { background: var(--red); }
-.av-bag .lvl { font-weight: 900; font-size: 22px; margin: 0 4px 0 2px; color: #d9541c; }
+.av-bag .lvl { font-weight: 900; font-size: 20px; margin: 0 4px 0 2px; color: #d9541c; }
 .av-row { display: flex; gap: 10px; align-items: center; }
-.av-nacht { padding: 6px 16px; font-size: 24px; font-weight: 900; color: #3f475f; white-space: nowrap; }
+.av-nacht { padding: 5px 14px; font-size: 22px; font-weight: 900; color: #3f475f; white-space: nowrap; }
 .av-nacht.night { background: #1d2144; color: #fff; }
-.av-campagne { padding: 6px 14px; font-size: 17px; font-weight: 700; color: #3f475f; display: flex; flex-direction: column; gap: 1px; max-width: 320px; }
+.av-campagne { padding: 5px 14px; font-size: 17px; font-weight: 700; color: #3f475f; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; max-width: 30vw; pointer-events: auto; cursor: pointer; }
+.av-campagne span { display: none; flex-basis: 100%; }
+.av-campagne.open span { display: block; }
 .av-campagne b { color: var(--ink); font-size: 18px; }
 .av-campagne span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .av-campagne i { font-style: normal; letter-spacing: 1px; font-size: 15px; }

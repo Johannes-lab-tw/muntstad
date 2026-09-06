@@ -279,8 +279,8 @@ export function createScene(container, game, engine) {
     resize();
   }
   function resize() {
-    if (engine.container !== host) engine.mount(host);
-    else engine.resize();
+    if (engine.container !== host) return;   // V7.0: another screen owns the canvas; never pull it over (rotating the iPad on the island left it blue)
+    engine.resize();
     W = engine.W; H = engine.H;
     cam.fit(W, H);
     walletCache.at = -1e9;
@@ -335,6 +335,7 @@ export function createScene(container, game, engine) {
 
   let lastTime = 0;
   function render(now) {
+    if (engine.checkSize()) resize();   // V7.0: the container changed size without a usable resize event (iPad rotation)
     if (!state || !W) return;
     const dt = Math.min(0.1, lastTime ? (now - lastTime) / 1000 : 0.016);
     if (lastTime) engine.trackFrame(now - lastTime, now);
