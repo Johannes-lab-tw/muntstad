@@ -2,7 +2,16 @@
 
 **Live:** https://johannes-lab-tw.github.io/muntstad/
 
-## 0. Zesde ronde: één wereld, echt overleven (5 september 2026, middag en avond)
+## 0. Zevende ronde: de derde iPad-test (6 september 2026)
+
+Johannes testte de zesde ronde in Safari op de iPad en meldde twee dingen. Allebei zijn dezelfde dag gerepareerd, getest op drie iPad-formaten en live gezet als **v7.0** (sw.js muntstad-v38, tag v7.0, CI-run 34029308120 groen op zes jobs).
+
+1. **Blauw beeld na draaien.** Draaide je de iPad per ongeluk staand ("Draai je iPad") en weer liggend, dan bleef het eiland leeg blauw. Oorzaak: bij elke maatwissel vroeg het spel ook het STAD-scherm om zich aan te passen, en dat trok het gedeelde 3D-canvas terug naar zijn eigen, verborgen scherm. Nu past een scherm alleen zijn eigen canvas aan, en kijkt het eiland elke paar tellen zelf of de maat stilletjes veranderd is (iPadOS meldt na een draai soms nog de oude maat). Een nieuwe browsertest speelt "staand en terug" na.
+2. **De teksten dekten het speelbeeld af.** De rugzakbalk is kleiner en past op één regel. De dagteller en de campagneregel staan naast elkaar, de opdrachtkaart eronder. Campagne en opdrachtkaart staan standaard dichtgevouwen op één regel ("📖 1. Het kamp ○○○○○○○", "▶ Pluk vijf bessen in het bos 0 / 5"). Een tik vouwt ze acht seconden open; is een stap af, dan vouwt de kaart zelf vijf seconden open zodat je zoon het vinkje ziet. Het spel is nu vanaf een derde van de hoogte vrij.
+
+Verder: het relais voor SAMEN SPELEN is op 6 september vanaf een pc nagemeten (twee spelers in één kamer zien elkaar; PAPA toonde bij Johannes één speler omdat de tweede iPad nog niet had ingetikt), en twee browsertests zijn robuuster gemaakt voor de traagste CI-runner (het spook mag daar twee keer stelen; de DORP-tik wordt herhaald als de dageraad-sticker hem opslokt). Nog open: de MELD-code en de punten van Johannes' zoon; die worden PLAN-V7. De uitleg op PAPA noemt voor de tweede iPad nog alleen "START → SAMEN", terwijl de knop SAMEN ook op het eiland staat; dat wordt in V7 aangepast.
+
+## 0-vorig. Zesde ronde: één wereld, echt overleven (5 september 2026, middag en avond)
 
 Na de tweede iPad-test ("avontuur is saai en klein", "hij wil door de stad lopen", "alles is al gekocht") is PLAN-V6.md gemaakt en zijn de eerste vier stappen gebouwd. Elke stap heeft een commit, unit-tests en e2e-tests op drie iPad-formaten; de site gaat pas online als die groen zijn.
 
@@ -17,7 +26,7 @@ Na de tweede iPad-test ("avontuur is saai en klein", "hij wil door de stad lopen
 8. **De vuurtoren** staat op een rots aan de noordkust van het eiland (geen tweede eiland: één eiland is één save en één kaartje). 's Nachts draait het licht. Bij de oude hut ernaast staat een tweede kist (60 munten per dag).
 9. **De campagne "De verdwenen munten van Muntstad".** Muntje's zeven gouden vrienden zijn kwijt; elk hoofdstuk levert er één op en staat links onder de dagteller: 1 een nacht met het vuur aan, 2 de kist in de grot en eruit zonder het grotspook, 3 de gouden vis (alleen met de hengel, 1 op 6), 4 klimschoenen kopen en naar de top van de berg, 5 de kist bij de vuurtoren, 6 drie nachten achter elkaar het vuur aan, 7 drie Nachtberen tegelijk die je alle drie met BOE wegjaagt (trommel helpt; samen gaat het makkelijker). Verlies je die nacht (alle drie bij het vuur, of het vuur uit), dan zijn je hout en het vuur weg en probeer je het morgen opnieuw. Winnen geeft de zevende munt, 500 munten, een sticker en vuurwerk boven het dorp. Daarna blijft alles open en gaan de opdrachtketens door.
 
-Nog te doen uit PLAN-V6: de afwerking met de MELD-knop op PAPA (V6.8). Bewaar-codes van eerdere rondes blijven laden.
+V6.8 (de MELD-knop op PAPA en de afwerking) is op 5 september gebouwd; wat daarna kwam staat onder de zevende ronde hierboven. Bewaar-codes van eerdere rondes blijven laden.
 
 ## 0-vorig. Vijfde ronde: spannender, wat je zoon vroeg (5 september 2026)
 
@@ -116,13 +125,13 @@ Je vroeg twee dingen: beoordeel wat de eerste run heeft gemaakt, en til de vormg
 Vanaf dan start Muntstad als app en werkt hij ook zonder internet. Let op twee iOS-eigenaardigheden:
 
 - De beginscherm-app heeft zijn eigen opslag. Voortgang die in Safari is gemaakt gaat niet vanzelf mee. Speel dus vanaf het begin in de beginscherm-app, of zet de voortgang over met de Bewaar-code (PAPA-scherm).
-- iOS negeert de liggende stand uit het manifest. Houd de iPad liggend; staand toont het spel "Draai je iPad".
+- iOS negeert de liggende stand uit het manifest. Houd de iPad liggend; staand toont het spel "Draai je iPad". Draai je hem per ongeluk en weer terug, dan komt het beeld sinds v7.0 (6 september 2026) gewoon terug.
 
 Als beginscherm-app blijft de voortgang bewaard; in een gewoon Safari-tabblad kan Safari opslag na 7 dagen zonder gebruik opruimen. Daarom is er de Bewaar-code (§3, PAPA).
 
 ## 1a. Samen spelen: het relais
 
-Het relais geeft alleen berichten door tussen de iPads in één kamer. Het staat sinds 5 september 2026 op Cloudflare (gratis): `wss://muntstad-relay.johannes-b0e.workers.dev`. Dat adres zit als standaard in het spel, dus op geen enkele iPad hoeft iets ingetypt te worden: PAPA → KAMER → de vier plaatjes; de andere iPads: START → SAMEN → plaatjes tikken. STOP op PAPA sluit de kamer.
+Het relais geeft alleen berichten door tussen de iPads in één kamer. Het staat sinds 5 september 2026 op Cloudflare (gratis): `wss://muntstad-relay.johannes-b0e.workers.dev`. Dat adres zit als standaard in het spel, dus op geen enkele iPad hoeft iets ingetypt te worden: PAPA → KAMER → de vier plaatjes (of op het eiland: SAMEN → KAMER); de andere iPads: op het eiland de knop SAMEN, of START → SAMEN, en dan de vier plaatjes tikken in dezelfde volgorde. PAPA zegt dan "2 spelers". STOP op PAPA sluit de kamer. Laat het adresveld op PAPA leeg; alleen wat je daar intikt vervangt ons eigen relais. Op 6 september 2026 nagemeten vanaf een pc: twee spelers in één kamer zien elkaar binnen een seconde.
 
 Opnieuw neerzetten (na een wijziging in server/relay/worker.js): `cd server/relay`, `npx wrangler@4 deploy` (inloggen met `npx wrangler@4 login`, het Cloudflare-account is gekoppeld aan GitHub). Alternatief voor testen zonder internet:
 
@@ -175,7 +184,7 @@ Wil je iets aan de look veranderen (een gebouw, een hoed, een kleur): `ART-DIREC
 
 ## 5. Wat er getest is
 
-**Unit tests (51, allemaal groen):** rekenwerk van de economie (opbrengst per tik, upgradeprijzen 40/80/160/320, vrijspelen, hondenvoer automatisch betaald, saldo nooit onder nul, 4-uur-plafond, werktempo = munten in de laatste 60 seconden met een plafond van 30 per minuut, mijlpalen in de juiste volgorde en de nieuwe regel voor "geld werkt harder", oude save-versie wordt omgezet, kapotte save geeft een schone start), stemkeuze (nl-NL eerst, dan andere nl, anders stil), de service-worker-lijst (elk bestand in `docs/` staat erin), manifest en iOS-metatags, en de balanssimulatie in vijf varianten.
+**Unit tests (99 op 6 september 2026, allemaal groen):** rekenwerk van de economie (opbrengst per tik, upgradeprijzen 40/80/160/320, vrijspelen, hondenvoer automatisch betaald, saldo nooit onder nul, 4-uur-plafond, werktempo = munten in de laatste 60 seconden met een plafond van 30 per minuut, mijlpalen in de juiste volgorde en de nieuwe regel voor "geld werkt harder", oude save-versie wordt omgezet, kapotte save geeft een schone start), stemkeuze (nl-NL eerst, dan andere nl, anders stil), de service-worker-lijst (elk bestand in `docs/` staat erin), manifest en iOS-metatags, en de balanssimulatie in vijf varianten.
 
 **Balanssimulatie (20 minuten, kind verdient 15 munten per minuut met WERK):**
 
@@ -193,7 +202,7 @@ Wil je iets aan de look veranderen (een gebouw, een hoed, een kleur): `ART-DIREC
 
 Verhouding LEUK-munten 3,68× (eis ≥ 3×), leuke spullen 2,5× (eis ≥ 1,5×), inhaalmoment 2,8 min (eis ≤ 4 min).
 
-**Browsertests (Playwright, 60 groen, drie iPad-formaten in Chromium):** iPad gen 7 1080×810, iPad mini 1024×768, iPad Pro 11 1194×834: geen foutmeldingen op geen enkel scherm · volledig doorspelen (start → werken tot 20 munten → limonadekraam kopen → portemonnee groeit zonder tikken → hoed kopen → hoed zichtbaar in HUIS → ouderpoort) · herladen bewaart de voortgang · gesimuleerde afwezigheid (1 uur weg = 720 munten; 5 uur weg = precies het plafond van 4 uur = 2 880) · echt offline (server uitgezet, spel laadt uit de cache) · manifest en iconen bereikbaar · kind-UX-audit op elk scherm (tikdoelen ≥ 64×64 zonder overlap en ≥ 12 px uit elkaar, hoofdknoppen ≥ 80 px, knopletters ≥ 24 px, muntstand ≥ 36 px, alle tekst ≥ 20 px, geen Engelse woorden) · ouderpoort (korte tik opent niet, som fout = nieuwe som, RESET twee keer bevestigen, Bewaar-code laden en weigeren) · twee stickers tegelijk komen na elkaar · staand scherm toont "Draai je iPad".
+**Browsertests (Playwright, 40 tests op 6 september 2026, groen op drie iPad-formaten in Chromium, in de cloud):** iPad gen 7 1080×810, iPad mini 1024×768, iPad Pro 11 1194×834: geen foutmeldingen op geen enkel scherm · volledig doorspelen (start → werken tot 20 munten → limonadekraam kopen → portemonnee groeit zonder tikken → hoed kopen → hoed zichtbaar in HUIS → ouderpoort) · herladen bewaart de voortgang · gesimuleerde afwezigheid (1 uur weg = 720 munten; 5 uur weg = precies het plafond van 4 uur = 2 880) · echt offline (server uitgezet, spel laadt uit de cache) · manifest en iconen bereikbaar · kind-UX-audit op elk scherm (tikdoelen ≥ 64×64 zonder overlap en ≥ 12 px uit elkaar, hoofdknoppen ≥ 80 px, knopletters ≥ 24 px, muntstand ≥ 36 px, alle tekst ≥ 20 px, geen Engelse woorden) · ouderpoort (korte tik opent niet, som fout = nieuwe som, RESET twee keer bevestigen, Bewaar-code laden en weigeren) · twee stickers tegelijk komen na elkaar · staand scherm toont "Draai je iPad".
 
 **Twee beoordelingsrondes.** Ronde 1 (eerste run): kind-tester en economie-check, twintig punten, verwerkt. Ronde 2 (deze run): zeven reviewers plus een sceptische tegencontrole per punt, 75 bevestigde punten; de vormgevingspunten zijn opgelost door de nieuwe look, de rest staat in §0.2.
 
@@ -209,6 +218,8 @@ Verhouding LEUK-munten 3,68× (eis ≥ 3×), leuke spullen 2,5× (eis ≥ 1,5×)
 4. **Offline:** zet wifi uit en open de app: hij moet gewoon starten.
 5. **Weg geweest:** leg de iPad 10 minuten weg met minstens één geldmaker; bij terugkomst komt "Terwijl je weg was…".
 6. **Tempo:** het dorp en de wasstraat moeten soepel bewegen (auto's, munten, wolken). Het dorp meet zichzelf: haalt een iPad geen 60 beelden per seconde, dan zet hij de golven en wolkschaduwen uit. In Chromium met 4× vertraagde processor (grofweg een iPad uit 2019): STAD 29, HUIS 55, WERK 60 en WINKEL 60 beelden per seconde; op de iPad zelf is het canvas versneld door de grafische chip, dus daar verwacht ik meer. Hapert het toch, zeg het.
+7. **Versie:** PAPA → MELD. De code begint met de versie (nu v7.0) en bevat het tempo van de iPad. Staat er een oudere versie, sluit de app helemaal af, open hem, wacht tien tellen, en sluit en open nog een keer.
+8. **Draaien:** draai de iPad op het eiland staand ("Draai je iPad") en weer liggend; het eiland moet terugkomen.
 
 ## 7. Wat (nog) niet kan, en Volgende versie
 
@@ -219,7 +230,7 @@ Bekende beperkingen:
 - WebKit-tests konden hier niet draaien (zie §5).
 - De beginscherm-app en Safari delen geen opslag (zie §1).
 
-Volgende versie na de zesde ronde (5 september 2026): samen een boomstam tillen; spoken die ook bij gasten stelen; NPC's en remmende auto's in het loopbare dorp, de winkel als gebouw, het huis binnenlopen; Avontuur als losse game met eigen titelscherm (docs/avontuur.html); gouden zaterdag en honderd dagopdrachten na de campagne; de gouden kist bij het standbeeld; spoken die het vuurtorenlicht stelen (veenhout); de boot tussen drie plekken; steiger met props, golven bij de palen, rustigere HUD op het eiland. Open voor Johannes: de iPad-test met de MELD-code op PAPA.
+Volgende versie na de zesde ronde (5 september 2026): samen een boomstam tillen; spoken die ook bij gasten stelen; NPC's en remmende auto's in het loopbare dorp, de winkel als gebouw, het huis binnenlopen; Avontuur als losse game met eigen titelscherm (docs/avontuur.html); gouden zaterdag en honderd dagopdrachten na de campagne; de gouden kist bij het standbeeld; spoken die het vuurtorenlicht stelen (veenhout); de boot tussen drie plekken; steiger met props, golven bij de palen; de uitleg op PAPA voor de tweede iPad (noemt nog alleen START → SAMEN). De rustigere HUD op het eiland is in v7.0 gedaan. Open voor Johannes: de MELD-code en de punten van zijn zoon (worden PLAN-V7).
 
 Volgende versie (bewust weggelaten voor een afgemaakte versie):
 - Meer geldmakers na de flat en meer levels.
@@ -233,6 +244,6 @@ Volgende versie (bewust weggelaten voor een afgemaakte versie):
 
 ## 8. Later iets veranderen
 
-Open een terminal in `C:\Claude_code\Geldspel` en start Claude Code (`claude`). Vraag gewoon: "Maak de wasstraat 20% goedkoper en voeg een brandweerauto toe aan LEUK." `claude --continue` pakt de vorige sessie op; SPEC.md, PROGRESS.md en ART-DIRECTION.md staan in de map. Tests: `npm test` en `npm run test:e2e`. Screenshots van elk scherm: `node scripts/dev-shot.mjs --seed rich` (met een draaiende `npm run serve`). Deployen: versienummer in `docs/sw.js` ophogen, `git commit`, `git push`; GitHub Pages zet het binnen een paar minuten live.
+Open een terminal in `C:\Claude_code\Geldspel` en start Claude Code (`claude`). Vraag gewoon: "Maak de wasstraat 20% goedkoper en voeg een brandweerauto toe aan LEUK." `claude --continue` pakt de vorige sessie op; SPEC.md, PROGRESS.md en ART-DIRECTION.md staan in de map. Tests: `npm test` en `npm run test:e2e`. Screenshots van elk scherm: `node scripts/dev-shot.mjs --seed rich` (met een draaiende `npm run serve`). Deployen: versienummer in `docs/sw.js` ophogen (en `GAME_VERSION` in `docs/js/main.js` bij een nieuwe tag), `git commit`, `git push`; GitHub Actions draait eerst alle browsertests op drie iPad-formaten (ongeveer 40 minuten) en zet de site alleen live als alles groen is. `gh run list --limit 3` laat zien hoe het staat.
 
 Node staat op deze pc als losse map in `C:\Users\jgsno\.local\node` (in je PATH gezet; nieuwe terminals zien hem). Wil je hem "netjes" installeren: `winget install OpenJS.NodeJS.LTS` in een terminal als beheerder, dat mag ernaast.
