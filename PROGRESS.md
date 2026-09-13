@@ -156,6 +156,7 @@ Plan: PLAN-V5.md (zes punten van de speler + open punten uit RAPPORT §7). Zelfd
 
 ## Run 8 (2026-09-13) — de STOOK-fout van 7 september en PLAN-V7
 - [x] V7.1 — STOOK bij een bijna vol vuur: `stokeFire` rondde de ruimte af naar 0 (399,6 van 400) en zei "geen hout" met 38 stuks in de tas; nu telt de laatste breuk als heel stuk, `reason` 'hout'/'vol', nieuwe zin `fireFull`, `canStoke()` voor de knop; gast ziet het hostvuur tot 400 (was 100). Unit 99 groen (nieuwe asserts), e2e eiland-nacht + samen groen op chromium-ipad-gen7. GAME_VERSION v7.1, sw muntstad-v39. Het per ongeluk vastgelegde bestand `indow.__muntstad = ...` (kopie van main.js) verwijderd.
+- [x] V7.1 live — PR #1 gemerged (rebase, main 1cd8280), run 34774823588 groen op zes jobs, deploy-job geslaagd 13-09 19:05 UTC. Johannes: "Jij mag hem mergen." Tag v7.1 nog te zetten op 1cd8280 (tag-push vanuit de Claude-Code-sessie geeft 403; lokaal doen: `git tag -a v7.1 1cd8280 -m v7.1 && git push origin v7.1`).
 - [x] PLAN-V7.md — beoordeling van het eilandscherm voor een zesjarige (7 punten) + drie Higgsfield-concepten als moodboard; Johannes kiest, daarna V7.2 t/m V7.5.
 
 ## Volgende sessie (stand 6 september 2026, middag)
