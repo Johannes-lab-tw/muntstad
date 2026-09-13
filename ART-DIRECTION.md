@@ -123,7 +123,7 @@ on every screen in V7.3:
   optional badge bottom-right (the fire level). `.low` turns it red and pulses.
 - `.tile` — a picture with a number badge (the backpack); `.n.full` turns the badge red.
 
-Rules that go with them ("knoppen niet in de weg"): the middle of the screen (60 % wide, 55 % high) never holds a
+Rules that go with them ("knoppen niet in de weg"): the middle of the screen (60 % wide, 50 % high) never holds a
 button; only the action of the moment is large; while the stick is held everything that is not the action drops to
 55 % (`.screen-avontuur.moving .av-dim`); emotes hide behind one smiley; a button keeps its place (visibility, not
 display); Muntje's bubble is narrow and lets touches through on the island. `tests/e2e/avontuur.spec.js` audits this.

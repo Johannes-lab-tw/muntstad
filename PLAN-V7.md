@@ -79,7 +79,7 @@ spel, in samenwerking met Higgsfield?
 
 ### C.2 Regels voor "niet in de weg" (bindend voor elk scherm)
 
-1. **Veilige zone:** het middelste 60 % van de breedte en 55 % van de hoogte is vrij van knoppen en panelen.
+1. **Veilige zone:** het middelste 60 % van de breedte en 50 % van de hoogte is vrij van knoppen en panelen.
    Knoppen hangen aan de vier hoeken en de onderrand.
 2. **Eén grote knop:** alleen de actie van dit moment is groot (110 px): PAK/HAK/VIS/KAMP/STOOK op het eiland,
    KLAAR in WERK, KOOP in de winkel. Al het andere is 84 px (navigatie) of 64 px (emotes, kaart, geluid).
