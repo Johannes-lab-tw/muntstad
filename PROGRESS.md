@@ -138,6 +138,7 @@ Plan: PLAN-V5.md (zes punten van de speler + open punten uit RAPPORT §7). Zelfd
 
 ### Run 8
 - 2026-09-13 STOOK: de laatste breuk ruimte in het vuur telt als een heel stuk (ceil) en de knop blijft weg onder een half stuk ruimte; liever een stuk hout "te veel" in een vol vuur dan een knop die niets doet.
+- 2026-09-13 Iconen in de V7.2-kit zijn emoji (groot en scherp op de iPad, dezelfde plaatjestaal als de gekozen concepten), geen SVG-sprite zoals PLAN-V7 §C.1 eerst zei; SVG alleen waar geen emoji past. Reden: nul bytes, nul tekenwerk. Headless Chromium heeft geen emoji-font, dus de plaatjes beoordeel je op de iPad.
 - 2026-09-13 Higgsfield-beelden zijn moodboard, geen game-assets (regel 4/5 blijven). Het downloaddomein van Higgsfield is in de Claude-Code-container geblokkeerd; beoordelen gebeurt door Johannes in de galerij.
 
 ### Run 3
@@ -157,6 +158,7 @@ Plan: PLAN-V5.md (zes punten van de speler + open punten uit RAPPORT §7). Zelfd
 ## Run 8 (2026-09-13) — de STOOK-fout van 7 september en PLAN-V7
 - [x] V7.1 — STOOK bij een bijna vol vuur: `stokeFire` rondde de ruimte af naar 0 (399,6 van 400) en zei "geen hout" met 38 stuks in de tas; nu telt de laatste breuk als heel stuk, `reason` 'hout'/'vol', nieuwe zin `fireFull`, `canStoke()` voor de knop; gast ziet het hostvuur tot 400 (was 100). Unit 99 groen (nieuwe asserts), e2e eiland-nacht + samen groen op chromium-ipad-gen7. GAME_VERSION v7.1, sw muntstad-v39. Het per ongeluk vastgelegde bestand `indow.__muntstad = ...` (kopie van main.js) verwijderd.
 - [x] V7.1 live — PR #1 gemerged (rebase, main 1cd8280), run 34774823588 groen op zes jobs, deploy-job geslaagd 13-09 19:05 UTC. Johannes: "Jij mag hem mergen." Tag v7.1 nog te zetten op 1cd8280 (tag-push vanuit de Claude-Code-sessie geeft 403; lokaal doen: `git tag -a v7.1 1cd8280 -m v7.1 && git push origin v7.1`).
+- [ ] V7.2 — UI-kit op het eiland (in de PR): `.btn-ico` (64/96/110/130), `.ring`, `.tile`; rugzak als tegels met badge, 🔥🍎🌡️ als ringen; STOOK en de actieknop groot rond met plaatje rechtsonder naast SPRING; ZWAAI/DANS achter één smiley (4 s); SAMEN en DORP als ronde plaatjesknoppen rechtsboven boven de kaart; vervagen naar 55 % bij lopen; ballon op het eiland smal en zonder tikvlak. Audit-test in avontuur.spec (≥ 64 px, geen overlap, midden vrij, smiley, dimmen). ART-DIRECTION §10 bijgewerkt. Johannes over de vier herschetsen: STAD, WINKEL en HUIS goed, WERK moet anders (nieuwe richting in V7.3). GAME_VERSION v7.2, sw muntstad-v40. `scripts/shot-hud.mjs` maakt vijf HUD-screenshots.
 - [x] Stijlkeuze Johannes (13 sep, avond): "het vuur als held" + "rugzak en mentor", regel "knoppen niet in de weg", PR #2 gemerged. PLAN-V7 §C/§D herschreven: UI-taal overal, wereld blijft rond plastic (geen Minecraft-blokjes, regel 5 + kosten), iconen als inline SVG (regel 4), zes "niet in de weg"-regels, de Higgsfield-loop, vier schermen + stijlgids-blad gegenereerd (jobs 0ae6c817, c3d38fb8, d22cfc5b, 6a97783c, 3a76151f).
 - [x] PLAN-V7.md — beoordeling van het eilandscherm voor een zesjarige (7 punten) + drie Higgsfield-concepten als moodboard; Johannes kiest, daarna V7.2 t/m V7.5.
 

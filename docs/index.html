@@ -102,8 +102,12 @@
     <section class="screen screen-avontuur" data-screen="avontuur" id="screen-avontuur">
       <div id="avontuur" class="gl-host" aria-label="Avontuur" role="img"></div>
       <div class="stick" id="stick" aria-hidden="true"><div class="stick-knob" id="stick-knob"></div></div>
+      <!-- V7.2: picture-first HUD (PLAN-V7 §C): the bag as tiles with a badge, three ring meters, folded cards -->
       <div class="av-left">
-        <div class="av-bag panel-mini" id="av-bag" aria-label="Rugzak"></div>
+        <div class="av-hud">
+          <div class="av-bag av-tiles" id="av-bag" aria-label="Rugzak"></div>
+          <div class="av-rings" id="av-rings" aria-label="Vuur, eten en warmte"></div>
+        </div>
         <div class="av-row">
           <div class="av-nacht panel-mini" id="av-nacht" aria-label="Dag of nacht"></div>
           <div class="av-campagne panel-mini" id="av-campagne" aria-label="Campagne"></div>
@@ -112,7 +116,8 @@
       </div>
       <div class="av-top-right">
         <div class="av-peers panel-mini" id="av-peers" hidden></div>
-        <button class="btn btn-purple btn-emote av-samen" id="av-samen" type="button">SAMEN</button>
+        <button class="btn btn-ico btn-ico-m btn-purple av-dim" id="av-samen" type="button"><i class="ico">👥</i><span class="lbl">SAMEN</span></button>
+        <button class="btn btn-ico btn-ico-m btn-secondary av-dim" id="av-dorp" type="button"><i class="ico">⛵</i><span class="lbl">DORP</span></button>
       </div>
       <canvas class="av-map" id="av-map" width="144" height="144" aria-label="Kaart van het eiland"></canvas>
       <div class="av-vignette" id="av-vignette" aria-hidden="true"></div>
@@ -131,17 +136,20 @@
           </div>
         </div>
       </div>
+      <!-- V7.2: emotes behind one smiley, EET beside it; the one big action (PAK/HAK/KAMP…), STOOK at the fire and SPRING bottom-right -->
       <div class="av-emotes">
-        <button class="btn btn-purple btn-emote" id="av-zwaai" type="button">ZWAAI</button>
-        <button class="btn btn-orange btn-emote" id="av-dans" type="button">DANS</button>
-        <button class="btn btn-success btn-emote" id="av-eet" type="button" hidden>EET</button>
-        <button class="btn btn-primary btn-emote" id="av-stook" type="button" hidden>STOOK</button>
+        <button class="btn btn-ico btn-ico-s btn-orange av-dim" id="av-emote" type="button" aria-label="Zwaai of dans"><i class="ico">😀</i></button>
+        <div class="av-emote-row" id="av-emote-row" hidden>
+          <button class="btn btn-ico btn-ico-s btn-purple" id="av-zwaai" type="button" aria-label="Zwaai"><i class="ico">👋</i></button>
+          <button class="btn btn-ico btn-ico-s btn-orange" id="av-dans" type="button" aria-label="Dans"><i class="ico">💃</i></button>
+        </div>
+        <button class="btn btn-ico btn-ico-m btn-success" id="av-eet" type="button" hidden><i class="ico">🍎</i><span class="lbl">EET</span></button>
       </div>
       <div class="av-flauw" id="av-flauw" hidden><p class="av-flauw-tekst" id="av-flauw-tekst"></p></div>
       <div class="av-buttons">
-        <button class="btn btn-secondary btn-lg" id="av-dorp" type="button">⛵ DORP</button>
-        <button class="btn btn-primary btn-actie" id="av-actie" type="button" hidden>PAK</button>
-        <button class="btn btn-success btn-jump" id="av-spring" type="button">SPRING</button>
+        <button class="btn btn-ico btn-ico-l btn-primary glow" id="av-stook" type="button" hidden><i class="ico">🪵</i><span class="lbl">STOOK</span></button>
+        <button class="btn btn-ico btn-ico-l btn-primary" id="av-actie" type="button" hidden><i class="ico" id="av-actie-ico">👉</i><span class="lbl" id="av-actie-lbl">PAK</span></button>
+        <button class="btn btn-ico btn-ico-xl btn-success" id="av-spring" type="button"><i class="ico">⬆️</i><span class="lbl">SPRING</span></button>
       </div>
       <!-- the campfire: a full screen inside AVONTUUR (V6.1), laid out like WINKEL -->
       <div class="kamp-screen" id="kamp-overlay" hidden>
