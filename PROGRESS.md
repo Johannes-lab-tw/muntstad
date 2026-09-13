@@ -136,6 +136,10 @@ Plan: PLAN-V5.md (zes punten van de speler + open punten uit RAPPORT §7). Zelfd
 - 2026-09-03 CI na R1 (runs 33805036763 t/m 33809128835): de twee avontuur-tests zijn op alle drie iPad-profielen groen sinds a96a42d (nodig waren: vaste substappen 1/60 s omdat de runner ~5 fps haalt; sprong blijft staan tot een substap hem verwerkt; hond-meetlat versoepeld). Nog rood op de trage runners: PAPA-hold van 3 s en de Muntje-tekst in smoke/papa/audits, dat is timing van vóór R1 en het werk van de andere sessie (CI-timeouts).
 - 2026-09-03 De kaart-knop heet AVONTUUR ⛵ en staat rechtsboven in STAD (de onderbalk heeft geen ruimte voor een vierde knop op de iPad mini). In AVONTUUR loop je altijd te voet, ook met scooter/auto gekocht.
 
+### Run 8
+- 2026-09-13 STOOK: de laatste breuk ruimte in het vuur telt als een heel stuk (ceil) en de knop blijft weg onder een half stuk ruimte; liever een stuk hout "te veel" in een vol vuur dan een knop die niets doet.
+- 2026-09-13 Higgsfield-beelden zijn moodboard, geen game-assets (regel 4/5 blijven). Het downloaddomein van Higgsfield is in de Claude-Code-container geblokkeerd; beoordelen gebeurt door Johannes in de galerij.
+
 ### Run 3
 - 2026-09-02 Route 1 gekozen: echte 3D met Three.js (gevendord, één renderer voor alle schermen). Budget docs/ gaat van 1 MB naar 1,5 MB omdat Three.js r185 minified 751 KB is; CDN blijft verboden. Zie PLAN-V3.md §0.
 - 2026-09-02 Reviews in ronde 3: lokale criticus (qwen3.8:27b) op screenshots in plaats van Opus-agents; Claude beslist.
@@ -149,6 +153,10 @@ Plan: PLAN-V5.md (zes punten van de speler + open punten uit RAPPORT §7). Zelfd
 - 2026-09-02 Gebouwen, huis, bomen/struiken/lantaarns, TE KOOP-borden en NPC-auto's worden per (soort, level/kleur, unit, dpr) één keer in een offscreen canvas getekend en daarna als plaatje geblit; alleen rook, druppels, vlaggen en zwevende munten worden live getekend (`part: 'anim'`). Winkelvolgorde gemengd per pagina; Bewaar-codes van vóór 2 september 2026 vervallen daardoor (er waren er nog geen).
 - 2026-09-02 Buttons hebben witte, omlijnde letters (text-shadow in 8 richtingen); het toetsenblok van de ouderpoort houdt donkere cijfers op wit voor leesbaarheid.
 - 2026-09-06 Op het eiland staan de campagne- en ketenkaart standaard dichtgevouwen op één regel (tik = 8 s open, stap af = 5 s open); een scène past het canvas alleen aan als ze het zelf heeft (`engine.container === host`), een resize claimt nooit het canvas.
+
+## Run 8 (2026-09-13) — de STOOK-fout van 7 september en PLAN-V7
+- [x] V7.1 — STOOK bij een bijna vol vuur: `stokeFire` rondde de ruimte af naar 0 (399,6 van 400) en zei "geen hout" met 38 stuks in de tas; nu telt de laatste breuk als heel stuk, `reason` 'hout'/'vol', nieuwe zin `fireFull`, `canStoke()` voor de knop; gast ziet het hostvuur tot 400 (was 100). Unit 99 groen (nieuwe asserts), e2e eiland-nacht + samen groen op chromium-ipad-gen7. GAME_VERSION v7.1, sw muntstad-v39. Het per ongeluk vastgelegde bestand `indow.__muntstad = ...` (kopie van main.js) verwijderd.
+- [x] PLAN-V7.md — beoordeling van het eilandscherm voor een zesjarige (7 punten) + drie Higgsfield-concepten als moodboard; Johannes kiest, daarna V7.2 t/m V7.5.
 
 ## Volgende sessie (stand 6 september 2026, middag)
 

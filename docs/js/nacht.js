@@ -34,12 +34,23 @@ export function burnFire(n, config, dtMs, darkness, mul = 1) {
   return { ...n, fire: Math.max(0, n.fire - (rate * dtMs) / 60000) };
 }
 
-/** Put wood in the fire: returns { nacht, eiland, used }. Takes up to `max` pieces from the backpack. */
+/**
+ * Put wood in the fire: returns { nacht, eiland, used, reason }. Takes up to `max` pieces from the backpack.
+ * V7.1: the fire burns in fractions, so the last bit of room (399.6 of 400) still takes one whole piece and tops the
+ * heap off; before, that room rounded down to zero and STOOK did nothing while the bag was full. `reason` says why
+ * nothing went in: 'hout' (no wood in the bag) or 'vol' (the heap is full).
+ */
 export function stokeFire(n, e, config, max = 3) {
-  const room = Math.max(0, Math.floor(config.nacht.fireMax - n.fire));
-  const used = Math.max(0, Math.min(max, e.bag.hout || 0, room));
-  if (used <= 0) return { nacht: n, eiland: e, used: 0 };
-  return { nacht: { ...n, fire: Math.min(config.nacht.fireMax, n.fire + used) }, eiland: { ...e, bag: { ...e.bag, hout: e.bag.hout - used } }, used };
+  const hout = Math.max(0, Math.floor(e.bag.hout || 0));
+  const room = Math.max(0, Math.ceil(config.nacht.fireMax - n.fire));
+  const used = Math.max(0, Math.min(max, hout, room));
+  if (used <= 0) return { nacht: n, eiland: e, used: 0, reason: hout <= 0 ? 'hout' : 'vol' };
+  return { nacht: { ...n, fire: Math.min(config.nacht.fireMax, n.fire + used) }, eiland: { ...e, bag: { ...e.bag, hout: hout - used } }, used, reason: null };
+}
+/** Can STOOK do anything right now? Wood in the bag and at least half a piece of room (so the button does not flicker back
+ * the moment a full heap burns a crumb; every tap on a visible STOOK puts wood in). */
+export function canStoke(n, e, config) {
+  return Math.floor(e.bag.hout || 0) > 0 && config.nacht.fireMax - n.fire >= 0.5;
 }
 
 /** How far the fire's light reaches (ghosts keep out of the light): per level. */

@@ -15,7 +15,7 @@ import { KETENS } from '../../content/ketens.js';
 import { CAMPAGNE } from '../../content/campagne.js';
 import { currentHoofdstuk, campagneEvent, berenVerloren, isGered } from '../campagne.js';
 import { currentKeten, ketenEvent, PLEKKEN } from '../ketens.js';
-import { burnFire, stokeFire, ghostSteal, dawnReward, fireLevel, levelSpan } from '../nacht.js';
+import { burnFire, stokeFire, canStoke, ghostSteal, dawnReward, fireLevel, levelSpan } from '../nacht.js';
 import { perks, drainHunger, eat, canEat, faint, deerBump, coolDown, freeze, cook } from '../uitdaging.js';
 import { CYCLE } from '../3d/daycycle.js';
 
@@ -253,7 +253,7 @@ export function createAvontuur(game) {
   /** STOOK shows at the fire while there is wood in the bag and room in the heap. */
   function syncStook(state) {
     const atCamp = !!(lastAction && lastAction.atCamp);
-    stookBtn.hidden = !(atCamp && (state.eiland.bag.hout || 0) > 0 && state.nacht.fire < game.config.nacht.fireMax);
+    stookBtn.hidden = !(atCamp && canStoke(state.nacht, state.eiland, game.config));
   }
 
   // ---------- hunger, eating, fainting, the deer (V5.3) ----------
@@ -410,7 +410,12 @@ export function createAvontuur(game) {
   }
   function onStoke() {
     const r = stokeFire(game.state.nacht, game.state.eiland, game.config, 3);
-    if (r.used <= 0) { game.mentor.say('lines.noWood', {}, { kind: 'reaction' }); return; }
+    if (r.used <= 0) {
+      // V7.1: a full heap is not an empty bag; say the right thing (and never "geen hout" with 38 pieces in the bag)
+      game.mentor.say(r.reason === 'vol' ? 'lines.fireFull' : 'lines.noWood', {}, { kind: 'reaction' });
+      syncStook(game.state);
+      return;
+    }
     game.audio.play('buy');
     if (samen && samen.isGuest) {
       // a guest's wood goes into the host's fire: take it out of the bag here, the host adds it to the fire

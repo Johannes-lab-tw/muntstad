@@ -64,6 +64,29 @@ test('night falls: Muntje warns, STOOK feeds the fire with the wood in the bag, 
   expect(errors()).toEqual([]);
 });
 
+test('V7.1 (iPad 7 sep): a nearly full bonfire still takes wood; a full one says "vol", never "geen hout" with a full bag', async ({ page }) => {
+  const errors = watchErrors(page);
+  // the bug: 399.4 of 400 pieces in the heap, 38 in the bag; STOOK did nothing and Muntje said "Je hebt geen hout"
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ bag: { hout: 38, schelp: 4, bes: 16, vis: 0 }, tools: { rugzak: true } }); s.nacht = { fire: 399.4, nights: 1, stolen: 0, clockOffsetMs: 0 }; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  const h = await hook(page);
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), h.camp);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('KAMP');
+  await expect(page.locator('#av-stook')).toBeVisible({ timeout: 40000 });
+  await page.locator('#av-stook').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 40000 }).toBe(37);
+  expect((await state(page)).nacht.fire).toBeGreaterThan(399.8);   // topped off (it burns a crumb per second)
+  expect(await mentorHas(page, 'geen hout')).toBe(false);
+  // the heap is full now: STOOK folds away; a tap that still lands on a full heap says so
+  await expect(page.locator('#av-stook')).toBeHidden({ timeout: 40000 });
+  await page.evaluate(() => { window.__muntstad.state.nacht.fire = window.__muntstad.config.nacht.fireMax; window.__muntstad.avontuur.stoke(); });
+  await expect.poll(() => mentorHas(page, 'vuur is vol'), { timeout: 40000 }).toBe(true);
+  expect(await mentorHas(page, 'geen hout')).toBe(false);
+  expect(errors()).toEqual([]);
+});
+
 test('V5.3: hunger drains and EET fills it; the Nachthert bumps you and your things lie on the ground to PAK; an empty stomach at night = faint at the fire', async ({ page }) => {
   const errors = watchErrors(page);
   await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ bag: { hout: 6, schelp: 4, bes: 2, vis: 1 }, honger: 30 }); s.nacht = { fire: 100, nights: 1, stolen: 0, clockOffsetMs: 0 }; return s; });
