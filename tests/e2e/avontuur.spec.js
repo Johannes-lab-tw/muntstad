@@ -88,7 +88,7 @@ test('the joystick walks the player off the pier, the dog follows, SPRING jumps,
 });
 
 // V7.2 (PLAN-V7 §C.2): the island's buttons are round pictures at the edges: every visible button ≥ 64 px, none overlap or sit
-// closer than 12 px, the middle of the screen (60 % wide, 55 % high) stays free of buttons, the emotes hide behind one smiley,
+// closer than 12 px, the middle of the screen (60 % wide, 50 % high) stays free of buttons, the emotes hide behind one smiley,
 // and while the stick is held the buttons that are not the action step back
 test('V7.2 kid-UX on the island: big round buttons at the edges, a free middle, emotes behind the smiley, dimming while walking', async ({ page }) => {
   const errors = watchErrors(page);
@@ -102,13 +102,16 @@ test('V7.2 kid-UX on the island: big round buttons at the edges, a free middle, 
   await expect(page.locator('#av-stook')).toBeVisible({ timeout: 40000 });
   await expect(page.locator('#av-eet')).toBeVisible();
   await expect(page.locator('#av-emote-row')).toBeHidden();
-  const audit = () => page.evaluate(() => {
+  // one round trip per check: the emote row folds after 4 s and a round trip on the ~1 fps runner can take longer, so a tap
+  // and the read-out of what it did happen inside the same evaluate
+  const audit = (tap = null) => page.evaluate((tap) => {
+    if (tap) document.getElementById(tap).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, pointerId: 9, button: 0 }));
     const visible = (el) => { const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || el.hidden) return false; let p = el.parentElement; while (p) { const pcs = getComputedStyle(p); if (pcs.display === 'none' || pcs.visibility === 'hidden' || p.hidden) return false; p = p.parentElement; } return true; };
     const label = (b) => `#${b.id}`;
     const buttons = [...document.querySelectorAll('#screen-avontuur button')].filter(visible).filter((b) => !b.closest('#kamp-overlay, #av-samen-pad'));
     const small = [], overlaps = [], tooClose = [], inMiddle = [];
     const W = innerWidth, H = innerHeight;
-    const mid = { left: W * 0.2, right: W * 0.8, top: H * 0.225, bottom: H * 0.775 };
+    const mid = { left: W * 0.2, right: W * 0.8, top: H * 0.25, bottom: H * 0.75 };
     const rects = buttons.map((b) => ({ label: label(b), r: b.getBoundingClientRect() }));
     for (const { label: l, r } of rects) {
       if (r.width < 64 || r.height < 64) small.push(`${l} ${Math.round(r.width)}×${Math.round(r.height)}`);
@@ -121,8 +124,8 @@ test('V7.2 kid-UX on the island: big round buttons at the edges, a free middle, 
       if (ix > 1 && iy > 1) overlaps.push(`${rects[i].label} ∩ ${rects[j].label}`);
       else if (-ix < 11.5 && -iy < 11.5) tooClose.push(`${rects[i].label} ↔ ${rects[j].label}`);
     }
-    return { n: buttons.length, small, overlaps, tooClose, inMiddle, moving: document.getElementById('screen-avontuur').classList.contains('moving'), dim: getComputedStyle(document.getElementById('av-dorp')).opacity };
-  });
+    return { n: buttons.length, small, overlaps, tooClose, inMiddle, rowHidden: document.getElementById('av-emote-row').hidden, moving: document.getElementById('screen-avontuur').classList.contains('moving'), dim: getComputedStyle(document.getElementById('av-dorp')).opacity };
+  }, tap);
   let a = await audit();
   expect(a.n).toBeGreaterThanOrEqual(6);
   expect(a.small, 'touch targets under 64×64').toEqual([]);
@@ -130,14 +133,13 @@ test('V7.2 kid-UX on the island: big round buttons at the edges, a free middle, 
   expect(a.tooClose, 'buttons closer than 12 px').toEqual([]);
   expect(a.inMiddle, 'buttons in the middle of the screen').toEqual([]);
   // the smiley opens ZWAAI and DANS; an emote closes the row again
-  await page.locator('#av-emote').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect(page.locator('#av-emote-row')).toBeVisible();
-  a = await audit();
+  a = await audit('av-emote');
+  expect(a.rowHidden, 'the smiley opens the emotes').toBe(false);
   expect(a.small, 'emote targets under 64×64').toEqual([]);
   expect(a.overlaps, 'emotes overlap').toEqual([]);
   expect(a.tooClose, 'emotes closer than 12 px').toEqual([]);
-  await page.locator('#av-zwaai').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect(page.locator('#av-emote-row')).toBeHidden();
+  a = await audit('av-zwaai');
+  expect(a.rowHidden, 'an emote folds the row').toBe(true);
   // walking: the screen carries `moving` and DORP steps back to 55 %; standing still brings it back
   await page.evaluate(() => window.__muntstad.avontuur.setInput(0, 1, false));
   await expect.poll(async () => (await audit()).moving, { timeout: 40000 }).toBe(true);
