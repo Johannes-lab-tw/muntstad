@@ -111,6 +111,23 @@ target (4× MSAA, transparent) and cached as PNG data URLs. Same export names as
 Unchanged from v2: outlined white game type, glossy 3D buttons with the 6 px ink edge, pills, panels, cards.
 Screens have a sky gradient (`#a6e4ff → #1479cf`) behind the transparent 3D canvas.
 
+**V7.2 (PLAN-V7 §C, Johannes' choice of 13 September): picture first.** Three new pieces, used on the island first and
+on every screen in V7.3:
+
+- `.btn-ico` — a round button, the picture on top and one capital word under it, 4 px ink edge, glossy. Four sizes:
+  `-s` 64 px (picture only, the word in `aria-label`: emotes, small switches), `-m` 96 px (navigation: SAMEN, DORP,
+  EET), `-l` 110 px (the one action of the moment: PAK/HAK/KAMP…, STOOK), `-xl` 130 px (SPRING). Words stay ≥ 24 px.
+  The picture is an emoji in an `<i class="ico">` (never the outlined text shadow); iPad Safari draws them large and
+  crisp, and they match the icon language of the chosen concepts. Draw an SVG only where no emoji fits.
+- `.ring` — a ring meter: the picture in the middle, the value as a conic ring (`--p` 0–100, `--rc` the colour), an
+  optional badge bottom-right (the fire level). `.low` turns it red and pulses.
+- `.tile` — a picture with a number badge (the backpack); `.n.full` turns the badge red.
+
+Rules that go with them ("knoppen niet in de weg"): the middle of the screen (60 % wide, 55 % high) never holds a
+button; only the action of the moment is large; while the stick is held everything that is not the action drops to
+55 % (`.screen-avontuur.moving .av-dim`); emotes hide behind one smiley; a button keeps its place (visibility, not
+display); Muntje's bubble is narrow and lets touches through on the island. `tests/e2e/avontuur.spec.js` audits this.
+
 ## 11. Do / don't
 
 - Do: rounded edges on everything, one light direction, saturated colours, chunky proportions, a little motion

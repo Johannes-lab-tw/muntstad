@@ -23,6 +23,9 @@ export function createAvontuur(game) {
   const el = document.getElementById('screen-avontuur');
   const host = document.getElementById('avontuur');
   const bagEl = document.getElementById('av-bag');
+  const ringsEl = document.getElementById('av-rings');   // V7.2: fire / food / warmth as ring meters
+  const actieIco = document.getElementById('av-actie-ico');
+  const actieLbl = document.getElementById('av-actie-lbl');
   const questEl = document.getElementById('av-quest');
   const peersEl = document.getElementById('av-peers');
   const actieBtn = document.getElementById('av-actie');
@@ -69,8 +72,19 @@ export function createAvontuur(game) {
   let minimap = null;   // V6.2e: drawn the first time the island shows
   game.on('samenpad', (open) => { if (visible) controls.setEnabled(!open); });   // the SAMEN pad covers the stick
   eetBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); onEat(); });
-  document.getElementById('av-zwaai').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('wave'); });
-  document.getElementById('av-dans').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('dance'); });
+  // V7.2: ZWAAI and DANS sit behind one smiley (PLAN-V7 §C.2 rule 4); the row folds away after a few seconds or after an emote
+  const emoteBtn = document.getElementById('av-emote');
+  const emoteRow = document.getElementById('av-emote-row');
+  let emoteTimer = 0, emoteOpenedAt = 0;
+  function showEmotes(v) {
+    clearTimeout(emoteTimer);
+    emoteRow.hidden = !v;
+    if (v) { emoteOpenedAt = performance.now(); emoteTimer = setTimeout(() => { emoteRow.hidden = true; }, 4000); }
+  }
+  // a second tap within 300 ms is the same tap (a double pointerdown never closes what it just opened)
+  emoteBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (!emoteRow.hidden && performance.now() - emoteOpenedAt < 300) return; showEmotes(emoteRow.hidden); });
+  document.getElementById('av-zwaai').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('wave'); showEmotes(false); });
+  document.getElementById('av-dans').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('dance'); showEmotes(false); });
   // keyboard: E / Enter = the action button
   window.addEventListener('keydown', (e) => {
     if (!visible || !scene3 || kamp.isOpen) return;
@@ -205,10 +219,13 @@ export function createAvontuur(game) {
     // V6.2: the fire shows its level and how far it is to the next one; the cold as a blue bar
     const span = levelSpan(state.nacht.fire, game.config);
     const pct = span.level === 0 ? 0 : Math.round(((state.nacht.fire - span.from) / Math.max(1, span.to - span.from)) * 100);
-    bagEl.innerHTML = Object.entries(cfg.items).filter(([id]) => id !== 'maal' || (e.bag.maal || 0) > 0).map(([id, it]) => `<span title="${it.name}">${it.icon}<span class="n${full ? ' full' : ''}">${e.bag[id] || 0}</span></span>`).join('')
-      + `<span class="fire" title="Vuur level ${span.level}">🔥<b class="lvl">${span.level}</b><i class="fire-bar${span.level <= 1 ? ' low' : ''}"><b style="width:${pct}%"></b></i></span>`
-      + `<span class="honger" title="Eten">🍎<i class="honger-bar${honger < game.config.honger.slowBelow ? ' low' : ''}"><b style="width:${honger}%"></b></i></span>`
-      + `<span class="warm" title="Warmte">🌡️<i class="warm-bar${warm < game.config.kou.slowBelow ? ' low' : ''}"><b style="width:${warm}%"></b></i></span>`;
+    // V7.2: pictures only. The bag = a tile per thing with the count as a badge (red when the bag is full); the fire, the
+    // food and the warmth = rings (the fire ring fills towards the next level and carries the level as its badge)
+    bagEl.innerHTML = Object.entries(cfg.items).filter(([id]) => id !== 'maal' || (e.bag.maal || 0) > 0).map(([id, it]) => `<span class="tile" title="${it.name}">${it.icon}<b class="n${full ? ' full' : ''}">${e.bag[id] || 0}</b></span>`).join('');
+    const fireP = span.level >= 5 ? 100 : pct;
+    ringsEl.innerHTML = `<span class="ring fire${span.level <= 1 ? ' low' : ''}" style="--p:${fireP};--rc:#ff9f2e" title="Vuur level ${span.level}"><i class="ico">🔥</i><b>${span.level}</b></span>`
+      + `<span class="ring honger${honger < game.config.honger.slowBelow ? ' low' : ''}" style="--p:${honger};--rc:#45d65c" title="Eten"><i class="ico">🍎</i></span>`
+      + `<span class="ring warm${warm < game.config.kou.slowBelow ? ' low' : ''}" style="--p:${warm};--rc:#4fb8ff" title="Warmte"><i class="ico">🌡️</i></span>`;
     eetBtn.hidden = !canEat(e);
     syncStook(state);
     // the dark rim closes in as you get cold (blue) or hungry (red)
@@ -242,10 +259,12 @@ export function createAvontuur(game) {
     if (peers) peersEl.textContent = `${samen.animal} 👥 ${peers}`;
   }
   let lastActionAt = 0, dorpArmed = false, lastAction = null, lastDark = 0;
+  // V7.2: the picture on the big action button, per label (the scene decides the label)
+  const ACTIE_ICO = { PAK: '🫳', HAK: '🪓', PLUK: '🫐', VIS: '🎣', WACHT: '⏳', TREK: '🎣', KAMP: '⛺', KOOK: '🍳', BOE: '👻', SLAAP: '💤', WEK: '⏰' };
   function onAction(a) {
     // V6.1: the button keeps its place (visibility, not display), so DORP never slides under a finger that just tapped PAK
     actieBtn.style.visibility = a ? 'visible' : 'hidden';
-    if (a) actieBtn.textContent = a.label;
+    if (a) { actieLbl.textContent = a.label; actieIco.textContent = ACTIE_ICO[a.label] || '👉'; }
     actieBtn.classList.toggle('pulse', !!a && (a.type === 'trek' || a.type === 'boe'));
     lastAction = a;
     syncStook(game.state);
@@ -483,6 +502,7 @@ export function createAvontuur(game) {
   function loop(now) {
     if (!visible) return;
     scene3.render(now);
+    el.classList.toggle('moving', controls.active);   // V7.2: while walking, the buttons that are not the action step back
     if (!minimap) minimap = createMinimap(mapEl);
     minimap.update(scene3.hook.player, scene3.hook.remotes, scene3.hook.darkness, { fireR: fireRadius(game.state.nacht, game.config) }, now);
     raf = requestAnimationFrame(loop);

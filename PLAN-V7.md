@@ -74,8 +74,8 @@ spel, in samenwerking met Higgsfield?
   rond plastic, maar chunkier en warmer. Als Johannes tóch de blokjeswereld wil, is dat een aparte ronde (V8) met
   een eigen beslissing over regel 5.
 - **Niet:** Higgsfield-plaatjes als game-asset. Regel 4 (geen externe afbeeldingen, alles eigen code) en de
-  1,5 MB-grens van docs/ blijven. Iconen tekenen we als **inline SVG-symbolen** (één sprite in index.html, ~16
-  iconen, ~12 KB, scherp op elke dpr, kleurbaar via CSS). Higgsfield is de referentie voor hoe ze eruitzien.
+  1,5 MB-grens van docs/ blijven. Iconen zijn **emoji** (V7.2-besluit: nul bytes, groot en scherp op de iPad, dezelfde
+  plaatjestaal als de concepten); een inline SVG alleen waar geen emoji past. Higgsfield is de referentie voor de look.
 
 ### C.2 Regels voor "niet in de weg" (bindend voor elk scherm)
 
@@ -116,9 +116,8 @@ game (regel 4, offline); wel bruikbaar als filmpje voor familie.
 ## D. Volgorde (elke stap één PR, screenshots + iPad-test)
 
 - V7.1 (gedaan, live): de STOOK-fout, gastvuur tot 400, tests, sw v39.
-- **V7.2 UI-kit (twee avonden):** in style.css de ronde plaatjesknop (`.btn-pic`, drie maten), ringmeter
-  (`.ring`), tegel met badge (`.tile`), korte ballon; SVG-sprite met de 16 iconen; ART-DIRECTION §10/§11
-  bijgewerkt. Eerst op het **eiland**: STOOK groot naast KAMP, emotes achter de smiley, rugzak als knop met
+- **V7.2 UI-kit (gedaan 13 sep):** in style.css de ronde plaatjesknop (`.btn-ico`, vier maten), ringmeter
+  (`.ring`), tegel met badge (`.tile`); emoji als plaatjes; ART-DIRECTION §10 bijgewerkt. Eerst op het **eiland**: STOOK groot naast KAMP, emotes achter de smiley, rugzak als knop met
   tegels, ringmeters 🔥🍎🌡️, kaart + SAMEN rechtsboven, vervagen bij bewegen, veilige zone. Kind-UX-audit
   (≥ 64 px, geen overlap) in de e2e.
 - **V7.3 STAD, WERK, WINKEL, HUIS, PAPA (twee avonden):** dezelfde kit: onderbalk met ronde plaatjesknoppen,
