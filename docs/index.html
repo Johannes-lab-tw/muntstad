@@ -63,12 +63,13 @@
     <!-- STAD -->
     <section class="screen screen-stad" data-screen="stad" id="screen-stad">
       <div id="town" class="town gl-host" aria-label="Muntstad" role="img"></div>
-      <button class="btn btn-orange btn-lg btn-avontuur" id="nav-avontuur" type="button">AVONTUUR ⛵</button>
-      <button class="btn btn-success btn-lg btn-dorp" id="nav-dorp" type="button">DORP 🚶</button>
+      <!-- V7.3: the town in the picture-first kit (PLAN-V7 §C): AVONTUUR and DORP as picture buttons top-right, the bottom bar as round picture buttons -->
+      <button class="btn btn-ico btn-ico-l wide btn-orange btn-avontuur" id="nav-avontuur" type="button"><i class="ico">⛵</i><span class="lbl">AVONTUUR</span></button>
+      <button class="btn btn-ico btn-ico-l btn-success btn-dorp" id="nav-dorp" type="button"><i class="ico">🚶</i><span class="lbl">DORP</span></button>
       <nav class="bottombar" id="bottombar">
-        <button class="btn btn-nav btn-werk" id="nav-werk" type="button"><img class="btn-icon" id="ico-werk" alt="" draggable="false">WERK</button>
-        <button class="btn btn-nav btn-winkel" id="nav-winkel" type="button"><img class="btn-icon" id="ico-winkel" alt="" draggable="false">WINKEL</button>
-        <button class="btn btn-nav btn-huis" id="nav-huis" type="button"><img class="btn-icon" id="ico-huis" alt="" draggable="false">HUIS</button>
+        <button class="btn btn-ico btn-ico-l btn-nav btn-werk" id="nav-werk" type="button"><img class="btn-icon" id="ico-werk" alt="" draggable="false"><span class="lbl">WERK</span></button>
+        <button class="btn btn-ico btn-ico-l btn-nav btn-winkel" id="nav-winkel" type="button"><img class="btn-icon" id="ico-winkel" alt="" draggable="false"><span class="lbl">WINKEL</span></button>
+        <button class="btn btn-ico btn-ico-l btn-nav btn-huis" id="nav-huis" type="button"><img class="btn-icon" id="ico-huis" alt="" draggable="false"><span class="lbl">HUIS</span></button>
         <button class="btn btn-papa" id="nav-papa" type="button" aria-label="PAPA"><span class="papa-ring" id="papa-ring"></span><span class="papa-label">PAPA</span></button>
       </nav>
     </section>
@@ -175,7 +176,7 @@
       </div>
       <div class="werk-hud">
         <div class="werk-count panel-mini" id="werk-count"><img id="ico-car" alt="" draggable="false"><span>0</span></div>
-        <button class="btn btn-primary btn-xl" id="btn-klaar" type="button">KLAAR ✔</button>
+        <button class="btn btn-ico btn-ico-xl btn-success btn-xl" id="btn-klaar" type="button"><i class="ico">✔️</i><span class="lbl">KLAAR</span></button>
       </div>
     </section>
 
@@ -190,7 +191,7 @@
         <button class="btn btn-arrow" id="shop-prev" type="button" aria-label="Vorige">◀</button>
         <div class="shop-dots" id="shop-dots"></div>
         <button class="btn btn-arrow" id="shop-next" type="button" aria-label="Volgende">▶</button>
-        <button class="btn btn-secondary btn-lg" id="shop-stad" type="button"><img class="btn-icon" id="ico-stad-1" alt="" draggable="false">STAD</button>
+        <button class="btn btn-ico btn-ico-m btn-secondary" id="shop-stad" type="button"><img class="btn-icon" id="ico-stad-1" alt="" draggable="false"><span class="lbl">STAD</span></button>
       </div>
     </section>
 
@@ -203,8 +204,8 @@
       </aside>
       <div class="huis-actions" id="huis-actions"></div>
       <div class="huis-footer">
-        <button class="btn btn-primary btn-lg" id="huis-winkel" type="button"><img class="btn-icon" id="ico-winkel-2" alt="" draggable="false">WINKEL</button>
-        <button class="btn btn-secondary btn-lg" id="huis-stad" type="button"><img class="btn-icon" id="ico-stad-2" alt="" draggable="false">STAD</button>
+        <button class="btn btn-ico btn-ico-l btn-primary" id="huis-winkel" type="button"><img class="btn-icon" id="ico-winkel-2" alt="" draggable="false"><span class="lbl">WINKEL</span></button>
+        <button class="btn btn-ico btn-ico-l btn-secondary" id="huis-stad" type="button"><img class="btn-icon" id="ico-stad-2" alt="" draggable="false"><span class="lbl">STAD</span></button>
       </div>
     </section>
 

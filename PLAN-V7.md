@@ -120,7 +120,7 @@ game (regel 4, offline); wel bruikbaar als filmpje voor familie.
   (`.ring`), tegel met badge (`.tile`); emoji als plaatjes; ART-DIRECTION §10 bijgewerkt. Eerst op het **eiland**: STOOK groot naast KAMP, emotes achter de smiley, rugzak als knop met
   tegels, ringmeters 🔥🍎🌡️, kaart + SAMEN rechtsboven, vervagen bij bewegen, veilige zone. Kind-UX-audit
   (≥ 64 px, geen overlap) in de e2e.
-- **V7.3 STAD, WERK, WINKEL, HUIS, PAPA (twee avonden):** dezelfde kit: onderbalk met ronde plaatjesknoppen,
+- **V7.3 STAD, WINKEL, HUIS (13 sep, in de PR; WERK-scène wacht op de keuze uit de twee nieuwe richtingen):** dezelfde kit: onderbalk met ronde plaatjesknoppen,
   AVONTUUR/DORP rechtsboven als plaatjesknoppen, winkelkaarten als tegels met grote sterren en één ronde
   KOOP/BETER, KLAAR als één grote ronde knop, emotes in HUIS als rij van vier kleine, stickeralbum met ronde
   vakken. Screenshots-galerij vernieuwen.

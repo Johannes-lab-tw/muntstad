@@ -275,9 +275,13 @@ export function createHuis(game) {
     game.mentor.say('lines.fireworks', {}, { kind: 'tip' });
   }
 
-  function actionButton(label, cls, fn) {
-    const b = el('button', `btn ${cls}`, label);
+  // V7.3: a round picture button (PLAN-V7 §C): the picture on top, the word under it
+  const ACTION_ICO = { spring: '⬆️', vuurwerk: '🎆', dansje: '💃', salto: '🤸' };
+  function actionButton(label, cls, fn, ico = '') {
+    const b = el('button', `btn btn-ico btn-ico-m ${cls}${label.length > 5 ? ' wide' : ''}`);   // VUURWERK and DANSJE need the stadium
     b.type = 'button';
+    b.appendChild(el('i', 'ico', ico));
+    b.appendChild(el('span', 'lbl', label));
     b.addEventListener('click', fn);
     return b;
   }
@@ -310,10 +314,10 @@ export function createHuis(game) {
       hitEls[`pet:${f.id}`] = h;
       if (s.petHungry) hitEls[`zzz:${f.id}`] = (() => { const z = el('div', 'zzz', '💤'); hits.appendChild(z); return z; })();
     }
-    if (s.fun.trampoline) actions.appendChild(actionButton(`${game.t('fun.spring')}`, 'btn-secondary', jump));
-    if (s.fun.vuurwerk) actions.appendChild(actionButton(`${game.t('fun.vuurwerk')}`, 'btn-primary', fireworks));
-    if (s.fun.dansje) actions.appendChild(actionButton(`${game.t('fun.dansje')}`, 'btn-success', () => { game.audio.play('buy'); avatar.pose = 'dance'; avatar.until = performance.now() + 2500; }));
-    if (s.fun.salto) actions.appendChild(actionButton(`${game.t('fun.salto')}`, 'btn-purple', () => { game.audio.play('whoosh'); avatar.pose = 'salto'; avatar.since = performance.now(); avatar.until = performance.now() + 1000; }));
+    if (s.fun.trampoline) actions.appendChild(actionButton(`${game.t('fun.spring')}`, 'btn-secondary', jump, ACTION_ICO.spring));
+    if (s.fun.vuurwerk) actions.appendChild(actionButton(`${game.t('fun.vuurwerk')}`, 'btn-primary', fireworks, ACTION_ICO.vuurwerk));
+    if (s.fun.dansje) actions.appendChild(actionButton(`${game.t('fun.dansje')}`, 'btn-success', () => { game.audio.play('buy'); avatar.pose = 'dance'; avatar.until = performance.now() + 2500; }, ACTION_ICO.dansje));
+    if (s.fun.salto) actions.appendChild(actionButton(`${game.t('fun.salto')}`, 'btn-purple', () => { game.audio.play('whoosh'); avatar.pose = 'salto'; avatar.since = performance.now(); avatar.until = performance.now() + 1000; }, ACTION_ICO.salto));
     stickerGrid.innerHTML = '';
     for (const m of game.config.milestones) {
       const got = s.milestones.includes(m.id);
