@@ -50,24 +50,83 @@ hiërarchie. De punten, in volgorde van belang:
 7. **Feedback per tik.** Een tik op STOOK moet altijd iets laten zien: vlam die opflakkert, stapel die groeit,
    geluid, getal dat uit de tas naar het vuur vliegt. Nu: alleen zwevende tekst midden in beeld.
 
-## C. Concepten uit Higgsfield (13 september)
+## C. Stijlkeuze van Johannes (13 september, avond)
 
-Drie beelden gegenereerd met de iPad-foto als referentie (GPT Image 2.5, 1 credit per stuk), als moodboard voor de
-punten hierboven; **niet als game-asset** (regel 4 en 5: eigen art, geen externe afbeeldingen in docs/). Ze staan in
-de Higgsfield-galerij van Johannes (jobs 29ef6db8…, 9c5b4dbb…, 071676de…; de drie zonder referentiefoto zijn
-c295e955…, ebaf9ba1…, fe1f60df…):
+Johannes koos uit de zes Higgsfield-concepten de twee met de foto als referentie: **"het vuur als held"** (ronde
+plaatjesknoppen met dikke donkerblauwe rand, ringmeters 🔥🍎🌡️, één grote gloeiende STOOK naast het vuur, wegwijzers
+met plaatje, kaart rechtsboven) en **"rugzak en mentor"** (rugzakknop met vier tegels en vulring, ballon met plaatje
+en drie woorden, zon/maan-wijzer, drie gelijke plaatjesknoppen rechts, ronde SPRING). Zijn regel erbij:
+**"Knoppen moeten tijdens het spelen niet te veel in de weg zitten."** Vraag: hoe passen we dit toe op het hele
+spel, in samenwerking met Higgsfield?
 
-1. **HUD kind-eerst** — muntpil + drie ringmeters, één grote STOOK, smiley voor emotes, plaatjesknoppen rechts.
-2. **Het vuur als held** — vlam per level, vijf blokjes boven het vuur, STOOK-knop in de wereld naast het vuur.
-3. **Rugzak en mentor** — rugzakknop met vier tegels en vulring, ballon met plaatje en drie woorden, zon met boog.
+### C.1 Wat we overnemen (en wat niet)
 
-Claude kon de beelden in deze sessie niet zelf bekijken (downloaddomein geblokkeerd door de netwerkproxy); Johannes
-kijkt en kiest, daarna bouwen we B.1 t/m B.7 in eigen 3D/CSS-art.
+- **Wél, overal:** de UI-taal. Ronde plaatjesknoppen (icoon boven, één woord eronder), dikke inkt-rand
+  (`--ink`, 4 px) met glans, ringmeters in plaats van balken, tegels met badge in plaats van tekstregels, korte
+  mentorballon met plaatje. Kleuren blijven het bestaande palet (goud/blauw/groen/paars/oranje uit style.css).
+- **Wél, in de wereld:** de compositielessen. Eén held per scherm (het vuur op het eiland, de auto in WERK), dingen
+  die iets betekenen zijn groot en zichtbaar (vlam per level, hout boven het vuur), borden met plaatjes, warm
+  licht (lantaarn bij de hut), meer detail bij het kamp (tent, hut, houtstapel, kruk), rijker gras en wat rotsen.
+- **Niet:** de Minecraft-blokjes. ART-DIRECTION §11 zegt bewust "geen voxelkubussen" en de tweede afbeelding is
+  onmiskenbaar Minecraft-achtig (kubushoofd, grasblokken). Twee redenen om daar weg te blijven: regel 5 (eigen
+  art, geen look-alike van een merk; voor Minecraft geldt hetzelfde als voor Roblox) en de bouwkosten (terrein,
+  bomen, gebouwen en avatar zijn allemaal "afgeronde plastic" en zouden opnieuw moeten). De wereld blijft dus
+  rond plastic, maar chunkier en warmer. Als Johannes tóch de blokjeswereld wil, is dat een aparte ronde (V8) met
+  een eigen beslissing over regel 5.
+- **Niet:** Higgsfield-plaatjes als game-asset. Regel 4 (geen externe afbeeldingen, alles eigen code) en de
+  1,5 MB-grens van docs/ blijven. Iconen tekenen we als **inline SVG-symbolen** (één sprite in index.html, ~16
+  iconen, ~12 KB, scherp op elke dpr, kleurbaar via CSS). Higgsfield is de referentie voor hoe ze eruitzien.
 
-## D. Volgorde
+### C.2 Regels voor "niet in de weg" (bindend voor elk scherm)
 
-- V7.1 (gedaan): de STOOK-fout, gastvuur tot 400, tests, sw v39.
-- V7.2: B.1 + B.7 — één grote STOOK, emotes achter één knop, feedback uit het vuur (een avond).
-- V7.3: B.2 — het vuur zichtbaar per level, stapel kleiner, blokjes boven het vuur (een avond, criticus erbij).
-- V7.4: B.3 + B.4 + B.5 — HUD naar plaatjes, mentorballon kort, wegwijzers met plaatje (twee avonden).
-- V7.5: B.6 — knoppensysteem rechts, kind-UX-audit (≥ 64 px, geen overlap), screenshots, RAPPORT.
+1. **Veilige zone:** het middelste 60 % van de breedte en 55 % van de hoogte is vrij van knoppen en panelen.
+   Knoppen hangen aan de vier hoeken en de onderrand.
+2. **Eén grote knop:** alleen de actie van dit moment is groot (110 px): PAK/HAK/VIS/KAMP/STOOK op het eiland,
+   KLAAR in WERK, KOOP in de winkel. Al het andere is 84 px (navigatie) of 64 px (emotes, kaart, geluid).
+3. **Vervagen bij bewegen:** zodra de joystick actief is, gaan de niet-actieknoppen naar 55 % dekking en het
+   HUD klapt dicht (V7.0 doet dit al voor campagne en keten); stilstaan = alles weer 100 %.
+4. **Groeperen:** emotes achter één smiley-knop (uitklap naar links, sluit na 4 s); SAMEN en de kaart samen
+   rechtsboven; de rugzak als één knop die openklapt tot vier tegels.
+5. **Niets verspringt:** een knop houdt zijn plek (zichtbaarheid, niet display), zoals sinds V6.1 bij PAK/DORP.
+6. **Ballon boven, kort:** de mentorballon staat bovenin het midden, plaatje + hooguit drie woorden, verdwijnt na
+   4 s; de stem zegt de hele zin. Bij een gevaar (spook, beer) blijft hij staan tot het voorbij is.
+
+### C.3 Zo werken we met Higgsfield (de loop)
+
+Higgsfield kan de beelden niet in de game zetten en Claude kan ze in de Claude-Code-sessie niet bekijken (het
+downloaddomein is geblokkeerd). De loop die werkt:
+
+1. Claude maakt screenshots van het echte scherm (`scripts/dev-shot.mjs`) en laat Higgsfield ze **herschetsen** in
+   de gekozen stijl (GPT Image 2.5, 1 credit per beeld, met de gekozen concepten als tweede referentie).
+2. Johannes kijkt in de galerij en **plakt de gekozen beelden in het gesprek** (zoals op 13 sep); dan ziet Claude
+   ze ook.
+3. Claude bouwt het in eigen CSS/SVG/Three.js, maakt screenshots, en legt die naast het Higgsfield-beeld; de lokale
+   criticus (`lokaal.py`) noemt de vijf grootste verschillen. Johannes test op de iPad.
+4. Per scherm één PR, CI groen, Johannes merget (of Claude na "merge").
+
+Gemaakt op 13 sep (jobs in de galerij): STAD (0ae6c817…), WINKEL (c3d38fb8…), WERK (d22cfc5b…), HUIS (6a97783c…)
+in de gekozen stijl, plus een **stijlgids-blad** (3a76151f…) met knoppen in drie maten, ringmeters, 16 iconen,
+ballon en kaarttegel. Dat blad is de meetlat voor de SVG-iconen en de CSS.
+
+Wat Higgsfield verder kan, en wat we er (nog) niet mee doen: `generate_3d` maakt GLB-modellen uit een plaatje;
+Three.js kan die laden (GLTFLoader, ~40 KB extra vendor), maar één hut is al 200 KB+ en docs/ zit op 1,7 MB. Pas
+overwegen voor twee of drie heldprops in V8 als de grens omhoog mag. Video (trailer voor START) valt buiten de
+game (regel 4, offline); wel bruikbaar als filmpje voor familie.
+
+## D. Volgorde (elke stap één PR, screenshots + iPad-test)
+
+- V7.1 (gedaan, live): de STOOK-fout, gastvuur tot 400, tests, sw v39.
+- **V7.2 UI-kit (twee avonden):** in style.css de ronde plaatjesknop (`.btn-pic`, drie maten), ringmeter
+  (`.ring`), tegel met badge (`.tile`), korte ballon; SVG-sprite met de 16 iconen; ART-DIRECTION §10/§11
+  bijgewerkt. Eerst op het **eiland**: STOOK groot naast KAMP, emotes achter de smiley, rugzak als knop met
+  tegels, ringmeters 🔥🍎🌡️, kaart + SAMEN rechtsboven, vervagen bij bewegen, veilige zone. Kind-UX-audit
+  (≥ 64 px, geen overlap) in de e2e.
+- **V7.3 STAD, WERK, WINKEL, HUIS, PAPA (twee avonden):** dezelfde kit: onderbalk met ronde plaatjesknoppen,
+  AVONTUUR/DORP rechtsboven als plaatjesknoppen, winkelkaarten als tegels met grote sterren en één ronde
+  KOOP/BETER, KLAAR als één grote ronde knop, emotes in HUIS als rij van vier kleine, stickeralbum met ronde
+  vakken. Screenshots-galerij vernieuwen.
+- **V7.4 De wereld chunkier (twee avonden, criticus erbij):** het vuur als held (vlam per level, vijf blokjes
+  boven het vuur, "+3 🪵" uit het vuur), kleinere nette stapel, borden met plaatjes, lantaarn bij de hut, houtstapel
+  en kruk bij het kamp, rijker gras en rotsen; in WERK borstels/schuim/spatten groter; in STAD gebouwen met een
+  paar accenten meer.
+- **V7.5 Afronden (een avond):** RAPPORT §0 ronde 8, README, PLAN-V7 afgevinkt, sw-versie, tag v7.5.
