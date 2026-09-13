@@ -257,7 +257,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   function applyWorld(d) {
     remoteWorld = d;
     if (typeof d.ph === 'number') daynight.setOverride(Math.max(0, Math.min(0.9999, d.ph)));
-    if (typeof d.f === 'number' && cb.onFireSync) cb.onFireSync(Math.max(0, Math.min(100, d.f)));
+    if (typeof d.f === 'number' && cb.onFireSync) cb.onFireSync(Math.max(0, Math.min(N.fireMax, d.f)));   // V7.1: was capped at 100, a bonfire (200+) showed as level 4 to a guest
     const gs = Array.isArray(d.g) ? d.g.slice(0, N.ghostsMax) : [];
     while (remoteGhosts.length < gs.length) { const m = ghostModel(); const holder = new T.Group(); holder.add(m.group); scene.add(holder); remoteGhosts.push({ m, holder }); }
     while (remoteGhosts.length > gs.length) { const g = remoteGhosts.pop(); scene.remove(g.holder); }

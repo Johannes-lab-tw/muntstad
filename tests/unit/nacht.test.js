@@ -6,7 +6,7 @@ import { CONFIG } from '../../docs/js/config.js';
 import { createState } from '../../docs/js/economy.js';
 import { encodeCode, decodeCode } from '../../docs/js/save.js';
 import { CYCLE } from '../../docs/js/3d/daycycle.js';
-import { createNacht, burnFire, stokeFire, fireRadius, fireLevel, levelSpan, isLit, stepGhost, ghostSteal, bearTonight, stepBear, scareBear, dawnReward, normalizeNacht, stepWolf, scareWolf } from '../../docs/js/nacht.js';
+import { createNacht, burnFire, stokeFire, canStoke, fireRadius, fireLevel, levelSpan, isLit, stepGhost, ghostSteal, bearTonight, stepBear, scareBear, dawnReward, normalizeNacht, stepWolf, scareWolf } from '../../docs/js/nacht.js';
 
 const N = CONFIG.nacht;
 
@@ -52,6 +52,19 @@ test('the fire burns slowly by day, fast by night and more per level; wood stoke
   assert.equal(full.used, 0, 'a full heap takes no wood');
   assert.equal(stokeFire({ ...n, fire: N.fireMax - 1 }, e, CONFIG, 3).used, 1, 'only the room that is left');
   assert.equal(stokeFire(n, { bag: { hout: 0 } }, CONFIG).used, 0);
+  // V7.1 (iPad bug 7 sep): the fire burns in fractions; 399.6 of 400 still takes one piece and tops the heap off
+  const almost = stokeFire({ ...n, fire: N.fireMax - 0.4 }, e, CONFIG, 3);
+  assert.equal(almost.used, 1, 'the last fraction of room takes a whole piece');
+  assert.equal(almost.nacht.fire, N.fireMax);
+  assert.equal(almost.eiland.bag.hout, 9);
+  assert.equal(almost.reason, null);
+  assert.equal(stokeFire({ ...n, fire: N.fireMax }, e, CONFIG, 3).reason, 'vol', 'a full heap says so');
+  assert.equal(stokeFire({ ...n, fire: 50 }, { bag: { hout: 0 } }, CONFIG).reason, 'hout', 'an empty bag says so');
+  assert.equal(stokeFire({ ...n, fire: N.fireMax }, { bag: { hout: 0 } }, CONFIG).reason, 'hout', 'no wood wins over a full heap');
+  assert.equal(canStoke({ ...n, fire: N.fireMax - 0.6 }, e, CONFIG), true, 'STOOK stays while half a piece of room is left');
+  assert.equal(canStoke({ ...n, fire: N.fireMax - 0.4 }, e, CONFIG), false, '... and folds away just under that');
+  assert.equal(canStoke({ ...n, fire: N.fireMax }, e, CONFIG), false);
+  assert.equal(canStoke({ ...n, fire: 50 }, { bag: { hout: 0 } }, CONFIG), false);
   assert.ok(fireRadius({ ...n, fire: 100 }, CONFIG) > fireRadius({ ...n, fire: 10 }, CONFIG));
   assert.equal(fireRadius({ ...n, fire: 0 }, CONFIG), 0);
   assert.equal(fireRadius({ ...n, fire: 250 }, CONFIG), N.levelRadius[5]);

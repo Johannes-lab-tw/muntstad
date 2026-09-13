@@ -172,6 +172,7 @@ export const T = {
     bearAte: 'De Nachtbeer at hout uit het vuur. Snel bijstoken!',
     stoked: 'Hout erin! Het vuur brandt fijn.',
     noWood: 'Je hebt geen hout. Hak wat bij de bomen.',
+    fireFull: 'Het vuur is vol! Bewaar je hout voor vannacht.',
     sleep: 'Lekker geslapen. Het is bijna ochtend!',
     peerJoined: 'Er doet iemand mee! Zwaai eens.',
     peerLeft: 'Iemand is weg. Tot straks!',
