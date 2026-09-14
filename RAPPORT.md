@@ -2,7 +2,42 @@
 
 **Live:** https://johannes-lab-tw.github.io/muntstad/
 
-## 0. Zevende ronde: de derde iPad-test (6 september 2026)
+## 0. Achtste ronde: de hout-fout en het spel voor een zesjarige (13 en 14 september 2026)
+
+Johannes testte v7.0 met zijn zoon op 7 september: **Samen spelen werkt**, maar hout toevoegen deed het maar één stuk en
+daarna zei Muntje "Je hebt geen hout" met 38 stuks in de rugzak. Daarna de vraag: dit kan voor een ervaren gamer van
+zes nog vele malen beter qua werking en lay-out, samen met Higgsfield. Wat er in deze ronde is gebeurd, elk als eigen
+PR met CI groen op drie iPad-formaten en daarna live:
+
+1. **v7.1, de hout-fout.** Het vuur brandt in breuken. Bij 399,6 van 400 stuks rondde het spel de resterende ruimte af
+   naar nul, ging er niets in, en de enige melding daarvoor was "geen hout". Nu telt de laatste breuk als een heel stuk,
+   verdwijnt STOOK pas als het vuur echt vol is, en zegt Muntje dan "Het vuur is vol! Bewaar je hout voor vannacht."
+   Tweede fout, alleen in Samen: de gast zag het vuur van de host afgekapt op 100 stuks (maximum is 400); een
+   vreugdevuur leek daar level 4. Twee tests spelen het iPad-scenario na.
+2. **De stijlkeuze.** Zes Higgsfield-concepten (GPT Image 2.5, jouw foto als referentie); Johannes koos "het vuur als
+   held" en "rugzak en mentor", met de regel "knoppen moeten tijdens het spelen niet in de weg zitten". Besluit: de
+   UI-taal overal (ronde plaatjesknoppen met dikke rand, ringmeters, tegels, kort en met plaatjes), de wereld blijft
+   rond plastic (geen Minecraft-blokjes: regel 5 en de bouwkosten), Higgsfield-beelden zijn moodboard en geen
+   game-asset (regel 4). Zes vaste regels in PLAN-V7 §C.2: een knopvrij midden (60 % breed, 50 % hoog), één grote knop
+   per moment, vervagen bij bewegen, groeperen, niets verspringt, korte ballon.
+3. **v7.2, het eiland.** Rugzak als tegels met badge, vuur/eten/warmte als ringen, STOOK en de actieknop groot en rond
+   rechtsonder naast SPRING, ZWAAI en DANS achter één smiley, SAMEN en DORP als plaatjesknoppen in de bovenbalk, bij
+   lopen vervaagt alles behalve de actie naar 55 %, Muntje's ballon laat tikken door. Een nieuwe browsertest bewaakt de
+   regels (elke knop ≥ 64 px, geen overlap, midden vrij, smiley, dimmen).
+4. **v7.3, het dorp.** STAD (AVONTUUR als stadion, DORP rond, WERK/WINKEL/HUIS als ronde plaatjesknoppen met de
+   3D-plaatjes), WINKEL (ronde pijlen en STAD), HUIS (de vier emotes als plaatjesknoppen), KLAAR in WERK rond. Alleen
+   de WERK-scène zelf wacht op Johannes' keuze uit twee nieuwe richtingen.
+5. **v7.4, het vuur als held.** De vlam groeit per level tot bijna drie meter, het vreugdevuur is een lage brede ring in
+   plaats van een tipi die vlam en figuurtje verborg, vijf gloeiende houtblokjes boven de vlam tonen het level, "+3 🪵"
+   springt uit het vuur zelf, wegwijzers met plaatje (🌊 MEER, 🕳️ GROT), een lantaarn bij de rode hut die 's nachts
+   brandt, een houtstapel en een kruk bij het kamp.
+
+Plaatjes op knoppen zijn emoji (groot en scherp op de iPad, nul bytes); de headless testbrowser heeft geen emoji-font,
+dus die beoordeel je op de iPad. Eerlijk: Claude kon de Higgsfield-beelden in de bouwsessie niet zelf bekijken (het
+downloaddomein is daar geblokkeerd); Johannes koos in de galerij en plakte de keuze in het gesprek. Nog open: de
+WERK-scène (keuze op 15 september), en de tags v7.1 t/m v7.5 (tag-push is vanuit de sessie geblokkeerd, zie PROGRESS).
+
+## 0-vorig. Zevende ronde: de derde iPad-test (6 september 2026)
 
 Johannes testte de zesde ronde in Safari op de iPad en meldde twee dingen. Allebei zijn dezelfde dag gerepareerd, getest op drie iPad-formaten en live gezet als **v7.0** (sw.js muntstad-v38, tag v7.0, CI-run 34029308120 groen op zes jobs).
 
@@ -229,6 +264,11 @@ Bekende beperkingen:
 - De Bewaar-code is lang (ongeveer 150 tekens); kopiëren naar Notities werkt het best.
 - WebKit-tests konden hier niet draaien (zie §5).
 - De beginscherm-app en Safari delen geen opslag (zie §1).
+
+Volgende versie na de achtste ronde (14 september 2026): de WERK-scène in de gekozen richting; korte mentorballonnen
+met plaatje en drie woorden (de stem zegt de rest); rijker gras en rotsen op het eiland, borstels/schuim/spatten groter
+in WERK, een paar accenten meer op de gebouwen in STAD; de SVG-iconen als de emoji op een iPad tegenvallen; de
+Higgsfield-concepten voor de winkelkaarten (grote sterren, één ronde KOOP) als Johannes die wil.
 
 Volgende versie na de zesde ronde (5 september 2026): samen een boomstam tillen; spoken die ook bij gasten stelen; NPC's en remmende auto's in het loopbare dorp, de winkel als gebouw, het huis binnenlopen; Avontuur als losse game met eigen titelscherm (docs/avontuur.html); gouden zaterdag en honderd dagopdrachten na de campagne; de gouden kist bij het standbeeld; spoken die het vuurtorenlicht stelen (veenhout); de boot tussen drie plekken; steiger met props, golven bij de palen; de uitleg op PAPA voor de tweede iPad (noemt nog alleen START → SAMEN). De rustigere HUD op het eiland is in v7.0 gedaan. Open voor Johannes: de MELD-code en de punten van zijn zoon (worden PLAN-V7).
 
