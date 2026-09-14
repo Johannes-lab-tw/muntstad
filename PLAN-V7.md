@@ -128,4 +128,5 @@ game (regel 4, offline); wel bruikbaar als filmpje voor familie.
   boven het vuur, "+3 🪵" uit het vuur), kleinere nette stapel, borden met plaatjes, lantaarn bij de hut, houtstapel
   en kruk bij het kamp, rijker gras en rotsen; in WERK borstels/schuim/spatten groter; in STAD gebouwen met een
   paar accenten meer.
-- **V7.5 Afronden (een avond):** RAPPORT §0 ronde 8, README, PLAN-V7 afgevinkt, sw-versie, tag v7.5.
+- **V7.5 Afronden (14 sep, in voorbereiding):** RAPPORT §0 ronde 8, README, PLAN-V7 afgevinkt, galerij; daarna de
+  WERK-scène in de gekozen richting als V7.6.
