@@ -75,9 +75,9 @@ export function createCamp(map) {
   const baken = new Builder({ r: 0.03 });
   for (let i = 0; i < 3; i++) {
     const a = (i / 3) * Math.PI * 2 + 0.5;
-    const g = new T.CylinderGeometry(0.09, 0.12, 3.4, 7).translate(0, 1.7, 0);
-    g.rotateX(-0.42); g.rotateY(-a + Math.PI / 2);
-    g.translate(Math.cos(a) * 1.15, 0, Math.sin(a) * 1.15);
+    const g = new T.CylinderGeometry(0.09, 0.12, 2.7, 7).translate(0, 1.35, 0);   // V7.4: shorter, so the flame stays the hero
+    g.rotateX(-0.5); g.rotateY(-a + Math.PI / 2);
+    g.translate(Math.cos(a) * 1.25, 0, Math.sin(a) * 1.25);
     baken.add(g, i % 2 ? WOOD : WOOD_L);
   }
   const bakenM = baken.build();
@@ -86,15 +86,29 @@ export function createCamp(map) {
   const vreugde = new Builder({ r: 0.03 });
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * Math.PI * 2 + 0.15;
-    const g = new T.CylinderGeometry(0.13, 0.16, 2.6, 7).translate(0, 1.3, 0);
-    g.rotateX(-0.62); g.rotateY(-a + Math.PI / 2);
-    g.translate(Math.cos(a) * 1.5, 0, Math.sin(a) * 1.5);
+    // V7.4: a low, wide ring of logs leaning outward instead of a tipi over the fire (the tipi hid the flame and the player)
+    const g = new T.CylinderGeometry(0.13, 0.16, 1.7, 7).translate(0, 0.85, 0);
+    g.rotateX(-1.0); g.rotateY(-a + Math.PI / 2);
+    g.translate(Math.cos(a) * 1.75, 0, Math.sin(a) * 1.75);
     vreugde.add(g, i % 3 ? WOOD : WOOD_L);
   }
   const vreugdeM = vreugde.build();
   vreugdeM.position.set(CAMP.x, y0, CAMP.z);
   group.add(vreugdeM);
   const levelProps = [[], [], [ring2M], [ring2M, korfM], [ring2M, korfM, bakenM], [ring2M, korfM, bakenM, vreugdeM]];
+  // V7.4: the fire's level in the world: five little logs above the flames, one lit per level (PLAN-V7 §C.1 "het vuur als held")
+  const meter = new T.Group();
+  const meterLogs = [];
+  const logGeom = new T.CylinderGeometry(0.11, 0.11, 0.42, 8).rotateZ(Math.PI / 2);
+  for (let i = 0; i < 5; i++) {
+    const m = new T.Mesh(logGeom, new T.MeshStandardMaterial({ color: col('#9aa0ab'), roughness: 0.8 }));
+    m.position.x = (i - 2) * 0.5;
+    m.castShadow = false;
+    meter.add(m);
+    meterLogs.push(m);
+  }
+  meter.position.set(CAMP.x, y0 + 3.6, CAMP.z);
+  group.add(meter);
   for (const m of [ring2M, korfM, bakenM, vreugdeM]) m.visible = false;
   const fireLight = new T.PointLight(0xffa040, 0, 24, 1.5);
   fireLight.position.set(CAMP.x, y0 + 1.2, CAMP.z);
@@ -134,19 +148,56 @@ export function createCamp(map) {
   }
   group.add(huts);
 
+  // ---- V7.4: a lantern at the red hut (warm light at night), a wood pile and a stool by the fire ----
+  const lanternX = CAMP.x - 3.4, lanternZ = CAMP.z + 2.6, lanternY = map.heightAt(lanternX, lanternZ);
+  const lantern = new Builder({ r: 0.02 });
+  lantern.cyl(0, 0, 0, 0.06, 1.7, WOOD, 6);
+  lantern.box(-0.16, -0.16, 1.55, 0.32, 0.32, 0.36, '#3a3d47', { r: 0.03 });
+  lantern.box(-0.11, -0.11, 1.6, 0.22, 0.22, 0.26, '#ffe066', { r: 0.02 });
+  lantern.box(-0.2, -0.2, 1.91, 0.4, 0.4, 0.06, '#3a3d47', { r: 0.02 });
+  const lanternM = lantern.build();
+  lanternM.position.set(lanternX, lanternY, lanternZ);
+  group.add(lanternM);
+  const lanternGlow = new T.Mesh(new T.BoxGeometry(0.2, 0.24, 0.2), new T.MeshStandardMaterial({ color: col('#ffe066'), emissive: col('#ffb300'), emissiveIntensity: 0.4 }));
+  lanternGlow.position.set(lanternX, lanternY + 1.73, lanternZ);
+  group.add(lanternGlow);
+  const lanternLight = new T.PointLight(0xffc266, 0, 7, 1.6);
+  lanternLight.position.set(lanternX, lanternY + 1.75, lanternZ);
+  group.add(lanternLight);
+  obstacles.push({ x: lanternX, z: lanternZ, r: 0.25 });
+  const pileX = CAMP.x + 3.4, pileZ = CAMP.z + 1.6, pileY = map.heightAt(pileX, pileZ);
+  const pile = new Builder({ r: 0.04 });
+  const pileRows = [[-0.5, -0.17, 0.17, 0.5], [-0.33, 0, 0.33], [-0.17, 0.17]];
+  pileRows.forEach((row, r) => row.forEach((x, i) => pile.add(new T.CylinderGeometry(0.16, 0.16, 1.0, 8).rotateX(Math.PI / 2).translate(x, 0.16 + r * 0.28, 0), (i + r) % 2 ? WOOD : WOOD_L)));
+  const pileM = pile.build();
+  pileM.position.set(pileX, pileY, pileZ);
+  pileM.rotation.y = 0.6;
+  group.add(pileM);
+  obstacles.push({ x: pileX, z: pileZ, r: 0.7 });
+  const stoolX = CAMP.x - 2.4, stoolZ = CAMP.z - 2.2, stoolY = map.heightAt(stoolX, stoolZ);
+  const stool = new Builder({ r: 0.04 });
+  stool.cyl(0, 0, 0, 0.3, 0.5, WOOD, 10);
+  stool.cyl(0, 0, 0.5, 0.34, 0.06, WOOD_L, 10);
+  const stoolM = stool.build();
+  stoolM.position.set(stoolX, stoolY, stoolZ);
+  group.add(stoolM);
+  obstacles.push({ x: stoolX, z: stoolZ, r: 0.4 });
+  anim.push((t) => { lanternGlow.material.emissiveIntensity = 0.3 + Math.sin(t / 300) * 0.1; });
+
   // ---- signpost ----
   const sign = new Builder({ r: 0.03 });
   sign.cyl(0, 0, 0, 0.08, 2.0, WOOD, 6);
-  sign.box(-0.6, -0.05, 1.5, 1.2, 0.1, 0.36, WOOD_L, { r: 0.03 });
-  sign.box(-0.5, -0.05, 1.0, 1.0, 0.1, 0.3, WOOD_L, { r: 0.03 });
+  sign.box(-0.7, -0.05, 1.5, 1.4, 0.1, 0.4, WOOD_L, { r: 0.03 });   // V7.4: wider boards for a picture + word
+  sign.box(-0.6, -0.05, 0.98, 1.2, 0.1, 0.34, WOOD_L, { r: 0.03 });
   const sm = sign.build();
   const sgx = CAMP.x - 2.2, sgz = CAMP.z + 5.2;
   sm.position.set(sgx, map.heightAt(sgx, sgz), sgz);
   sm.rotation.y = 0.3;
   // what the boards say (the lake lies north-east, the cave north-west)
-  const t1 = textPlane('MEER →', { w: 1.1, h: 0.3, font: 0.2, color: '#ffffff' });
-  t1.position.set(0, 1.68, 0.06);
-  const t2 = textPlane('← GROT', { w: 0.95, h: 0.26, font: 0.18, color: '#ffffff' });
+  // V7.4 (PLAN-V7 §B.5): a picture first, the word after it, for a child who does not read yet
+  const t1 = textPlane('🌊 MEER →', { w: 1.3, h: 0.34, font: 0.22, color: '#ffffff' });
+  t1.position.set(0, 1.7, 0.06);
+  const t2 = textPlane('← 🕳️ GROT', { w: 1.1, h: 0.28, font: 0.19, color: '#ffffff' });
   t2.position.set(0, 1.15, 0.06);
   sm.add(t1, t2);
   group.add(sm);
@@ -286,9 +337,18 @@ export function createCamp(map) {
 
   const fireBase = y0;
   let level = 1, frac = 0.1;   // V6.2: level 0..5 from the wood in the fire, frac 0..1 = how full the heap is
-  function update(now, darkness = 0, lite = false) {
+  function update(now, darkness = 0, lite = false, camera = null) {
     for (const fn of anim) fn(now);
-    const size = level <= 0 ? 0 : 0.55 + level * 0.32 + frac * 0.2;   // level 1 ≈ 0.9, level 5 ≈ 2.2
+    const size = level <= 0 ? 0 : 0.6 + level * 0.4 + frac * 0.2;   // V7.4: level 1 ≈ 1.0, level 5 ≈ 2.7 (the flame is the hero)
+    // the wood meter floats above the flames and turns towards the camera; it bobs a little so it reads as part of the fire
+    // in the upper part of the flame and a step towards the camera, so it reads as part of the fire and never leaves the frame
+    meter.position.y = fireBase + 1.0 + size * 0.62 + Math.sin(now / 600) * 0.05;   // level 1 ≈ 1.6, level 5 ≈ 2.7
+    if (camera) {
+      const dx = camera.position.x - CAMP.x, dz = camera.position.z - CAMP.z, d = Math.hypot(dx, dz) || 1;
+      meter.position.x = CAMP.x + (dx / d) * 1.0;
+      meter.position.z = CAMP.z + (dz / d) * 1.0;
+      meter.quaternion.copy(camera.quaternion);
+    }
     flames.forEach((c, i) => {
       const f = (1 + Math.sin(now / 90 + i * 2.1) * 0.12 + Math.sin(now / 37 + i) * 0.06) * size;
       c.visible = size > 0;
@@ -299,6 +359,8 @@ export function createCamp(map) {
     // the fire is the light of the night: warm, flickering, strong in the dark and a soft glow by day
     fireLight.intensity = size * (lite ? 0.7 : 1) * (0.3 + darkness * 2.8) * (1 + Math.sin(now / 80) * 0.08 + Math.sin(now / 210) * 0.05) * 8;
     fireLight.distance = 4 + size * 12;
+    lanternLight.intensity = darkness * (lite ? 2.5 : 4) * (1 + Math.sin(now / 130) * 0.06);
+    lanternGlow.material.emissiveIntensity = 0.25 + darkness * 0.9 + Math.sin(now / 300) * 0.08;
     // sparks: each one climbs, drifts and starts over; the number that show grows with the level
     const alive = level <= 0 ? 0 : Math.min(SPARKS, 6 + level * 7);
     const dt = Math.min(0.05, (now - (sparks.userData.t || now)) / 1000);
@@ -332,6 +394,7 @@ export function createCamp(map) {
     if (next === level) return;
     level = next;
     for (const m of [ring2M, korfM, bakenM, vreugdeM]) m.visible = levelProps[level].includes(m);
+    meterLogs.forEach((m, i) => { const lit = i < level; m.material.color.set(lit ? '#ffb347' : '#9aa0ab'); m.material.emissive.set(lit ? '#ff7a1a' : '#000000'); m.material.emissiveIntensity = lit ? 0.6 : 0; });
   }
   return { group, update, obstacles, fireLight, chest, cave: caveInfo, addHut, firePos: new T.Vector3(CAMP.x, y0, CAMP.z), setFire, get fireLevel() { return level; } };
 }

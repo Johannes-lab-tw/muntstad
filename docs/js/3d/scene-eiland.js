@@ -1000,7 +1000,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     daynight.update(now, focus, state.nacht.clockOffsetMs);
     const lite = engine.tier >= 2;
     water.update(now, lite);
-    camp.update(now, daynight.darkness, lite);
+    camp.update(now, daynight.darkness, lite, camera);
     vuurtoren.update(now, daynight.darkness);
     // the night bookkeeping (fire, hunger, ghosts, bear, deer) runs on real elapsed time, up to a second per frame,
     // so a slow frame rate (CI, an old iPad) does not slow the world down
@@ -1027,6 +1027,12 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get phase() { return daynight.phase; },
     get darkness() { return daynight.darkness; },
     get action() { return action ? { type: action.type, label: action.label } : null; },
+    /** V7.4: where the fire's flames are on the screen (px), for "+3 🪵" to pop out of the fire itself. */
+    firePoint() {
+      const v = camp.firePos.clone(); v.y += 1.8; v.project(camera);
+      const r = (engine.container || document.getElementById('avontuur')).getBoundingClientRect();
+      return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height, visible: v.z < 1 && Math.abs(v.x) < 1 && Math.abs(v.y) < 1 };
+    },
     get fishing() { return fishing ? { biting: !!fishing.biteUntil } : null; },
     get ghosts() { return (samen && samen.isGuest ? remoteGhosts.map((rg) => ({ x: rg.holder.position.x, z: rg.holder.position.z, state: 'remote' })) : ghosts.map((gh) => ({ x: gh.g.x, z: gh.g.z, state: gh.g.state }))); },
     get bear() { return bears.length ? { x: bears[0].b.x, z: bears[0].b.z, state: bears[0].b.state, scared: bears[0].b.scared } : null; },
