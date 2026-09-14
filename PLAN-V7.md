@@ -124,7 +124,7 @@ game (regel 4, offline); wel bruikbaar als filmpje voor familie.
   AVONTUUR/DORP rechtsboven als plaatjesknoppen, winkelkaarten als tegels met grote sterren en één ronde
   KOOP/BETER, KLAAR als één grote ronde knop, emotes in HUIS als rij van vier kleine, stickeralbum met ronde
   vakken. Screenshots-galerij vernieuwen.
-- **V7.4 De wereld chunkier (twee avonden, criticus erbij):** het vuur als held (vlam per level, vijf blokjes
+- **V7.4 Het vuur als held (14 sep, in de PR; STAD/WERK-accenten en rijker gras doorgeschoven naar V7.5):** het vuur als held (vlam per level, vijf blokjes
   boven het vuur, "+3 🪵" uit het vuur), kleinere nette stapel, borden met plaatjes, lantaarn bij de hut, houtstapel
   en kruk bij het kamp, rijker gras en rotsen; in WERK borstels/schuim/spatten groter; in STAD gebouwen met een
   paar accenten meer.

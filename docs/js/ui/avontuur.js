@@ -441,7 +441,10 @@ export function createAvontuur(game) {
       game.update((s) => ({ ...s, eiland: r.eiland }));
       samen.send('stoke', { n: r.used });
     } else game.update((s) => ({ ...s, nacht: r.nacht, eiland: r.eiland }));
-    game.fx.floatText(window.innerWidth * 0.5, window.innerHeight * 0.4, `🔥 +${r.used} 🪵`, '#ffffff');
+    // V7.4: the wood pops out of the fire itself (PLAN-V7 §B.2), not out of the middle of the screen
+    const fp = scene3 && scene3.hook.firePoint ? scene3.hook.firePoint() : null;
+    if (fp && fp.visible) game.fx.floatText(fp.x, fp.y, `+${r.used} 🪵`, '#ffffff');
+    else game.fx.floatText(window.innerWidth * 0.5, window.innerHeight * 0.4, `🔥 +${r.used} 🪵`, '#ffffff');
     const lvl = fireLevel(game.state.nacht.fire, game.config);
     if (!(samen && samen.isGuest) && lvl > fireLevel(r.nacht.fire - r.used, game.config)) { game.audio.play('upgrade'); game.mentor.say('lines.fireLevelUp', { n: lvl }, { kind: 'reaction' }); }
     else if (game.now() - lastStokeSaid > 30000) { lastStokeSaid = game.now(); game.mentor.say('lines.stoked', {}, { kind: 'reaction' }); }
