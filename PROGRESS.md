@@ -170,10 +170,10 @@ Plan: PLAN-V5.md (zes punten van de speler + open punten uit RAPPORT §7). Zelfd
 
 ## Volgende sessie (stand 16 september 2026)
 
-**Klaar en live:** PLAN-V7 V7.1 t/m V7.5 (Run 8, PR #1 t/m #6, alle gemerged; laatste run 14 september groen, site op sw.js muntstad-v42, GAME_VERSION v7.4). Tags v7.0 t/m v7.5 staan op GitHub (v7.1 = 1cd8280, v7.2 = 7f216c9, v7.3 = 0cab8a2, v7.4 = 3fe9c35, v7.5 = d34dad1). Open besluit van Johannes: de richting voor de WERK-scène (V7.6, keuze was gepland voor 15 september). Nog steeds open: de MELD-code van een echte iPad (tempo-meting) en het playtest-protocol.
+**Klaar (16 september 2026):** PLAN-V7 V7.1 t/m V7.8. V7.1 t/m V7.5 zijn live (sw muntstad-v42); V7.6 (WERK als lopende band), V7.7 (Muntje's ballon kort) en V7.8 (CI-onderhoud) staan als gestapelde PR's #7, #8 en #9 klaar en gaan na groene CI in die volgorde naar main (rebase-merge; laatste stand sw muntstad-v44, GAME_VERSION v7.7). Tags v7.0 t/m v7.5 staan op GitHub; v7.6 t/m v7.8 zetten na de merge. Nog steeds open: de MELD-code van een echte iPad (tempo-meting), het playtest-protocol, en de volgende test met Johannes' zoon (wordt PLAN-V8).
 
 **Eerst doen in de nieuwe sessie:**
-1. `gh run list --limit 3` — is de laatste run groen en is de site gedeployd (https://johannes-lab-tw.github.io/muntstad/ moet `muntstad-v42` in docs/sw.js hebben)? Zo niet: log lezen met `gh api repos/Johannes-lab-tw/muntstad/actions/jobs/<id>/logs`, alleen de ene test repareren, opnieuw pushen.
+1. `gh run list --limit 3` — is de laatste run groen en is de site gedeployd (https://johannes-lab-tw.github.io/muntstad/ moet `muntstad-v44` in docs/sw.js hebben)? Zo niet: log lezen met `gh api repos/Johannes-lab-tw/muntstad/actions/jobs/<id>/logs`, alleen de ene test repareren, opnieuw pushen.
 2. Johannes' iPad-test met zijn zoon: nieuw spel, eerste nacht, DORP en de boot, samen spelen met twee iPads (SAMEN op het eiland), Bewaar-code laden, MELD-code plakken in het gesprek. Zijn punten worden PLAN-V7.
 3. Playtest-protocol (PLAN-V6 §E.6) elke avond dezelfde vijf minuten.
 

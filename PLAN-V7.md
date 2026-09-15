@@ -93,8 +93,9 @@ spel, in samenwerking met Higgsfield?
 
 ### C.3 Zo werken we met Higgsfield (de loop)
 
-Higgsfield kan de beelden niet in de game zetten en Claude kan ze in de Claude-Code-sessie niet bekijken (het
-downloaddomein is geblokkeerd). De loop die werkt:
+Higgsfield kan de beelden niet in de game zetten. Claude kan een gedeelde link (higgsfield.ai/s/…) sinds 16 september
+wel zelf bekijken via het Browser-paneel van Claude Code (screenshot plus de prompttekst van de pagina); alleen het
+downloaddomein is geblokkeerd. De loop die werkt:
 
 1. Claude maakt screenshots van het echte scherm (`scripts/dev-shot.mjs`) en laat Higgsfield ze **herschetsen** in
    de gekozen stijl (GPT Image 2.5, 1 credit per beeld, met de gekozen concepten als tweede referentie).
