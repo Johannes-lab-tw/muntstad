@@ -133,6 +133,11 @@ on every screen in V7.3:
   optional badge bottom-right (the fire level). `.low` turns it red and pulses.
 - `.tile` — a picture with a number badge (the backpack); `.n.full` turns the badge red.
 
+**V7.7: Muntje's bubble.** `#bubble` is `position: fixed`, centred at the top under the top bar (on the island right of
+the bag row and under the map; on WINKEL, HUIS, START, the gate and PAPA low beside Muntje), no tail. With `.kort` it
+shows one emoji and at most three words at 34 px (`kort.<key>` in i18n.js) and goes after 4 s; the voice says the
+whole line, a tap on the words shows it, 🔊 and Muntje repeat it. Lines without a short form show in full.
+
 Rules that go with them ("knoppen niet in de weg"): the middle of the screen (60 % wide, 50 % high) never holds a
 button; only the action of the moment is large; while the stick is held everything that is not the action drops to
 55 % (`.screen-avontuur.moving .av-dim`); emotes hide behind one smiley; a button keeps its place (visibility, not

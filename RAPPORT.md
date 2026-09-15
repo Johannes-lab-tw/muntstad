@@ -40,6 +40,11 @@ PR met CI groen op drie iPad-formaten en daarna live:
    juicht), rechtsonder de grote ronde KLAAR; het midden is vrij. Het verdienmodel is niet veranderd: twee munten per
    truck, nooit sneller dan één truck per vier seconden. De vijf uitbreidingen van de wasstraat (vlaggen, neon, extra
    borstels, lampjes, paleis) staan op hun nieuwe plek.
+7. **v7.7, Muntje praat in plaatjes (16 september).** De ballon toont nu één plaatje en hooguit drie woorden ("🪵 Hak
+   bij bomen", "🔥 Snel hout erin") terwijl de stem de hele zin zegt; hij staat bovenin het midden, uit de buurt van
+   de handen, en verdwijnt na vier tellen. Gaat het om iets dat blijft (vuur uit, honger, kou, wolven, beren), dan
+   blijft hij tien tellen staan. Een tik op de woorden laat de hele zin zien voor wie meeleest; Muntje zelf of het
+   luidsprekertje herhaalt de zin. Opdrachten, hoofdstukken en stickers blijven voluit.
 
 Plaatjes op knoppen zijn emoji (groot en scherp op de iPad, nul bytes); de headless testbrowser heeft geen emoji-font,
 dus die beoordeel je op de iPad. Eerlijk: Claude kon de Higgsfield-beelden in de bouwsessie niet zelf bekijken (het
