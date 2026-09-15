@@ -99,8 +99,9 @@ export const T = {
   lines: {
     start: 'Hoi {naam}! Ik ben Muntje. Kom, we gaan munten maken!',
     welcomeBack: 'Hoi {naam}! Fijn dat je er weer bent.',
-    firstWork: 'Tik op de vlekken. Elke schone auto geeft munten!',
-    tipWerk: 'Tik op WERK. Daar was je auto’s voor munten!',
+    firstWork: 'Veeg de modder weg. Elke schone truck geeft munten!',
+    wasRonde: 'Drie trucks schoon! De chauffeurs zwaaien naar je, {naam}!',
+    tipWerk: 'Tik op WERK. Daar was je trucks voor munten!',
     avontuur: 'Duw met je duim om te lopen. Veeg rechts om rond te kijken!',
     eilandWelkom: 'Dit is het Avontuureiland! Loop naar het kampvuur, daar wacht ik op je.',
     dorpWelkom: 'Loop maar door Muntstad! Bij de haven ligt de boot naar het eiland.',
