@@ -32,6 +32,15 @@ PR met CI groen op drie iPad-formaten en daarna live:
    springt uit het vuur zelf, wegwijzers met plaatje (🌊 MEER, 🕳️ GROT), een lantaarn bij de rode hut die 's nachts
    brandt, een houtstapel en een kruk bij het kamp.
 
+6. **v7.6, WERK als lopende band (16 september).** Johannes koos het Higgsfield-beeld met het zijaanzicht. Trucks
+   (bakwagen, kiepwagen met zand, tankwagen, pick-up met een kist) rollen van links over een lopende band de wasstraat
+   in: links staat er één te wachten, in het midden veeg je de modder van de truck tussen twee reusachtige gestreepte
+   borstels en onder een derde, met schuim en regenboogbogen, en rechts staat de schone truck te glinsteren terwijl de
+   chauffeur zwaait. Rechtsboven één ring met een truckje die over drie trucks vol loopt (vol = confetti en Muntje
+   juicht), rechtsonder de grote ronde KLAAR; het midden is vrij. Het verdienmodel is niet veranderd: twee munten per
+   truck, nooit sneller dan één truck per vier seconden. De vijf uitbreidingen van de wasstraat (vlaggen, neon, extra
+   borstels, lampjes, paleis) staan op hun nieuwe plek.
+
 Plaatjes op knoppen zijn emoji (groot en scherp op de iPad, nul bytes); de headless testbrowser heeft geen emoji-font,
 dus die beoordeel je op de iPad. Eerlijk: Claude kon de Higgsfield-beelden in de bouwsessie niet zelf bekijken (het
 downloaddomein is daar geblokkeerd); Johannes koos in de galerij en plakte de keuze in het gesprek. Nog open: de

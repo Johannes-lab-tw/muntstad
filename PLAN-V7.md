@@ -128,5 +128,18 @@ game (regel 4, offline); wel bruikbaar als filmpje voor familie.
   boven het vuur, "+3 🪵" uit het vuur), kleinere nette stapel, borden met plaatjes, lantaarn bij de hut, houtstapel
   en kruk bij het kamp, rijker gras en rotsen; in WERK borstels/schuim/spatten groter; in STAD gebouwen met een
   paar accenten meer.
-- **V7.5 Afronden (14 sep, in voorbereiding):** RAPPORT §0 ronde 8, README, PLAN-V7 afgevinkt, galerij; daarna de
-  WERK-scène in de gekozen richting als V7.6.
+- **V7.5 Afronden (14 sep, gedaan):** RAPPORT §0 ronde 8, README, PLAN-V7 afgevinkt, galerij.
+- **V7.6 WERK als lopende band (16 sep, gedaan):** Johannes koos op 16 september het Higgsfield-beeld "zijaanzicht als
+  lopende-band-minigame" (drie trucks, grote gestreepte borstels, schuim, regenboogbogen, ring rechtsboven, één ronde
+  KLAAR). Gebouwd in Three.js in de bestaande plastic stijl: `truckModel` met vier soorten, lopende band met strepen,
+  wachtende/wassende/klaar-truck met zwaaiende chauffeur, borstels die sneller draaien tijdens het wassen, schuim uit
+  de borstels, WASSTRAAT op de tunnelrand, vijf upgrade-levels opnieuw geplaatst. Economie ongewijzigd (2 munten,
+  minCycleMs 4 s, 3-4 modderplekken). Ring `#werk-count` vult over drie trucks; vol = confetti + Muntje "Drie trucks
+  schoon!". Muntje's WERK-zinnen zeggen nu "truck" en "modder". Tests: smoke/audits/live/playthrough/persistence
+  groen op gen7; de audit (≥ 64 px, geen overlap, midden vrij) blijft gelden. Criticus (Ollama): vlak licht en geen
+  beweging in het plaatje komen door de software-renderer en de stilstaande screenshot (op de iPad zijn er schaduwen
+  en draait alles); UI-stijlbreuk en meer detail blijven punten voor later.
+- **V7.7 Mentorballon kort (volgende):** regel C.2-6: plaatje + hooguit drie woorden in de ballon, de stem zegt de
+  hele zin; korte vormen per zin via Ollama, met de hand nagekeken.
+- **V7.8 Onderhoud:** CI met één herkansing per test en negen jobs, emoji-lettertype op de runner voor de galerij,
+  bekende problemen in PROGRESS opschonen.

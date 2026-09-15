@@ -97,9 +97,19 @@ around its centre). Hats and skins as in v2 (9 hats, 5 skins); vehicles (scooter
 - HUIS: the yard is its own cushion island with a double-rail fence on the far edges, a hedge along the front,
   a curved slab path from the door, garden props (`3d/props.js`), pets (`3d/pets.js`) that wander and nap, the
   trampoline that dips when the avatar bounces. DOM `.hit` areas are projected over the figures every frame.
-- WERK: the wash hall with a dark tunnel mouth and two spinning red brush rollers, a tiled concrete slab with
-  puddles, bucket, hose reel, cone, palm. The car is a big rounded model with spinning wheels; mud is 3D blobs
-  squashed onto the car's faces, each with a transparent DOM `.dirt` tap area; foam is 3D spheres.
+- WERK (V7.6, Johannes' Higgsfield direction of 16 September 2026: "a side view like a conveyor mini-game"): the
+  camera looks at the lane from the side (`az` 0.16, `elev` 0.24). Three chunky trucks (box body, dump truck with a
+  heap of sand, tanker, pickup with a crate; six wheels, a driver with a cap in the side window) roll left to right
+  over a grey conveyor with moving stripes: one waits on the left, one stands in the tunnel being washed, the clean
+  one waits on the right with sparkles while the driver waves an arm. The hall is a wide blue box with a dark tunnel
+  mouth, a yellow lintel, a round sign with a drop, a tunnel roof that reaches out over the lane with WASSTRAAT on its
+  edge, and a flag. Two big striped rollers (red/yellow/blue/green) stand in front of the lane and one lies across
+  above the truck; three rainbow arcs stand behind the truck; static foam puffs at the mouth, live foam from the
+  brushes while washing. Behind: hills, round trees, clouds. Mud is 3D blobs squashed onto the side that faces the
+  camera, each with a transparent DOM `.dirt` tap area (78 × 70 px on this screen). HUD: the truck ring top-right
+  (`.werk-ring`, fills over three trucks, confetti and a line from Muntje when full) and KLAAR bottom-right; the
+  middle is free (PLAN-V7 §C.2). The hall's five upgrade levels (flags, neon ring and strip, extra rollers, foam
+  cannon and palms, string of lights, golden trim, tower, fountain, bunting) are kept and re-placed.
 
 ## 9. Thumbnails (`docs/js/3d/thumbs.js`)
 
