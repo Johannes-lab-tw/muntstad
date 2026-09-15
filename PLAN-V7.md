@@ -147,5 +147,6 @@ game (regel 4, offline); wel bruikbaar als filmpje voor familie.
   wolven, beren, hert). Een tik op de woorden toont de hele zin 6 s; 🔊 en Muntje herhalen. Teksten zonder korte vorm
   (ketens, hoofdstukken, stickers, mijlpalen) tonen vol. Tests: playthrough ("Nog {n} munten" blijft "Nog" bevatten),
   smoke, audits, avontuur (ballonregel), eiland-nacht groen op gen7.
-- **V7.8 Onderhoud:** CI met één herkansing per test en negen jobs, emoji-lettertype op de runner voor de galerij,
-  bekende problemen in PROGRESS opschonen.
+- **V7.8 Onderhoud (16 sep, gedaan):** CI met één herkansing per test (alleen op de runner) en twaalf jobs van 10-15
+  minuten (dorp, eiland-lopen, eiland-nacht, eiland-campagne per profiel), emoji-lettertype op de runner voor
+  faal-screenshots, bekende problemen in PROGRESS opgeschoond.
