@@ -47,9 +47,9 @@ PR met CI groen op drie iPad-formaten en daarna live:
    luidsprekertje herhaalt de zin. Opdrachten, hoofdstukken en stickers blijven voluit.
 
 Plaatjes op knoppen zijn emoji (groot en scherp op de iPad, nul bytes); de headless testbrowser heeft geen emoji-font,
-dus die beoordeel je op de iPad. Eerlijk: Claude kon de Higgsfield-beelden in de bouwsessie niet zelf bekijken (het
-downloaddomein is daar geblokkeerd); Johannes koos in de galerij en plakte de keuze in het gesprek. Nog open: de
-WERK-scène (keuze op 15 september), en de tags v7.1 t/m v7.5 (tag-push is vanuit de sessie geblokkeerd, zie PROGRESS).
+dus die beoordeel je op de iPad. Op 13 september kon Claude de Higgsfield-beelden niet zelf bekijken en koos Johannes in de galerij; sinds 16 september
+opent Claude een gedeelde Higgsfield-link zelf in het browserpaneel. De tags v7.1 t/m v7.5 staan sinds 16 september op
+GitHub; de WERK-scène is v7.6 (punt 6).
 
 ## 0-vorig. Zevende ronde: de derde iPad-test (6 september 2026)
 
