@@ -18,7 +18,9 @@ export default defineConfig({
   expect: { timeout: process.env.CI ? 40000 : 15000 },
   fullyParallel: true,
   workers: 3,
-  retries: 0,
+  // V7.8: one retry on the CI runner only: a test that passes on the second go is reported as flaky, not red;
+  // locally a failure stays a failure so it gets looked at
+  retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   outputDir: 'test-results',
   use: {

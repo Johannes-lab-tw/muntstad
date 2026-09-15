@@ -12,15 +12,18 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 75   # 38 e2e-tests op de trage runner (~1 fps eiland) duren 40-50 minuten per profiel
+    timeout-minutes: 45   # V7.8: four groups per profile of 10-15 minutes (the island renders at ~1 fps on the runner)
     strategy:
       fail-fast: false
       matrix:
         project: [chromium-ipad-gen7, chromium-ipad-mini, chromium-ipad-pro11]
-        # two groups per profile, one worker each: the island renders at about a frame per second on the runner
+        # four groups per profile, one worker each (twelve jobs; the repo is public, so they run at once):
+        # the town in one group (~12 min), the island split in three (~10-15 min each) instead of one of ~38 min
         group:
           - { name: dorp, specs: 'tests/e2e/audits.spec.js tests/e2e/dorp.spec.js tests/e2e/live.spec.js tests/e2e/offline.spec.js tests/e2e/papa.spec.js tests/e2e/persistence.spec.js tests/e2e/playthrough.spec.js tests/e2e/pwa.spec.js tests/e2e/smoke.spec.js' }
-          - { name: eiland, specs: 'tests/e2e/avontuur.spec.js tests/e2e/eiland-doen.spec.js tests/e2e/eiland-nacht.spec.js tests/e2e/eiland-ketens.spec.js tests/e2e/campagne.spec.js tests/e2e/samen.spec.js' }
+          - { name: eiland-lopen, specs: 'tests/e2e/avontuur.spec.js tests/e2e/eiland-doen.spec.js' }
+          - { name: eiland-nacht, specs: 'tests/e2e/eiland-nacht.spec.js tests/e2e/eiland-ketens.spec.js' }
+          - { name: eiland-campagne, specs: 'tests/e2e/campagne.spec.js tests/e2e/samen.spec.js' }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,6 +33,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npx playwright install --with-deps chromium
+      # V7.8: the picture buttons are emoji; without this font the failure screenshots and traces show empty circles
+      - run: sudo apt-get install -y --no-install-recommends fonts-noto-color-emoji
       - run: npm run test:e2e -- --project=${{ matrix.project }} ${{ matrix.group.specs }}
         env:
           PW_WORKERS: 1
