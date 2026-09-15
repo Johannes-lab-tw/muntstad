@@ -807,51 +807,41 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .muntje.talk { animation: talk 0.5s ease-in-out infinite; }
 @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
 @keyframes talk { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06, 0.95); } }
+/* V7.7 (PLAN-V7 §C.2 rule 6): the bubble sits at the top in the middle, out of the way of the hands, and shows a
+   picture plus at most three words (.kort); Muntje himself stays bottom-left and repeats the line when tapped */
 .bubble {
-  position: absolute;
-  left: 8px;
-  bottom: 130px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(var(--topbar-h) + 10px);
+  margin: 0 auto;
   width: max-content;
-  max-width: min(600px, 60vw);
+  max-width: min(640px, 60vw);
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 14px 14px 20px;
+  padding: 12px 12px 12px 20px;
   background: #fff;
   border: 3px solid var(--ink);
-  border-radius: 22px;
+  border-radius: 26px;
   box-shadow: var(--edge-sm);
   font-size: 24px;
   line-height: 1.25;
   pointer-events: auto;
   animation: pop 0.3s var(--pop);
-  transform-origin: 10% 100%;
+  transform-origin: 50% 0%;
+  z-index: 31;
 }
-.bubble::after {
-  content: "";
-  position: absolute;
-  left: 34px;
-  bottom: -26px;
-  border: 12px solid transparent;
-  border-top: 16px solid var(--ink);
-}
-.bubble::before {
-  content: "";
-  position: absolute;
-  left: 38px;
-  bottom: -15px;
-  border: 8px solid transparent;
-  border-top: 11px solid #fff;
-  z-index: 1;
-}
+.bubble.kort { font-size: 34px; font-weight: 800; padding: 10px 12px 10px 18px; }
+.bubble.kort .bubble-text { white-space: nowrap; }
 .bubble.hidden { display: none; }
-/* in the wash bay the bubble sits beside Muntje along the bottom, so it never covers a mud splat on the car */
-.app[data-screen="werk"] .bubble { left: 122px; bottom: 8px; max-width: min(560px, 50vw); transform-origin: 0% 100%; }
-.app[data-screen="werk"] .bubble::after { left: -20px; bottom: 26px; border: 12px solid transparent; border-right: 18px solid var(--ink); }
-.app[data-screen="werk"] .bubble::before { left: -11px; bottom: 30px; border: 8px solid transparent; border-right: 14px solid #fff; }
+/* on the island the free strip is right of the bag and left of the map: centre the bubble at about two thirds */
+.app[data-screen="avontuur"] .bubble { left: 46%; right: 8%; top: calc(var(--topbar-h) + 150px); }
+/* on WINKEL the tabs sit at the top and on HUIS the sticker wall: there the bubble stays low, beside Muntje */
+.app[data-screen="winkel"] .bubble, .app[data-screen="huis"] .bubble, .app[data-screen="start"] .bubble, .app[data-screen="gate"] .bubble, .app[data-screen="papa"] .bubble { left: 122px; right: auto; top: auto; bottom: calc(14px + env(safe-area-inset-bottom)); margin: 0; transform-origin: 0% 100%; }
 /* on the shop Muntje shrinks a little so he never sits on the bottom-left card's button */
 .app[data-screen="winkel"] .mentor, .app[data-screen="winkel"] .muntje { width: 92px; height: 92px; }
-.app[data-screen="winkel"] .bubble { bottom: 104px; }
+.app[data-screen="winkel"] .bubble { left: 100px; bottom: calc(104px + env(safe-area-inset-bottom)); }
 .bubble-text { flex: 1; }
 .bubble .btn-round { --c: var(--blue); --cd: var(--blue-d); --cl: #c4e8ff; }
 @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }

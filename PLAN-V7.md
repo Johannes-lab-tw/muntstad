@@ -139,7 +139,13 @@ game (regel 4, offline); wel bruikbaar als filmpje voor familie.
   groen op gen7; de audit (≥ 64 px, geen overlap, midden vrij) blijft gelden. Criticus (Ollama): vlak licht en geen
   beweging in het plaatje komen door de software-renderer en de stilstaande screenshot (op de iPad zijn er schaduwen
   en draait alles); UI-stijlbreuk en meer detail blijven punten voor later.
-- **V7.7 Mentorballon kort (volgende):** regel C.2-6: plaatje + hooguit drie woorden in de ballon, de stem zegt de
-  hele zin; korte vormen per zin via Ollama, met de hand nagekeken.
+- **V7.7 Mentorballon kort (16 sep, gedaan):** regel C.2-6. `kort.<sleutel>` in i18n.js voor 104 van de 105 zinnen
+  (één emoji + hooguit drie woorden; Ollama schreef de eerste versie, met de hand ingekort en nagekeken; `ketenStap`
+  blijft vol omdat de staptekst de kern is). `mentor.say` toont de korte vorm en spreekt de hele zin; de ballon staat
+  bovenin het midden (op het eiland rechts van de rugzak, onder het kaartje; op WINKEL, HUIS, START, poort en PAPA
+  laag naast Muntje), verdwijnt na 4 s, blijft 10 s bij een toestand die duurt (vuur uit/laag, honger, kou, flauw,
+  wolven, beren, hert). Een tik op de woorden toont de hele zin 6 s; 🔊 en Muntje herhalen. Teksten zonder korte vorm
+  (ketens, hoofdstukken, stickers, mijlpalen) tonen vol. Tests: playthrough ("Nog {n} munten" blijft "Nog" bevatten),
+  smoke, audits, avontuur (ballonregel), eiland-nacht groen op gen7.
 - **V7.8 Onderhoud:** CI met één herkansing per test en negen jobs, emoji-lettertype op de runner voor de galerij,
   bekende problemen in PROGRESS opschonen.
