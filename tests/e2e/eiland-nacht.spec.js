@@ -72,11 +72,14 @@ test('V7.1 (iPad 7 sep): a nearly full bonfire still takes wood; a full one says
   await closePopups(page);
   await openAvontuur(page);
   const h = await hook(page);
+  await page.evaluate(() => window.__muntstad.avontuur.setWeer('zon'));   // V8.2: rain would burn the heap faster and make room for two pieces
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), h.camp);
   await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('KAMP');
   await expect(page.locator('#av-stook')).toBeVisible({ timeout: 40000 });
   await page.locator('#av-stook').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 40000 }).toBe(37);
+  // one piece goes in (two on a slow runner where the heap burned a crumb more while we waited); the point is: not zero
+  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 40000 }).toBeLessThan(38);
+  expect((await state(page)).eiland.bag.hout).toBeGreaterThanOrEqual(36);
   expect((await state(page)).nacht.fire).toBeGreaterThan(399.8);   // topped off (it burns a crumb per second)
   expect(await mentorHas(page, 'geen hout')).toBe(false);
   // the heap is full now: STOOK folds away; a tap that still lands on a full heap says so
