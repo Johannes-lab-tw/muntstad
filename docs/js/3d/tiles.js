@@ -11,7 +11,7 @@ import { createGrid } from './player.js';
 const RING = 1;          // tiles kept around the player's tile (1 = 3 × 3)
 const PREFETCH = 2;      // tiles prepared (not yet shown) further out
 
-export function createTiles(map, { statics = [], isLite = () => false } = {}) {
+export function createTiles(map, { statics = [], isLite = () => false, tierOf = () => 0 } = {}) {
   const group = new T.Group();
   const tiles = new Map();   // key → { tx, tz, group, terrain, forest, obstacles, shells, bushes }
   let near = createGrid(statics, 4), nearShells = createGrid([], 4), nearBushes = createGrid([], 4);
@@ -27,7 +27,7 @@ export function createTiles(map, { statics = [], isLite = () => false } = {}) {
     if (tiles.has(key)) return tiles.get(key);
     const bounds = { x0: tx * map.tile, z0: tz * map.tile, x1: (tx + 1) * map.tile, z1: (tz + 1) * map.tile };
     const g = new T.Group();
-    const terrain = tileTerrain(map, bounds, isLite() ? 1.0 : 0.5);
+    const terrain = tileTerrain(map, bounds, tierOf() >= 1 || isLite() ? 1.0 : 0.5);   // V9.1: 1 m cells from tier 1 (a quarter of the vertices)
     g.add(terrain);
     const t = { key, tx, tz, bounds, group: g, terrain, forest: null, placements: null, obstacles: [], shells: [], bushes: [], shown: false, phase: 1 };
     tiles.set(key, t);
