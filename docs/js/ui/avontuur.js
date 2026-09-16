@@ -35,6 +35,7 @@ export function createAvontuur(game) {
   let visible = false;
   let questSaid = '';
   let burnAcc = 0, lastFireWarn = 0, fireOutSaid = false, lastStokeSaid = 0;
+  let lastWeer = '', heartAcc = 0;   // V8.2
   const samen = game.samen;
 
   const kamp = createKamp(game, (what, info) => {
@@ -233,7 +234,8 @@ export function createAvontuur(game) {
     const f = Math.max(coldF, hungerF);
     vignetteEl.classList.toggle('on', f > 0);
     vignetteEl.style.setProperty('--vig', coldF >= hungerF ? `rgba(30, 60, 160, ${0.5 + f * 0.45})` : `rgba(150, 20, 20, ${0.5 + f * 0.45})`);
-    nachtEl.textContent = lastDark ? `🌙 Nacht ${nights + 1}` : `☀️ Dag ${nights + 1}`;
+    const wIcon = scene3 ? scene3.hook.weer.icon : '☀️';   // V8.2: the weather in the day badge
+    nachtEl.textContent = lastDark ? `${wIcon === '⛈️' ? '⛈️' : '🌙'} Nacht ${nights + 1}` : `${wIcon} Dag ${nights + 1}`;
     // the campaign line (V6.6): chapter, goal and the golden coins found so far
     const ch = currentHoofdstuk(state.campagne, CAMPAGNE);
     const munten = state.campagne ? state.campagne.munten || 0 : 0;
@@ -280,6 +282,15 @@ export function createAvontuur(game) {
   function onTick(dtMs, darkness, ctx = {}) {
     const dark = darkness > 0.5 ? 1 : 0;
     if (dark !== lastDark) { lastDark = dark; hudKey = ''; renderHud(game.state); }
+    // V8.2: the weather in the badge and the rain you hear; the heartbeat when the stomach or the warmth runs low
+    const wk = scene3 ? scene3.hook.weer.kind : 'zon';
+    if (wk !== lastWeer) { lastWeer = wk; game.audio.setWeer(wk); hudKey = ''; renderHud(game.state); }
+    heartAcc += dtMs;
+    if (heartAcc > 900) {
+      heartAcc = 0;
+      const e0 = game.state.eiland, n0 = game.state.nacht;
+      if ((e0.honger ?? 100) < game.config.honger.warnBelow || (n0.warm ?? 100) < game.config.kou.warnBelow) game.audio.play('heart');
+    }
     tickAcc += dtMs;
     if (tickAcc < 1000) return;
     const ms = tickAcc;
@@ -383,7 +394,8 @@ export function createAvontuur(game) {
     const ms = burnAcc;
     burnAcc = 0;
     const before = game.state.nacht.fire;
-    game.update((s) => ({ ...s, nacht: burnFire(s.nacht, game.config, ms, darkness, perks(s.eiland, game.config).burnMul) }));
+    const weerMul = scene3 ? scene3.hook.weer.mul : 1;   // V8.2: rain and storm eat more wood unless the afdak is up
+    game.update((s) => ({ ...s, nacht: burnFire(s.nacht, game.config, ms, darkness, perks(s.eiland, game.config).burnMul * weerMul) }));
     const fire = game.state.nacht.fire;
     const lvlBefore = fireLevel(before, game.config), lvlNow = fireLevel(fire, game.config);
     if (darkness > 0.5) {
@@ -403,6 +415,8 @@ export function createAvontuur(game) {
     game.mentor.say(samen && samen.isGuest ? 'lines.guestNight' : 'lines.nightComing', {}, { kind: 'reaction' });
     if (bear) setTimeout(() => { if (visible) game.mentor.say('lines.bearComing', {}, { kind: 'reaction' }); }, 5000);
     else if (nights === 1) setTimeout(() => { if (visible) game.mentor.say('lines.harderNight', {}, { kind: 'reaction' }); }, 5000);
+    const wk = scene3 ? scene3.hook.weer.kind : 'zon';   // V8.2: the weather warning comes after the night line
+    if (wk === 'storm' || wk === 'regen') setTimeout(() => { if (visible) game.mentor.say(wk === 'storm' ? 'lines.storm' : 'lines.regen', {}, { kind: 'reaction' }); }, bear ? 10000 : 5000);
   }
   function onDawn(fireBurned) {
     game.audio.setAmbient('day');
@@ -541,6 +555,13 @@ export function createAvontuur(game) {
       onKamp() { controls.setEnabled(false); kamp.show(); },
       onAction,
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
+      onSound(name) { game.audio.play(name); },   // V8.2
+      onBliksemHout(n) {   // V8.2: the burnt tree leaves wood at dawn
+        game.update((s) => { const max = perks(s.eiland, game.config).bagMax; const bag = { ...s.eiland.bag, hout: Math.min(max, (s.eiland.bag.hout || 0) + n) }; return { ...s, eiland: { ...s.eiland, bag } }; });
+        game.mentor.say('lines.bliksemHout', { n }, { kind: 'reaction' });
+        hudKey = '';
+        renderHud(game.state);
+      },
       onBurn, onNight, onDawn, onSteal, onStoke, onSleep, onBearAte, onFireSync, onRemoteStoke, onChest, onCaveGhostCaught,
       onTick, onDeerBump, onCook, onOntdek, onWolfBump, onCaveExit, onGoldFish, onTop, onBerenGewonnen, onBerenVerloren,
     });
@@ -575,6 +596,8 @@ export function createAvontuur(game) {
       visible = false;
       controls.setEnabled(false);
       game.audio.setAmbient(null);
+      game.audio.setWeer(null);
+      lastWeer = '';
       game.audio.setTheme('dorp');
       kamp.close();
       cancelAnimationFrame(raf);

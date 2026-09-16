@@ -10,6 +10,8 @@ export function createDayNight(scene, lights, { fogNear = 42, fogFar = 95 } = {}
   const { sun, sky, fill } = lights;
   let override = null;
   let phase = 0, darkness = 0;
+  let gloom = 0, flashUntil = 0;   // V8.2: grey weather and the lightning flash
+  const grey = new T.Color('#8c9aa8'), flashColor = new T.Color('#eef6ff');
   scene.fog = new T.Fog(col('#bfe9ff'), fogNear, fogFar);
   scene.background = new T.Color('#8fdcff');
   sun.shadow.camera.near = 2;
@@ -54,13 +56,16 @@ export function createDayNight(scene, lights, { fogNear = 42, fogFar = 95 } = {}
     phase = override != null ? override : phaseAt(Date.now(), offsetMs);
     const pal = paletteAt(phase);
     darkness = pal.darkness;
-    scene.background.set(pal.sky);
-    scene.fog.color.set(pal.fog);
+    scene.background.set(pal.sky).lerp(grey, gloom * (1 - darkness * 0.6));
+    scene.fog.color.set(pal.fog).lerp(grey, gloom * (1 - darkness * 0.6));
+    scene.fog.near = fogNear * (1 - gloom * 0.5);
+    scene.fog.far = fogFar * (1 - gloom * 0.45);
     sun.color.set(pal.sun);
-    sun.intensity = pal.sunI;
+    sun.intensity = pal.sunI * (1 - gloom * 0.7);
     sky.color.set(pal.hemiSky);
     sky.groundColor.set(pal.hemiGround);
-    sky.intensity = pal.hemiI;
+    sky.intensity = pal.hemiI * (1 - gloom * 0.3);
+    if (now < flashUntil) { scene.background.copy(flashColor); sun.intensity = Math.max(sun.intensity, 3.2); sky.intensity = 2.4; }
     fill.intensity = 0.45 * (1 - darkness * 0.8);
     // by day the sun, by night a moon high in the sky (weak, bluish) so shapes stay readable
     const night = pal.sunElev < 0.05;
@@ -92,5 +97,9 @@ export function createDayNight(scene, lights, { fogNear = 42, fogFar = 95 } = {}
     get phase() { return phase; },
     get darkness() { return darkness; },
     setOverride(p) { override = p; },
+    /** V8.2: how grey the weather makes the sky (0 sun … 0.62 storm) and a lightning flash of `ms`. */
+    setGloom(g) { gloom = g; },
+    flash(now, ms = 140) { flashUntil = now + ms; },
+    get gloom() { return gloom; },
   };
 }

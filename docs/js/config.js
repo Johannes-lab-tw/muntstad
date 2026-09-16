@@ -58,6 +58,8 @@ export const CONFIG = Object.freeze({
       { id: 'trommel',  name: 'Trommel',  icon: '🥁', price: 110, tekst: 'Eén keer BOE en de beer is weg.' },
       { id: 'vuurkuil', name: 'Vuurkuil', icon: '🕳️', price: 180, tekst: 'Het vuur brandt langzamer op.' },
       { id: 'hoog_hek', name: 'Hoog hek', icon: '🏰', price: 250, tekst: 'Een groter hek: het hele kamp is veilig.' },
+      // V8.2: weather
+      { id: 'afdak',    name: 'Afdak',    icon: '⛱️', price: 120, tekst: 'Een dak boven het vuur. Regen dooft het niet.' },
       { id: 'hut2',     name: 'Tweede hut', icon: '🛖', price: 300, tekst: 'Een hut voor wie meespeelt.' },
       { id: 'klimschoenen', name: 'Klimschoenen', icon: '🥾', price: 150, tekst: 'Je kunt de sneeuw op, tot de top van de berg.' },   // V6.6: chapter 4
     ],
@@ -94,6 +96,17 @@ export const CONFIG = Object.freeze({
 
   // The night on the island (PLAN-V4 R4). Balance: a night (3 min) burns ≈ 8 pieces of wood; by hand that is 24 taps,
   // with the axe 4 taps. The reward for a night with the fire still burning grows with every night.
+  // V8.2: the weather of the island (docs/js/weer.js): one kind per day from the day number and the save's seed
+  weer: {
+    eersteStormDag: 3,                // never a storm in the first three days
+    stormElke: 4,                     // a storm can come on one day in four (and then half the time)
+    regenMul: 2,                      // rain: the fire eats twice the wood
+    stormMul: 3,                      // storm: three times (the afdak keeps it dry)
+    bliksemNaMs: 40 * 1000,           // in a storm night the lightning strikes this long after dark
+    bliksemHout: 6,                   // the burnt tree leaves this much wood at dawn
+    donderElkeMs: [20000, 40000],     // thunder and a flash every 20-40 s while it storms
+  },
+
   nacht: {
     // V6.2: the fire is a heap of wood (fire = pieces in it); more wood = a higher level, a bigger fire and more light
     fireMax: 400,                     // the heap never holds more than this

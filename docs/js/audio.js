@@ -137,10 +137,16 @@ export function createAudio() {
     flutter() { for (let i = 0; i < 7; i++) noise({ start: i * 0.06, dur: 0.04, gain: 0.07, filter: 'bandpass', freq: 500 + i * 120, q: 2 }); },
     stumble() { tone({ freq: 220, type: 'triangle', dur: 0.18, gain: 0.2, slideTo: 90 }); noise({ dur: 0.12, gain: 0.1, filter: 'lowpass', freq: 500 }); },
     munch() { for (let i = 0; i < 3; i++) noise({ start: i * 0.12, dur: 0.06, gain: 0.09, filter: 'bandpass', freq: 700, q: 2 }); },
+    // V8.2: the weather and the warnings you hear before you see them
+    howl() { tone({ freq: 320, type: 'sine', dur: 1.4, gain: 0.12, slideTo: 520, attack: 0.3 }); tone({ freq: 240, type: 'sine', start: 0.5, dur: 1.2, gain: 0.08, slideTo: 400, attack: 0.3 }); },
+    thunder() { noise({ dur: 1.6, gain: 0.28, filter: 'lowpass', freq: 180, slideTo: 60 }); noise({ start: 0.25, dur: 1.2, gain: 0.16, filter: 'lowpass', freq: 400, slideTo: 90 }); tone({ freq: 55, type: 'sawtooth', dur: 1.2, gain: 0.08, slideTo: 35, attack: 0.02 }); },
+    heart() { tone({ freq: 70, type: 'sine', dur: 0.12, gain: 0.22, slideTo: 45 }); tone({ freq: 62, type: 'sine', start: 0.18, dur: 0.14, gain: 0.16, slideTo: 40 }); },
+    patter() { for (let i = 0; i < 4; i++) noise({ start: i * 0.28, dur: 0.24, gain: 0.035, filter: 'highpass', freq: 2500 }); },
   };
 
   // ---- ambience on the island: birds by day, an owl and the fire by night (a few soft sounds a minute) ----
   let ambientTimer = null, ambientKind = null;
+  let weerKind = null, weerTimer = null;
   function setAmbient(kind) {
     if (kind === ambientKind) return;
     ambientKind = kind;
@@ -256,6 +262,15 @@ export function createAudio() {
       theme = t;
       STEP = night ? theme.step * 1.5 : theme.step;
       step = 0;
+    },
+    /** V8.2: rain patter while it rains or storms on the island; null stops it. */
+    setWeer(kind) {
+      if (kind === weerKind) return;
+      weerKind = kind;
+      if (weerTimer) clearInterval(weerTimer);
+      weerTimer = null;
+      if (kind !== 'regen' && kind !== 'storm') return;
+      weerTimer = setInterval(() => { if (soundOn && ctx && ctx.state === 'running') SFX.patter(); }, kind === 'storm' ? 1100 : 1600);
     },
     pause() { stopMusic(); if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {}); },
     resume() { if (ctx) { if (ctx.state !== 'running') ctx.resume().catch(() => {}); startMusic(); } },

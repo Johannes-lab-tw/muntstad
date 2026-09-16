@@ -54,7 +54,7 @@ Wat er is (nacht, spoken, beer, hert, wolven, campagne) komt naar je toe zonder 
 dat de spanning opbouwt. Drie stappen die elk iets zichtbaars en hoorbaars toevoegen; niets ervan is een druk-timer
 (regel 2): je ziet het aankomen en kunt je voorbereiden.
 
-### V8.2 Weer, geluid en aankondiging (avond 2)
+### V8.2 Weer, geluid en aankondiging (avond 2) — gebouwd 17 september, zie PROGRESS Run 9
 - **Weer per dag** (`config.weer`, `daycycle`): zon, bewolkt, regen, storm; nooit storm in de eerste drie nachten,
   hooguit één storm per vier dagen, met een zaad per dag zodat de test het kan afdwingen. Regen = druppels
   (instanced lijnen), grijzere lucht, natte glans op de steiger; storm = harde wind (bomen en vlaggen zwaaien mee),

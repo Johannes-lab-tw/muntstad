@@ -18,6 +18,13 @@ zeven avonden. De eerste is gebouwd:
    elke stand. Lopen reageert sneller op de duim en stopt sneller, en de benen zwaaien met de afgelegde meters mee.
    De MELD-code toont voortaan per scherm de frametijden (mediaan, p95, hikken per minuut), de stand en de pixelratio,
    plus de videokaart. Bewijs volgt met de volgende MELD-code van Johannes.
+2. **v8.2, weer dat je voelt aankomen.** Elke dag heeft zijn weer: zon, bewolkt, regen of storm (nooit storm in de
+   eerste drie dagen, hooguit één per vier dagen; het staat in het dagbadge: ⛈️ Dag 7). Bij regen eet het vuur twee
+   keer zoveel hout, bij storm drie keer; een **afdak** bij het vuur (120 munten) houdt het droog. In een stormnacht
+   dondert en flitst het, en veertig tellen na donker slaat de bliksem in de boom naast het kamp: die brandt de hele
+   nacht (spoken blijven aan die kant weg) en laat 's ochtends zes stukken hout achter. Gevaar hoor je nu eerst: de
+   wolven huilen vijftien tellen voor ze komen, het hert stampt, en bij honger of kou onder een kwart hoor je je
+   hartslag. Muntje waarschuwt bij regen en storm.
 
 ## 0-vorig. Achtste ronde: de hout-fout en het spel voor een zesjarige (13 en 14 september 2026)
 

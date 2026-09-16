@@ -23,6 +23,7 @@ import { isFunActive } from '../economy.js';
 import { chopRule } from '../eiland.js';
 import { fireRadius, fireLevel, isLit, stepGhost, bearTonight, stepBear, scareBear, stepWolf, scareWolf } from '../nacht.js';
 import { plekAt } from '../ketens.js';
+import { weerVoorDag, burnMul as weerBurnMul, seedOf, WEER } from '../weer.js';
 import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
@@ -303,7 +304,81 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   const lantern = new T.PointLight(0xffd080, 0, 12, 1.6);
   lantern.visible = false;
   scene.add(lantern);
-  const gear = { tent: null, torches: null, fence: null };
+  const gear = { tent: null, torches: null, fence: null, afdak: null };
+  // ---------- V8.2: the weather: rain streaks, the lightning tree, thunder ----------
+  let weerOverride = null, weerDag = -1, weerVandaag = 'zon', nextThunder = 0, strikeAt = 0;
+  function weerNu() {
+    if (weerOverride) return weerOverride;
+    const day = (state && state.nacht.nights) || 0;
+    if (day !== weerDag) { weerDag = day; weerVandaag = weerVoorDag(day, seedOf(state), config.weer); }
+    return weerVandaag;
+  }
+  const RAIN_N = 260, RAIN_AXIS = new T.Vector3(0, 0, 1);
+  const rain = new T.InstancedMesh(new T.BoxGeometry(0.02, 0.55, 0.02), new T.MeshBasicMaterial({ color: 0xd9ecff, transparent: true, opacity: 0.55, fog: false }), RAIN_N);
+  rain.frustumCulled = false;
+  rain.visible = false;
+  scene.add(rain);
+  const rainDrops = Array.from({ length: RAIN_N }, () => ({ x: (Math.random() - 0.5) * 24, y: Math.random() * 12, z: (Math.random() - 0.5) * 24 }));
+  const rainM = new T.Matrix4(), rainQ = new T.Quaternion(), rainS = new T.Vector3(1, 1, 1), rainP = new T.Vector3();
+  function updateRain(dt, focus, kind, lite) {
+    const w = WEER[kind] || WEER.zon;
+    rain.visible = w.rain > 0;
+    if (!rain.visible) return;
+    const n = lite ? RAIN_N / 2 : RAIN_N;
+    rain.count = n;
+    const slant = w.wind * 0.35;
+    rainQ.setFromAxisAngle(RAIN_AXIS, slant);
+    for (let i = 0; i < n; i++) {
+      const d = rainDrops[i];
+      d.y -= dt * (9 + w.rain * 4);
+      d.x += dt * slant * 6;
+      if (d.y < 0) { d.y += 12; d.x = (Math.random() - 0.5) * 24; d.z = (Math.random() - 0.5) * 24; }
+      if (d.x > 12) d.x -= 24;
+      rainP.set(focus.x + d.x, focus.y + d.y, focus.z + d.z);
+      rainM.compose(rainP, rainQ, rainS);
+      rain.setMatrixAt(i, rainM);
+    }
+    rain.instanceMatrix.needsUpdate = true;
+  }
+  // the tree the lightning strikes: a real tree beside the camp that burns until dawn and leaves wood
+  const BLIKSEM_AT = { x: CAMP.x + 9.5, z: CAMP.z - 6.5 };
+  const bliksem = { burning: false, group: new T.Group(), flames: [], light: new T.PointLight(0xff9a3c, 0, 14, 2) };
+  {
+    const b = new Builder({ r: 0.05 });
+    b.tree(0, 0, 1.7, '#3fbf5a', '#6b4a2c');
+    bliksem.group.add(b.build());
+    for (let i = 0; i < 4; i++) {
+      const f = new T.Mesh(new T.ConeGeometry(0.35 - i * 0.05, 1.1 + i * 0.2, 7), new T.MeshBasicMaterial({ color: i % 2 ? 0xffd23f : 0xff7a1c, transparent: true, opacity: 0.9 }));
+      f.position.set((i - 1.5) * 0.35, 1.9 + i * 0.35, (i % 2) * 0.3 - 0.15);
+      f.visible = false;
+      bliksem.group.add(f);
+      bliksem.flames.push(f);
+    }
+    bliksem.light.position.set(0, 2.6, 0);
+    bliksem.group.add(bliksem.light);
+    bliksem.group.position.set(BLIKSEM_AT.x, map.heightAt(BLIKSEM_AT.x, BLIKSEM_AT.z), BLIKSEM_AT.z);
+    scene.add(bliksem.group);
+  }
+  function setBurning(on) {
+    bliksem.burning = on;
+    for (const f of bliksem.flames) f.visible = on;
+    bliksem.light.intensity = on ? 30 : 0;
+  }
+  function strike(now) {
+    if (bliksem.burning) return;
+    setBurning(true);
+    daynight.flash(now, 220);
+    cb.onSound && cb.onSound('thunder');
+    cb.onSay && cb.onSay('lines.bliksem');
+  }
+  function afdakModel() {
+    const b = new Builder({ r: 0.04 });
+    for (const [dx, dz] of [[-2.0, -2.0], [2.0, -2.0], [-2.0, 2.0], [2.0, 2.0]]) b.cyl(dx, dz, 0, 0.09, 3.6, '#8a5a35', 8);
+    b.box(-2.4, -2.4, 3.55, 4.8, 4.8, 0.14, '#c96b3a', { r: 0.04 });
+    b.box(-2.5, -2.5, 3.66, 5.0, 0.2, 0.1, '#a9552b', { r: 0.02 });
+    b.box(-2.5, 2.3, 3.66, 5.0, 0.2, 0.1, '#a9552b', { r: 0.02 });
+    return b.build();
+  }
   function syncGear() {
     const tools = state.eiland.tools;
     if (tools.tent && !gear.tent) {
@@ -323,6 +398,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
         gear.torches.push({ ...t, x, z });
       }
     }
+    if (tools.afdak && !gear.afdak) {   // V8.2: a roof over the fire
+      gear.afdak = afdakModel();
+      gear.afdak.position.set(CAMP.x, map.heightAt(CAMP.x, CAMP.z), CAMP.z);
+      scene.add(gear.afdak);
+    }
     const pk = perks(state.eiland, config);
     if ((tools.hek || tools.hoog_hek) && gear.fenceR !== pk.fenceRadius) {
       if (gear.fence) scene.remove(gear.fence);
@@ -340,6 +420,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const ls = [{ x: CAMP.x, z: CAMP.z, r: fireRadius(state.nacht, config) }];
     if (state.eiland.tools.lantaarn) ls.push({ x: player.x, z: player.z, r: N.lanternRadius });
     if (gear.torches) for (const t of gear.torches) ls.push({ x: t.x, z: t.z, r: N.torchRadius });
+    if (bliksem.burning) ls.push({ x: BLIKSEM_AT.x, z: BLIKSEM_AT.z, r: 6 });   // V8.2: the burning tree keeps ghosts away on that side
     return ls;
   }
   function landSpot(dist) {
@@ -417,8 +498,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       scene.add(holder);
       wolves.push({ w: { x: p.x, z: p.z, heading: p.heading, state: 'circle', ang: (i / W.pack) * Math.PI * 2, wait: 0, dir: i % 2 ? -1 : 1 }, model, holder });
     }
-    game.audio.play('growl');
-    cb.onSay && cb.onSay('lines.wolvesComing');
+    game.audio.play('growl');   // V8.2: the howl and Muntje's warning came at dark, 15 s before the pack
   }
   function clearWolves() { for (const v of wolves) scene.remove(v.holder); wolves.length = 0; }
   function wolfNear() { return wolves.some((v) => v.w.state !== 'flee' && Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 2); }
@@ -526,7 +606,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       }
     } else {
       // wander: amble to a spot, look around; charge when it sees you in the dark
-      if (dark > 0.5 && !playerSafe && dist < D.sight) { d.state = 'charge'; cb.onSay && cb.onSay('lines.deerComing'); }
+      if (dark > 0.5 && !playerSafe && dist < D.sight) { d.state = 'charge'; cb.onSay && cb.onSay('lines.deerComing'); cb.onSound && cb.onSound('stumble'); }
       else {
         const tx = d.tx - d.x, tz = d.tz - d.z, td = Math.hypot(tx, tz);
         if (td < 0.5 || now > d.until) { const p = landSpot(20 + Math.random() * 10); d.tx = p.x; d.tz = p.z; d.until = now + 6000 + Math.random() * 6000; }
@@ -567,11 +647,25 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       if (finale) setTimeout(() => { if (wasDark && !berenNacht && !bears.length) spawnBears(config.campagne.beren); }, config.campagne.berenVanaf);
       if (rules.deer && !guest) spawnDeer();
       wolvesCame = false;
-      if (rules.wolves && !guest) setTimeout(() => { if (wasDark && !guest && !wolvesCame) spawnWolves(); }, 15000);   // the pack comes a bit into the night, once
+      if (rules.wolves && !guest) {
+        cb.onSound && cb.onSound('howl');   // V8.2: you hear the pack before you see it
+        cb.onSay && cb.onSay('lines.wolvesComing');
+        setTimeout(() => { if (wasDark && !guest && !wolvesCame) spawnWolves(); }, 15000);   // the pack comes a bit into the night, once
+      }
+      strikeAt = weerNu() === 'storm' && !guest ? now + config.weer.bliksemNaMs : 0;   // V8.2: a storm night has one lightning strike
     }
+    if (strikeAt && isDark && now >= strikeAt) { strikeAt = 0; strike(now); }
+    if (weerNu() === 'storm' && now > nextThunder) {
+      const [a, b] = config.weer.donderElkeMs;
+      nextThunder = now + a + Math.random() * (b - a);
+      daynight.flash(now);
+      cb.onSound && cb.onSound('thunder');
+    }
+    if (bliksem.burning) { const f = 1 + Math.sin(now / 70) * 0.15; for (const fl of bliksem.flames) fl.scale.set(f, 1 + Math.sin(now / 90 + fl.position.x) * 0.2, f); bliksem.light.intensity = 26 + Math.sin(now / 60) * 6; }
     if (!isDark && wasDark) {
       wasDark = false;
       cb.onDawn && cb.onDawn(fireWasBurning && n.fire > 0);
+      if (bliksem.burning) { setBurning(false); strikeAt = 0; cb.onBliksemHout && cb.onBliksemHout(config.weer.bliksemHout); }   // V8.2
       clearNight();
       clearDeer();
       clearWolves();
@@ -1001,6 +1095,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     daynight.update(now, focus, state.nacht.clockOffsetMs);
     const lite = engine.tier >= 2;
     water.update(now, lite);
+    daynight.setGloom((WEER[weerNu()] || WEER.zon).gloom);   // V8.2
+    updateRain(dt, focus, weerNu(), lite);
     camp.update(now, daynight.darkness, lite, camera);
     vuurtoren.update(now, daynight.darkness);
     // the night bookkeeping (fire, hunger, ghosts, bear, deer) runs on real elapsed time, up to a second per frame,
@@ -1043,6 +1139,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     bearsAt(x, z) { bears.forEach((b, i) => { b.b.x = x + i * 0.8; b.b.z = z; }); },
     get berenNacht() { return berenNacht ? { ...berenNacht } : null; },
     get lights() { return state ? lightsNow() : []; },
+    // V8.2: the weather of today ({ kind, icon, mul }: how much faster the fire burns, 1 with the afdak), and the test hooks
+    get weer() { const k = weerNu(); return { kind: k, icon: (WEER[k] || WEER.zon).icon, mul: weerBurnMul(k, !!(state && state.eiland.tools.afdak), config.weer) }; },
+    setWeer(k) { weerOverride = k || null; if (k === 'storm' && daynight.darkness > 0.5 && !strikeAt && !bliksem.burning) strikeAt = performance.now() + config.weer.bliksemNaMs; },
+    strikeNow() { strike(performance.now()); },
+    get bliksem() { return bliksem.burning; },
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
     setDown(v) { down = !!v; },
     get down() { return down; },
