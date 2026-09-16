@@ -117,3 +117,34 @@ test('V6.5 the lighthouse: the hut chest on the north coast pays 60 once a day a
   expect((await state(page)).eiland.chestDay).toBe('');   // the cave chest is a different chest
   expect(errors()).toEqual([]);
 });
+
+// V8.3: the treasure map. Four pieces are already in the save; digging the fifth (with the schep) completes the map,
+// the X of the week appears on the minimap and in the world, digging there pays 300 and the pirate hat, and the X is
+// gone for the rest of the week.
+test('V8.3 the treasure map: the fifth mound completes the map, the X pays 300 and the pirate hat once a week', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ tools: { schep: true }, kaart: ['ruine', 'moeras', 'berg', 'vuurtoren'] }); s.nacht = { fire: 30, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  const kaart = () => page.evaluate(() => window.__muntstad.avontuur.kaart);
+  expect((await kaart()).n).toBe(4);
+  const spot = await page.evaluate(() => window.__muntstad.avontuur.graafplekken.grot);
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 1.2), spot);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('GRAAF');
+  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => (await kaart()).n, { timeout: 40000 }).toBe(5);
+  await expect.poll(() => mentorHas(page, 'compleet'), { timeout: 40000 }).toBe(true);
+  await expect.poll(async () => (await kaart()).x, { timeout: 40000 }).not.toBeNull();
+  // the X: dig there
+  const x = (await kaart()).x;
+  const walletBefore = Math.floor((await state(page)).wallet);
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 1.2), x);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('GRAAF');
+  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 40000 }).toBe(walletBefore + 300);
+  expect((await state(page)).fun.piratenhoed).toBe(true);
+  await expect.poll(async () => (await kaart()).x, { timeout: 40000 }).toBeNull();
+  await expect.poll(() => mentorHas(page, 'schat'), { timeout: 40000 }).toBe(true);
+  expect(errors()).toEqual([]);
+});

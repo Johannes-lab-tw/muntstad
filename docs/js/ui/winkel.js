@@ -44,7 +44,7 @@ export function createWinkel(game) {
   }
 
   function items() {
-    return tab === 'makers' ? game.config.makers : game.config.fun;
+    return tab === 'makers' ? game.config.makers : game.config.fun.filter((f) => !f.schat);   // V8.3: the pirate hat comes from the treasure
   }
 
   function perPage() {

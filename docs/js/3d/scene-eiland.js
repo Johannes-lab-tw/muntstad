@@ -10,7 +10,7 @@ import { avatarModel, lookKey } from './avatar.js';
 import { petModel } from './pets.js';
 import { createPlayer, createFollower, stepPlayer, stepFollower, turnTowards } from './player.js';
 import { addLights } from './engine.js';
-import { createHeightmap, PIER, CAMP, LAKE, CAVE, HILL, VUURTOREN, HUT, caveInner } from './heightmap.js';
+import { createHeightmap, PIER, CAMP, LAKE, CAVE, HILL, VUURTOREN, HUT, RUINE, caveInner } from './heightmap.js';
 import { createWater } from './terrain.js';
 import { createTiles } from './tiles.js';
 import { createCamp } from './camp.js';
@@ -24,6 +24,7 @@ import { chopRule } from '../eiland.js';
 import { fireRadius, fireLevel, isLit, stepGhost, bearTonight, stepBear, scareBear, stepWolf, scareWolf } from '../nacht.js';
 import { plekAt } from '../ketens.js';
 import { weerVoorDag, burnMul as weerBurnMul, seedOf, WEER } from '../weer.js';
+import { KAARTSTUKKEN, X_PLEKKEN, kaartStukken, kaartCompleet, schatPlek, weekKey } from '../schat.js';
 import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
@@ -45,7 +46,64 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   const vuurtoren = createVuurtoren(map);   // V6.5: the lighthouse and the hut on the north coast
   scene.add(vuurtoren.group);
   // V6.2: the island in tiles round the player; the camp's things are the static obstacles every tile shares
-  const tiles = createTiles(map, { statics: [...camp.obstacles, ...vuurtoren.obstacles], isLite: () => engine.tier >= 2 });
+  // V8.3: the ruin gets walls, an old well and a signpost (and they block the way)
+  function createRuine() {
+    const g = new T.Group();
+    const b = new Builder({ r: 0.04 });
+    const obstacles = [];
+    for (const [dx, dz, w, d, h] of [[-7, -6, 6, 0.8, 2.2], [-7, -6, 0.8, 5, 1.6], [5, -5, 0.8, 7, 2.6], [3, 6, 7, 0.8, 1.4], [-5, 5, 4, 0.8, 1.0]]) {
+      b.box(dx, dz, 0, w, d, h, '#b9b1a3', { r: 0.03 });
+      b.box(dx + 0.1, dz + 0.1, h, w - 0.2, d - 0.2, 0.25, '#8f877a', { r: 0.02 });
+      obstacles.push({ x: RUINE.x + dx + w / 2, z: RUINE.z + dz + d / 2, r: Math.max(w, d) / 2, kind: 'muur' });
+    }
+    b.cyl(0, 0, 0, 1.2, 0.9, '#a39b8d', 16);
+    b.cyl(0, 0, 0.9, 1.05, 0.05, '#2b2f45', 16);
+    for (const dx of [-1.0, 1.0]) b.cyl(dx, 0, 0.9, 0.08, 1.6, '#8a5a35', 8);
+    b.box(-1.3, -0.7, 2.4, 2.6, 1.4, 0.16, '#c96b3a', { r: 0.03 });
+    obstacles.push({ x: RUINE.x, z: RUINE.z, r: 1.3, kind: 'put' });
+    b.cyl(3.2, -1.5, 0, 0.07, 1.8, '#8a5a35', 8);
+    g.add(b.build());
+    const sign = textPlane('?', { w: 0.9, h: 0.9, font: 0.7, color: '#ffffff', bg: '#c96b3a' });
+    sign.position.set(3.2, 1.9, -1.5);
+    g.add(sign);
+    g.position.set(RUINE.x, map.heightAt(RUINE.x, RUINE.z), RUINE.z);
+    scene.add(g);
+    return { group: g, obstacles };
+  }
+  const ruine = createRuine();
+  const tiles = createTiles(map, { statics: [...camp.obstacles, ...vuurtoren.obstacles, ...ruine.obstacles], isLite: () => engine.tier >= 2 });
+  // V8.3: the mounds of earth: one per map piece (gone once dug) and the X of the week (a red cross on top)
+  function moundModel(withX) {
+    const b = new Builder({ r: 0.03 });
+    b.puff(0, 0, 0.1, 0.8, '#7a5a3a', 1);
+    b.puff(0.4, 0.2, 0.05, 0.5, '#8a6a45', 1);
+    b.puff(-0.35, -0.2, 0.05, 0.45, '#6b4e33', 1);
+    b.sphere(0.1, 0, 0.95, 0.16, '#1b1f3b', 8);   // the crow
+    b.sphere(0.26, 0, 1.06, 0.1, '#1b1f3b', 8);
+    b.box(0.32, -0.03, 1.03, 0.14, 0.06, 0.05, '#ff9f2e', { r: 0.01 });
+    if (withX) for (const a of [Math.PI / 4, -Math.PI / 4]) { const g = new T.BoxGeometry(1.5, 0.06, 0.2); g.rotateY(a); g.translate(0, 0.9, 0); b.add(g, '#ff3b3b'); }
+    return b.build({ receive: false });
+  }
+  const mounds = KAARTSTUKKEN.map((k) => { const mesh = moundModel(false); mesh.position.set(k.x, map.heightAt(k.x, k.z), k.z); mesh.visible = false; scene.add(mesh); return { ...k, mesh }; });
+  const xMound = { mesh: moundModel(true), x: 0, z: 0, on: false };
+  xMound.mesh.visible = false;
+  scene.add(xMound.mesh);
+  let lastSchatSync = 0;
+  function syncSchat(now) {
+    if (!state || now - lastSchatSync < 1000) return;
+    lastSchatSync = now;
+    const have = kaartStukken(state.eiland);
+    for (const m of mounds) m.mesh.visible = !have.includes(m.id);
+    const week = weekKey(game.now());
+    const on = kaartCompleet(state.eiland) && state.eiland.schatWeek !== week;
+    if (on) {
+      let p = schatPlek(week, seedOf(state));
+      for (let i = 1; i < X_PLEKKEN.length && !map.walkable(p.x, p.z); i++) p = schatPlek(week, seedOf(state), i);
+      if (p.x !== xMound.x || p.z !== xMound.z) { xMound.x = p.x; xMound.z = p.z; xMound.mesh.position.set(p.x, map.heightAt(p.x, p.z), p.z); }
+    }
+    xMound.on = on;
+    xMound.mesh.visible = on;
+  }
   scene.add(tiles.group);
   const lights = addLights(scene, new T.Vector3(CAMP.x, 1, CAMP.z), 20, engine.tier);
   engine.onTier((t) => {
@@ -726,6 +784,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     for (const [id, r] of remotes) if ((r.down || r.pose === 'down') && Math.hypot(px - r.x, pz - r.z) < 2.6) return { type: 'wek', label: 'WEK', target: id };   // a fainted friend (V6.2)
     if (bearNear() || wolfNear()) return { type: 'boe', label: 'BOE', target: null };
     if (gear.tent && daynight.darkness > 0.5 && Math.hypot(px - TENT_AT.x, pz - TENT_AT.z) < REACH.tent) return { type: 'slaap', label: 'SLAAP', target: null };
+    for (const m of mounds) if (m.mesh.visible && Math.hypot(px - m.x, pz - m.z) < 2.0) return { type: 'graaf', label: 'GRAAF', target: m.id };   // V8.3
+    if (xMound.on && Math.hypot(px - xMound.x, pz - xMound.z) < 2.0) return { type: 'graaf', label: 'GRAAF', target: 'schat' };
     if (Math.hypot(px - camp.chest.pos.x, pz - camp.chest.pos.z) < 1.9) return { type: 'kist', label: camp.chest.isOpen ? 'LEEG' : 'OPEN', target: 'grot' };
     if (Math.hypot(px - vuurtoren.chest.pos.x, pz - vuurtoren.chest.pos.z) < 1.9) return { type: 'kist', label: vuurtoren.chest.isOpen ? 'LEEG' : 'OPEN', target: 'hut' };   // V6.5
     for (const dr of drops) if (Math.hypot(px - dr.x, pz - dr.z) < 1.4) return { type: 'drop', label: 'PAK', target: dr };   // your own things, shaken out by the deer
@@ -770,6 +830,14 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (!action) return;
     switch (action.type) {
       case 'kamp': cb.onKamp && cb.onKamp(); return;
+      case 'graaf': {   // V8.3: dig at a mound (needs the schep); the answer comes from avontuur.js after the swing
+        if (!state.eiland.tools.schep) { cb.onSay && cb.onSay('lines.schepNodig'); return; }
+        hakUntil = now + 420;
+        game.audio.play('thud');
+        const id = action.target;
+        setTimeout(() => { if (cb.onGraaf && cb.onGraaf(id)) { lastSchatSync = 0; syncSchat(performance.now()); } }, 450);
+        return;
+      }
       case 'kist': cb.onChest && cb.onChest(action.target || 'grot'); return;
       case 'drop': {
         const dr = action.target;
@@ -1096,6 +1164,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const lite = engine.tier >= 2;
     water.update(now, lite);
     daynight.setGloom((WEER[weerNu()] || WEER.zon).gloom);   // V8.2
+    syncSchat(now);   // V8.3
     updateRain(dt, focus, weerNu(), lite);
     camp.update(now, daynight.darkness, lite, camera);
     vuurtoren.update(now, daynight.darkness);
@@ -1144,6 +1213,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     setWeer(k) { weerOverride = k || null; if (k === 'storm' && daynight.darkness > 0.5 && !strikeAt && !bliksem.burning) strikeAt = performance.now() + config.weer.bliksemNaMs; },
     strikeNow() { strike(performance.now()); },
     get bliksem() { return bliksem.burning; },
+    // V8.3: the treasure map: pieces found, whether the X is out and where; the mounds for the tests
+    get kaart() { const have = state ? kaartStukken(state.eiland) : []; return { n: have.length, total: KAARTSTUKKEN.length, compleet: !!state && kaartCompleet(state.eiland), x: xMound.on ? { x: xMound.x, z: xMound.z } : null }; },
+    graafplekken: Object.fromEntries(KAARTSTUKKEN.map((k) => [k.id, { x: k.x, z: k.z }])),
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
     setDown(v) { down = !!v; },
     get down() { return down; },

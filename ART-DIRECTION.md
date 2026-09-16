@@ -133,6 +133,11 @@ on every screen in V7.3:
   optional badge bottom-right (the fire level). `.low` turns it red and pulses.
 - `.tile` — a picture with a number badge (the backpack); `.n.full` turns the badge red.
 
+**V8.3: the treasure map.** Mounds are three brown puffs with a black crow (orange beak); the X mound carries two crossed
+red bars. The ruin: five broken walls (`#b9b1a3` with a darker crumbled top), an old well (stone ring, two posts, a
+terracotta roof) and a signpost with a `?` text plane. The pirate hat is a black tricorn with a gold band and a white
+skull on the front. The minimap shows ❌ at the X, else `🗺️ n/5` along the bottom.
+
 **V8.2: weather.** One kind per day (`weer.js`), shown in the day badge. Rain is an InstancedMesh of 260 thin streaks in a
 24 × 12 × 24 m box round the player (slanted by wind, half of them on tier 2); grey weather lerps sky and fog towards
 `#8c9aa8` and pulls the fog closer (`daynight.setGloom`); a lightning flash whitens the sky for 140-220 ms. The

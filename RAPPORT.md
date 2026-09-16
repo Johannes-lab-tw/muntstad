@@ -25,6 +25,11 @@ zeven avonden. De eerste is gebouwd:
    nacht (spoken blijven aan die kant weg) en laat 's ochtends zes stukken hout achter. Gevaar hoor je nu eerst: de
    wolven huilen vijftien tellen voor ze komen, het hert stampt, en bij honger of kou onder een kwart hoor je je
    hartslag. Muntje waarschuwt bij regen en storm.
+3. **v8.3, de schatkaart.** Bij de ruïne, het moeras, de bergtop, de vuurtorenhut en de grot ligt een hoopje aarde met
+   een kraai erop. Met een **schep** (80 munten, bij het vuur) graaf je er een stuk van de schatkaart op; met alle vijf
+   staat er een kruis op je kaartje en een hoop met een rood kruis in de wereld, elke week ergens anders. Daar
+   graven geeft 300 munten en de eerste keer een echte piratenhoed (die is nergens te koop). De ruïne heeft nu muren,
+   een oude put en een bordje met een vraagteken.
 
 ## 0-vorig. Achtste ronde: de hout-fout en het spel voor een zesjarige (13 en 14 september 2026)
 
