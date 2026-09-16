@@ -56,11 +56,20 @@ export function createEngine() {
     renderer.setSize(W, H, false);
   }
 
+  // V9.1: the tier is remembered per screen: the island may need tier 2 while the town runs fine on tier 0
+  const tierByScreen = new Map();
   function mount(el) {
     if (canvas.parentNode !== el) el.appendChild(canvas);
+    if (container && container !== el) tierByScreen.set(container.id || '', tier);
+    const prev = container;
     container = el;
     resize();
     quality.reset();   // a new screen starts a fresh measuring window
+    if (!forcedLite && prev && prev !== el) {
+      const saved = tierByScreen.get(el.id || '');
+      const want = saved == null ? 0 : saved;
+      if (want !== tier) setTier(want);
+    }
   }
   // V7.0: iPadOS sometimes reports the old size in the resize event after a rotation; the scenes ask every 20th frame
   // whether the container has quietly changed size and resize themselves if so (a reflow every third of a second is cheap)
@@ -87,19 +96,26 @@ export function createEngine() {
   }
   if (forcedLite) setTier(2);
 
+  let lastCalls = 0, lastTris = 0, simMs = 0, renderMs = 0;
   function render(scene, camera) {
+    const t0 = performance.now();
     renderer.render(scene, camera);
+    renderMs = performance.now() - t0;
+    lastCalls = renderer.info.render.calls;
+    lastTris = renderer.info.render.triangles;
   }
+  /** V9.1: the scene reports how long its own work took this frame (physics, tiles, night) before the draw. */
+  function noteSim(ms) { simMs = ms; }
 
   return {
-    renderer, canvas, mount, resize, render, trackFrame, checkSize,
+    renderer, canvas, mount, resize, render, trackFrame, checkSize, noteSim,
     onTier(fn) { tierListeners.push(fn); fn(tier); },
     get W() { return W; },
     get H() { return H; },
     get tier() { return tier; },
     get fps() { return lastAvgMs > 0 ? Math.round(1000 / lastAvgMs) : 0; },   // V6.8: for the MELD code on PAPA
     /** V8.1: the last measuring window for the MELD code: { p50, p95, n, hitchesPerMin, tier, pixelRatio }. */
-    get stats() { return { ...quality.stats(performance.now()), pixelRatio: renderer.getPixelRatio() }; },
+    get stats() { return { ...quality.stats(performance.now()), pixelRatio: renderer.getPixelRatio(), calls: lastCalls, tris: lastTris, simMs: Math.round(simMs * 10) / 10, renderMs: Math.round(renderMs * 10) / 10 }; },
     get info() { return { gpu: gpuName, cores, isIpad, forcedLite }; },
     get container() { return container; },
   };
@@ -129,7 +145,7 @@ export function addLights(scene, center, size = 14, tier = 0) {
   scene.add(fill);
   const setTier = (t) => {
     sun.castShadow = t < 2;
-    const s = t === 2 ? 1024 : t === 1 ? 1536 : 2048;
+    const s = t === 2 ? 1024 : t === 1 ? 1024 : 2048;   // V9.1: tier 1 draws a smaller shadow map too
     if (sun.shadow.mapSize.x !== s) {
       sun.shadow.mapSize.set(s, s);
       if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }

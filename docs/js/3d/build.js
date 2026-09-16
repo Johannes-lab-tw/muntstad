@@ -39,6 +39,9 @@ export function col(hex) {
 export const MAT = {
   plastic: new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.0 }),
   plasticFlat: new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.0, flatShading: true }),
+  // V9.1: the same vertex colours without PBR per pixel: what the island uses on tier 1 and 2 (an iPad with 4 cores)
+  plasticLite: new T.MeshLambertMaterial({ vertexColors: true }),
+  plasticFlatLite: new T.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
   gold: new T.MeshStandardMaterial({ color: col('#ffd23f'), roughness: 0.3, metalness: 0.55, emissive: col('#ffb300'), emissiveIntensity: 0.25 }),
   glass: new T.MeshStandardMaterial({ color: col('#bfe6ff'), roughness: 0.15, metalness: 0.1 }),
   white: new T.MeshStandardMaterial({ color: col('#ffffff'), roughness: 0.6 }),

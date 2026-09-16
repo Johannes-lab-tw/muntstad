@@ -2,7 +2,23 @@
 
 **Live:** https://johannes-lab-tw.github.io/muntstad/
 
-## 0. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
+## 0. Tiende ronde: Muntstad: Nacht (17 september 2026)
+
+Na de vijfde iPad-test zei Johannes: beter, maar het voelt nog als een spel voor een vierjarige, eentonig, en niet
+alles loopt lekker. Zijn maat is 99 Nights in the Forest: jezelf verdedigen, elke nacht zwaarder, tools en wapens
+maken, het kamp upgraden, en verliezen mag (gered worden door de ander, of alleen opnieuw beginnen). Dat is PLAN-V9.md,
+acht avonden, met Higgsfield als fabriek voor modellen met animatie, stem en muziek.
+
+De MELD-code van v8.4 liet zien dat het eiland op de kaalste stand nog altijd 37 beelden per seconde haalde. De eerste
+stap van V9 is daarom weer tempo:
+
+1. **v9.1, het eiland op 60 (eerste ronde).** Van de elf lampjes op het eiland (vuur, lantaarn, hut, grot, vuurtoren,
+   fakkels, bliksemboom) rekende de videokaart er elk beeld elf mee, ook als ze uit stonden; nu bestaan alleen de vier
+   dichtstbijzijnde die echt branden. Op de lagere standen gebruikt het eiland een goedkoper materiaal met dezelfde
+   kleuren en een grover terrein. De stand wordt per scherm onthouden, zodat het dorp niet meer de kale stand van het
+   eiland erft. De MELD-code toont nu ook tekenopdrachten, driehoeken en hoeveel van een beeld rekenen en tekenen kost.
+
+## 0-vorig. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
 
 Johannes plakte na de vierde iPad-test de eerste echte MELD-code: `iPad 1180x688 dpr2 · fps 60 tier 2`. Dat ene
 woord **tier 2** verklaarde zijn klachten (het eiland hapert, het water hapert, lopen voelt niet lekker): het spel had

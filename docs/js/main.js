@@ -83,7 +83,7 @@ const game = {
       `${navigator.platform || '?'} ${(navigator.userAgent.match(/(iPad|iPhone|Macintosh|Windows|Android)[^;)]*/) || ['?'])[0]} ${window.innerWidth}x${window.innerHeight} dpr${Math.round((window.devicePixelRatio || 1) * 10) / 10}`,
       `fps ${game.engine ? game.engine.fps : 0} tier ${game.engine ? game.engine.tier : '?'} scherm ${screen}`,
       // V8.1: frame times per 3D screen: median, p95, hitches (> 80 ms) in the last minute, tier and pixel ratio there
-      `tempo: ${Object.entries({ ...perfLog, ...(game.engine && game.engine.stats.n ? { [screen]: game.engine.stats } : {}) }).map(([n, s]) => `${n} p50 ${Math.round(s.p50)} p95 ${Math.round(s.p95)} hik ${s.hitchesPerMin}/min tier ${s.tier} px ${Number(s.pixelRatio).toFixed(2)}`).join(' | ') || 'nog niet gemeten'}`,
+      `tempo: ${Object.entries({ ...perfLog, ...(game.engine && game.engine.stats.n ? { [screen]: game.engine.stats } : {}) }).map(([n, s]) => `${n} p50 ${Math.round(s.p50)} p95 ${Math.round(s.p95)} hik ${s.hitchesPerMin}/min tier ${s.tier} px ${Number(s.pixelRatio).toFixed(2)}${s.calls != null ? ` calls ${s.calls} tris ${Math.round((s.tris || 0) / 1000)}k sim ${s.simMs} draw ${s.renderMs}` : ''}`).join(' | ') || 'nog niet gemeten'}`,
       `gpu ${game.engine && game.engine.info.gpu ? game.engine.info.gpu.slice(0, 40) : '?'} kernen ${game.engine ? game.engine.info.cores || '?' : '?'}${game.engine && game.engine.info.isIpad ? ' ipad' : ''}${game.engine && game.engine.info.forcedLite ? ' lite-vast' : ''}`,
       `munten ${Math.floor(s.wallet)} makers ${Object.values(s.makers).filter((l) => l > 0).length} nacht ${s.nacht.nights} vuur ${Math.round(s.nacht.fire)} warm ${Math.round(s.nacht.warm ?? 100)} maag ${Math.round(s.eiland.honger ?? 100)} hoofdstuk ${(s.campagne ? s.campagne.hoofdstuk : 0) + 1} keten ${s.eiland.keten}/${s.eiland.stap}`,
       av && av.player ? `eiland ${Math.round(av.player.x)},${Math.round(av.player.z)} ${av.kindAt(av.player.x, av.player.z)}` : 'eiland niet open',
@@ -271,7 +271,7 @@ function bumpWallet() {
 // ---------- screens ----------
 
 const TOPBAR_SCREENS = new Set(['stad', 'dorp', 'avontuur', 'werk', 'winkel', 'huis']);
-export const GAME_VERSION = 'v8.4';   // V6.8: shown in the MELD code on PAPA; bump with every tag
+export const GAME_VERSION = 'v9.1';   // V6.8: shown in the MELD code on PAPA; bump with every tag
 const recent = [];                    // the last screens, for the MELD code
 const perfLog = {};                   // V8.1: the last measuring window per 3D screen (p50/p95/hitches/tier), for the MELD code
 function noteEvent(what) { recent.push(`${new Date().toTimeString().slice(0, 8)} ${what}`); if (recent.length > 8) recent.shift(); }

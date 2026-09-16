@@ -124,7 +124,7 @@ elke stap maakt de volgende mogelijk, en er gaat geld af als je niet oplet.
 - Tests: unit (kapot/repareer, uitgaven, spaardoel, geen twee kapot tegelijk), simulator met reparaties (de les
   houdt), e2e: KAPOT-bord → REPAREER → inkomen terug; spaardoel kiezen en halen.
 
-## D. Afwerking (V8.7, avond 7)
+## D. Afwerking (V8.7, avond 7) — V8.5 t/m V8.7 zijn op 17 september opgegaan in PLAN-V9 §D (V9.8)
 
 RAPPORT §0 negende ronde, README, PLAN-V8 afgevinkt, ART-DIRECTION (weer, ruïne, piraten, kapotte geldmaker),
 screenshotgalerij, MELD-code met frametijden gecontroleerd op de iPad van Johannes, tags v8.1 t/m v8.7.

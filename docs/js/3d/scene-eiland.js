@@ -18,7 +18,7 @@ import { createVuurtoren } from './vuurtoren.js';
 import { createDayNight } from './daynight.js';
 import { ghostModel, bearModel, tentModel, torchModel, fenceModel, deerModel, dropModel, wolfModel, piraatModel, bootModel } from './spoken.js';
 import { perks, nightRules, hungerSpeedMul, coldSpeedMul, isCold } from '../uitdaging.js';
-import { Builder, textPlane } from './build.js';
+import { Builder, textPlane, MAT } from './build.js';
 import { isFunActive } from '../economy.js';
 import { chopRule } from '../eiland.js';
 import { fireRadius, fireLevel, isLit, stepGhost, bearTonight, stepBear, scareBear, stepWolf, scareWolf } from '../nacht.js';
@@ -72,7 +72,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     return { group: g, obstacles };
   }
   const ruine = createRuine();
-  const tiles = createTiles(map, { statics: [...camp.obstacles, ...vuurtoren.obstacles, ...ruine.obstacles], isLite: () => engine.tier >= 2 });
+  const tiles = createTiles(map, { statics: [...camp.obstacles, ...vuurtoren.obstacles, ...ruine.obstacles], isLite: () => engine.tier >= 2, tierOf: () => engine.tier });
   // V8.3: the mounds of earth: one per map piece (gone once dug) and the X of the week (a red cross on top)
   function moundModel(withX) {
     const b = new Builder({ r: 0.03 });
@@ -107,12 +107,44 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   }
   scene.add(tiles.group);
   const lights = addLights(scene, new T.Vector3(CAMP.x, 1, CAMP.z), 20, engine.tier);
+  // V9.1: on tier 1 and 2 every plastic surface swaps to the Lambert twin (same colours, no PBR per pixel), and back
+  let liteMat = false;
+  function swapMaterials(lite) {
+    if (lite === liteMat) return;
+    liteMat = lite;
+    scene.traverse((o) => {
+      if (!o.material) return;
+      if (lite) { if (o.material === MAT.plastic) o.material = MAT.plasticLite; else if (o.material === MAT.plasticFlat) o.material = MAT.plasticFlatLite; }
+      else { if (o.material === MAT.plasticLite) o.material = MAT.plastic; else if (o.material === MAT.plasticFlatLite) o.material = MAT.plasticFlat; }
+    });
+  }
   engine.onTier((t) => {
     lights.setTier(t);
     // lite tier (slow iPad / software renderer): the two biggest instanced kinds (grass tufts, flowers) are pure decoration
     tiles.setLite(t >= 2);
     if (scene.fog) scene.fog.far = t >= 2 ? 70 : 95;   // the fog exists once daynight is created
+    swapMaterials(t >= 1);
   });
+  // V9.1: the light budget. Three.js evaluates every point light in the scene in every pixel, even at intensity 0;
+  // eleven of them (fire, lantern, hut, cave, lighthouse, torches, lightning tree) cost an iPad a third of its frame.
+  // Twice a second only the four nearest lights that actually shine stay in the scene.
+  let pointLights = [], lightsScanned = 0, lightsBudgeted = 0;
+  const LIGHT_BUDGET = 4;
+  function budgetLights(now) {
+    if (now - lightsScanned > 5000) { pointLights = []; scene.traverse((o) => { if (o.isPointLight) pointLights.push(o); }); lightsScanned = now; }
+    if (now - lightsBudgeted < 500) return;
+    lightsBudgeted = now;
+    const wp = new T.Vector3();
+    const on = [];
+    for (const l of pointLights) {
+      if (l.intensity <= 0.05) { l.visible = false; continue; }
+      l.getWorldPosition(wp);
+      on.push({ l, d: Math.hypot(wp.x - player.x, wp.z - player.z) });
+    }
+    on.sort((a, b) => a.d - b.d);
+    on.forEach((e, i) => { e.l.visible = i < LIGHT_BUDGET; });
+  }
+  let liteFrame = 0;
   const daynight = createDayNight(scene, lights);
   // with the climbing shoes (V6.6) the snow is walkable: the top of the mountain is chapter 4
   const walkable = (x, z) => map.walkable(x, z) || (!!(state && state.eiland.tools.klimschoenen) && x > 1 && z > 1 && x < map.size - 1 && z < map.size - 1 && map.kindAt(x, z) === 'snow');
@@ -1176,6 +1208,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   let lastTime = 0, prevNow = 0, simAcc = 0, jumps = 0, pendingJump = false, walkDist = 0;
   const focus = new T.Vector3();
   function render(now) {
+    const frameStart = performance.now();   // V9.1
     if (engine.checkSize()) resize();   // V7.0: the container changed size without a usable resize event (iPad rotation)
     if (!state || !W) return;
     const dt = Math.min(0.05, lastTime ? (now - lastTime) / 1000 : 0.016);
@@ -1208,7 +1241,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     updateBats(now, dt);
     updateDrips(now, dt);
     updateCaveGhost(now, dt);
-    tiles.animate(now, dt, daynight.darkness);
+    if (!(engine.tier >= 2 && (++liteFrame & 1))) tiles.animate(now, dt, daynight.darkness);   // V9.1: crabs and butterflies every other frame on tier 2
     if (input.tap) handleTap(input.tap);
     const next = findAction(now);
     const key = next ? `${next.type}:${next.label}` : '';
@@ -1236,12 +1269,14 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     water.update(now, lite);
     daynight.setGloom((WEER[weerNu()] || WEER.zon).gloom);   // V8.2
     syncSchat(now);   // V8.3
+    budgetLights(now);   // V9.1
     updateRain(dt, focus, weerNu(), lite);
     camp.update(now, daynight.darkness, lite, camera);
     vuurtoren.update(now, daynight.darkness);
     // the night bookkeeping (fire, hunger, ghosts, bear, deer) runs on real elapsed time, up to a second per frame,
     // so a slow frame rate (CI, an old iPad) does not slow the world down
     updateNight(now, Math.min(1.0, (now - prevNow) / 1000));
+    engine.noteSim(performance.now() - frameStart);   // V9.1: how much of the frame was ours before the draw
     engine.render(scene, camera);
   }
 
