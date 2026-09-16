@@ -29,7 +29,7 @@ At the start of every session and after any context compaction: re-read SPEC.md 
 - Displayed numbers are integers with a thin space as thousands separator; never abbreviate.
 
 ## Ronde 3: Three.js en de lokale criticus (sinds 2026-09-02)
-- PLAN-V3.md is het stappenplan voor de 3D-tekenlaag; lees het na SPEC.md en PROGRESS.md.
+- PLAN-V3.md is het stappenplan voor de 3D-tekenlaag; lees het na SPEC.md en PROGRESS.md. Het lopende plan is PLAN-V8.md (16 september 2026); PLAN-V7.md beschrijft de UI-kit en de regels "knoppen niet in de weg" (§C.2) die voor elk scherm gelden.
 - Rule 4 wordt in V3.0 aangepast: Three.js is de enige gevendorde tekenbibliotheek (docs/vendor/, in PRECACHE); geen CDN, geen bundler, devDependency blijft alleen @playwright/test.
 - Na elke visuele wijziging: screenshots met `node scripts/dev-shot.mjs --seed rich` en dan de lokale criticus (nul tokens, ~30 s per plaatje):
   `python C:\TW1\lokaal-zoeken\lokaal.py "Je bent art director van een moderne 3D-tycoongame voor kinderen. Noem de 5 grootste redenen waarom dit scherm nog niet als een moderne game oogt, concreet en kort, in het Nederlands." screenshots\chromium-ipad-gen7\02-stad.png`
