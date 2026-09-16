@@ -62,6 +62,12 @@ export const CONFIG = Object.freeze({
       { id: 'afdak',    name: 'Afdak',    icon: '⛱️', price: 120, tekst: 'Een dak boven het vuur. Regen dooft het niet.' },
       // V8.3: the treasure map
       { id: 'schep',    name: 'Schep',    icon: '⛏️', price: 80,  tekst: 'Graaf bij de hoopjes aarde. Daar zit iets in.' },
+      // V9.2: weapons (docs/js/gevecht.js); no blood, enemies poof
+      { id: 'speer',      name: 'Speer',      icon: '🔱', price: 50,  tekst: 'Gooi naar een wolf of piraat. Komt vanzelf terug.' },
+      { id: 'katapult',   name: 'Katapult',   icon: '🥎', price: 90,  tekst: 'Schiet bessen, tot tien meter ver.' },
+      { id: 'waterspuit', name: 'Waterspuit', icon: '🔫', price: 120, tekst: 'Water tegen spoken. Eén spuit en poef.' },
+      { id: 'boemerang',  name: 'Boemerang',  icon: '🪃', price: 200, tekst: 'Raakt twee keer zo hard en komt terug.' },
+      { id: 'alien',      name: 'Alienpistool', icon: '👽', price: 400, tekst: 'Licht dat alles laat poffen. Ook spoken.' },
       { id: 'hut2',     name: 'Tweede hut', icon: '🛖', price: 300, tekst: 'Een hut voor wie meespeelt.' },
       { id: 'klimschoenen', name: 'Klimschoenen', icon: '🥾', price: 150, tekst: 'Je kunt de sneeuw op, tot de top van de berg.' },   // V6.6: chapter 4
     ],
@@ -98,6 +104,15 @@ export const CONFIG = Object.freeze({
 
   // The night on the island (PLAN-V4 R4). Balance: a night (3 min) burns ≈ 8 pieces of wood; by hand that is 24 taps,
   // with the axe 4 taps. The reward for a night with the fire still burning grows with every night.
+  // V9.2: defending yourself (docs/js/gevecht.js): lives per enemy, the coins a beaten enemy drops, the growing pack
+  gevecht: {
+    levens: { wolf: 2, piraat: 2, beer: 4, spook: 1 },
+    buit: { wolf: 2, piraat: 5, beer: 10, spook: 1 },
+    terugdeins: 1.5,                  // metres an enemy is pushed back by a hit
+    roedelCap: 6,                     // the wolf pack never grows beyond this
+    roedelElke: 3,                    // ... one wolf more every three nights
+  },
+
   // V8.4: the pirates (docs/js/piraten.js): a boat on the south beach a minute after dark, pirates walk to the fire
   piraten: {
     vanafNacht: 8,                    // the first pirate night

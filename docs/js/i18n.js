@@ -223,6 +223,10 @@ export const T = {
     piratenWeg: 'Alle piraten weg! Ze lieten gouden munten vallen: {n} munten.',
     piratenPlunder: 'De piraten namen spullen mee en hout uit het vuur. Morgen beter!',
     hondJaagt: 'Je hond jaagt een piraat weg! Goed zo!',
+    // V9.2: defending yourself
+    nachtWapen: 'Pak je wapen! Tik op een wolf of piraat als hij dichtbij is.',
+    geenWapen: 'Bij het vuur koop je een speer. Dan kun je terugvechten.',
+    buit: 'Poef! {n} munten.',
   },
   // V7.7 (PLAN-V7 §C.2 rule 6): the bubble form of each line for a child who does not read yet: one picture and at most
   // three words; the voice says the full line. Drafted by Ollama from the lines above, shortened and checked by hand.
@@ -349,6 +353,9 @@ export const T = {
     piratenWeg: '🪙 {n} munten!',
     piratenPlunder: '🏴‍☠️ Spullen weg',
     hondJaagt: '🐶 Goed zo!',
+    nachtWapen: '⚔️ Pak je wapen',
+    geenWapen: '🔱 Koop een speer',
+    buit: '💥 {n} munten!',
   },
 
   milestones: {

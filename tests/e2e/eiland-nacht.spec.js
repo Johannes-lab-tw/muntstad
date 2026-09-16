@@ -233,3 +233,46 @@ test('V8.4 pirates: BOE sends them running one by one for a gold coin each; when
   await expect.poll(() => mentorHas(page, 'namen spullen'), { timeout: 40000 }).toBe(true);
   expect(errors()).toEqual([]);
 });
+
+// V9.2: defending yourself. With a spear the action on a wolf in range is SPEER: two hits and the wolf poofs for two
+// coins; the water pistol poofs a ghost in one; the dusk banner names the night.
+test('V9.2 weapons: SPEER beats a wolf in two hits, WATER poofs a ghost, the banner says what comes', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ tools: { speer: true, waterspuit: true } }); s.nacht = { fire: 100, nights: 5, stolen: 0, clockOffsetMs: 0 }; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  await page.evaluate(() => window.__muntstad.avontuur.setWeer('zon'));
+  await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 40000 }).toBe(1);
+  await expect(page.locator('#av-banner')).toContainText('Nacht 6', { timeout: 40000 });
+  const levens = () => page.evaluate(() => window.__muntstad.avontuur.levens);
+  const wolves = () => page.evaluate(() => window.__muntstad.avontuur.wolves);
+  // the pack next to the player, away from the fire; the spear is the action
+  const h = await hook(page);
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 30), h.camp);
+  await page.evaluate(() => window.__muntstad.avontuur.spawnWolves());
+  const p = (await hook(page)).player;
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.wolvesAt(x, z + 3), p);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('SPEER');
+  const n0 = (await wolves()).length;
+  const walletBefore = Math.floor((await state(page)).wallet);
+  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => Math.min(...(await levens()).wolven), { timeout: 40000 }).toBe(1);
+  await page.waitForTimeout(1000);   // the spear reloads
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.wolvesAt(x, z + 3), p);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('SPEER');
+  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => (await wolves()).length, { timeout: 40000 }).toBe(n0 - 1);
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 40000 }).toBe(walletBefore + 2);
+  // a ghost right here: the water pistol is the action, one hit and it is gone
+  await page.evaluate(() => window.__muntstad.avontuur.scareWolves());
+  await expect.poll(async () => (await wolves()).filter((w) => w.state !== 'flee').length, { timeout: 40000 }).toBe(0);
+  const q = (await hook(page)).player;
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.ghostAt(x, z + 2), q);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('WATER');
+  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => (await hook(page)).ghosts.length, { timeout: 40000 }).toBe(0);
+  expect(Math.floor((await state(page)).wallet)).toBe(walletBefore + 3);
+  expect(errors()).toEqual([]);
+});

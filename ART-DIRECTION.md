@@ -133,6 +133,11 @@ on every screen in V7.3:
   optional badge bottom-right (the fire level). `.low` turns it red and pulses.
 - `.tile` — a picture with a number badge (the backpack); `.n.full` turns the badge red.
 
+**V9.2: the fight.** A shot is a small sphere in the weapon's colour (spear sand, sling purple, water light blue, boomerang
+orange, alien green) flying in an arc of 0.8 m over 180 ms plus 12 ms per metre; a hit scales the enemy to 1.3 for 120 ms
+and pushes it back 1.5 m; a beaten enemy poofs into six white spheres that drift up and fade in 450 ms. The dusk banner
+is white 44 px game type on a dark rounded box at 30 % height, five seconds, no touch target.
+
 **V8.4: the pirates.** A pirate is a small figure in the avatar's proportions: red shirt with three white stripes, dark
 trousers, a skin sphere head with a red bandana (knot at the back), a black eye patch, and an emissive yellow lantern
 in the right hand that flickers. The boat is a 6.4 m dark hull with a deck, a mast, a black sail with a white skull and

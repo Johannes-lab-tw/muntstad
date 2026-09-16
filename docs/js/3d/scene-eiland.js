@@ -26,6 +26,7 @@ import { plekAt } from '../ketens.js';
 import { weerVoorDag, burnMul as weerBurnMul, seedOf, WEER } from '../weer.js';
 import { KAARTSTUKKEN, X_PLEKKEN, kaartStukken, kaartCompleet, schatPlek, weekKey } from '../schat.js';
 import { piratenNacht, stepPiraat, scarePiraat, buit } from '../piraten.js';
+import { wapenVoor, levens, tref, roedel, nachtPlan } from '../gevecht.js';
 import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
@@ -529,7 +530,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     holder.add(model.group);
     holder.position.set(p.x, map.heightAt(p.x, p.z), p.z);
     scene.add(holder);
-    ghosts.push({ g: { x: p.x, z: p.z, heading: p.heading, state: 'come' }, model, holder });
+    ghosts.push({ g: { x: p.x, z: p.z, heading: p.heading, state: 'come', hp: levens('spook', config.gevecht) }, model, holder });
   }
   function spawnBear(dist = 30) {
     const p = landSpot(dist);
@@ -538,7 +539,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     holder.add(model.group);
     holder.position.set(p.x, map.heightAt(p.x, p.z), p.z);
     scene.add(holder);
-    bears.push({ b: { x: p.x, z: p.z, heading: p.heading, state: 'come', scared: 0, pause: 0 }, model, holder });
+    bears.push({ b: { x: p.x, z: p.z, heading: p.heading, state: 'come', scared: 0, pause: 0, hp: levens('beer', config.gevecht) }, model, holder });
   }
   /** The last chapter (V6.7): three bears at once; the night is won when all three ran, lost when they all ate or the fire died. */
   function spawnBears(n) {
@@ -593,7 +594,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       holder.add(model.group);
       holder.position.set(x, map.heightAt(x, z), z);
       scene.add(holder);
-      pirates.push({ p: { x, z, heading: Math.PI, state: 'come', pause: i * 1.5 }, model, holder });
+      pirates.push({ p: { x, z, heading: Math.PI, state: 'come', pause: i * 1.5, hp: levens('piraat', config.gevecht) }, model, holder });
     }
     cb.onSound && cb.onSound('yarr');
     cb.onSay && cb.onSay('lines.piratenKomen');
@@ -631,14 +632,15 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (wolves.length) return;
     wolvesCame = true;
     const W = config.wolven;
-    for (let i = 0; i < W.pack; i++) {
+    const pack = Math.max(1, roedel(state ? state.nacht.nights : 0, config));   // V9.2: the pack grows with the nights
+    for (let i = 0; i < pack; i++) {
       const p = landSpot(30 + i * 3);
       const model = wolfModel();
       const holder = new T.Group();
       holder.add(model.group);
       holder.position.set(p.x, groundOf(p.x, p.z), p.z);
       scene.add(holder);
-      wolves.push({ w: { x: p.x, z: p.z, heading: p.heading, state: 'circle', ang: (i / W.pack) * Math.PI * 2, wait: 0, dir: i % 2 ? -1 : 1 }, model, holder });
+      wolves.push({ w: { x: p.x, z: p.z, heading: p.heading, state: 'circle', ang: (i / pack) * Math.PI * 2, wait: 0, dir: i % 2 ? -1 : 1, hp: levens('wolf', config.gevecht) }, model, holder });
     }
     game.audio.play('growl');   // V8.2: the howl and Muntje's warning came at dark, 15 s before the pack
   }
@@ -796,6 +798,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       }
       strikeAt = weerNu() === 'storm' && !guest ? now + config.weer.bliksemNaMs : 0;   // V8.2: a storm night has one lightning strike
       if (!guest && piratenNacht(n.nights, config.piraten)) startPiratenNacht(now);   // V8.4
+      // V9.2: the banner says what tonight brings
+      const plan = nachtPlan({ nights: n.nights, wolves: rules.wolves && !guest, bear: (bearNight || finale) && !guest, beren: finale ? config.campagne.beren : 1, pirates: !guest && piratenNacht(n.nights, config.piraten), ghosts: true }, config);
+      cb.onNachtPlan && cb.onNachtPlan(plan, !!wapenVoor(state.eiland.tools, 'wolf'));
     }
     if (strikeAt && isDark && now >= strikeAt) { strikeAt = 0; strike(now); }
     if (weerNu() === 'storm' && now > nextThunder) {
@@ -876,6 +881,92 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   let hakUntil = 0;
   let fishing = null;       // { until, biteUntil }
   let forceGoldFish = false;   // tests: the next catch is the golden fish
+  // ---------- V9.2: defending yourself: the nearest enemy, the weapon that works on it, shots in flight ----------
+  const shots = [];   // { mesh, from, to, t0, dur, target: { kind, rec, holder }, weapon }
+  const poofs = [];   // { mesh, t0 }
+  let lastShotAt = 0;
+  function nearestEnemy() {
+    let best = null, bd = Infinity;
+    const consider = (kind, rec, holder, x, z) => { const d = Math.hypot(player.x - x, player.z - z); if (d < bd) { bd = d; best = { kind, rec, holder, x, z, d }; } };
+    for (const v of wolves) if (v.w.state !== 'flee') consider('wolf', v.w, v.holder, v.w.x, v.w.z);
+    for (const b of bears) if (b.b.state === 'come') consider('beer', b.b, b.holder, b.b.x, b.b.z);
+    for (const pr of pirates) if (pr.p.state === 'come') consider('piraat', pr.p, pr.holder, pr.p.x, pr.p.z);
+    for (const gh of ghosts) if (gh.g.state !== 'gone') consider('spook', gh.g, gh.holder, gh.g.x, gh.g.z);
+    return best;
+  }
+  /** The shoot action when an enemy is in range of a weapon you own (the host only; a guest keeps BOE). */
+  function shootAction() {
+    if (samen && samen.isGuest) return null;
+    const e = nearestEnemy();
+    if (!e) return null;
+    const w = wapenVoor(state.eiland.tools, e.kind);
+    if (!w || e.d > w.bereik) return null;
+    return { type: 'schiet', label: w.naam, target: e, weapon: w };
+  }
+  function poofAt(x, y, z) {
+    for (let i = 0; i < 6; i++) {
+      const m = new T.Mesh(new T.SphereGeometry(0.22 + Math.random() * 0.12, 6, 5), new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 }));
+      m.position.set(x + (Math.random() - 0.5) * 0.8, y + 0.6 + Math.random() * 0.8, z + (Math.random() - 0.5) * 0.8);
+      scene.add(m);
+      poofs.push({ mesh: m, t0: performance.now(), vx: (Math.random() - 0.5) * 2, vy: 1 + Math.random(), vz: (Math.random() - 0.5) * 2 });
+    }
+  }
+  function enemyBeaten(t) {
+    const G = config.gevecht;
+    poofAt(t.rec.x, groundOf(t.rec.x, t.rec.z), t.rec.z);
+    game.audio.play('pop');
+    if (t.kind === 'wolf') { const i = wolves.findIndex((v) => v.w === t.rec); if (i >= 0) { scene.remove(wolves[i].holder); wolves.splice(i, 1); } }
+    else if (t.kind === 'spook') { const i = ghosts.findIndex((gh) => gh.g === t.rec); if (i >= 0) { scene.remove(ghosts[i].holder); ghosts.splice(i, 1); } }
+    else if (t.kind === 'piraat') { scarePiraat(t.rec, { x: player.x, z: player.z }); piraatWeg(false); }
+    else if (t.kind === 'beer') {
+      t.rec.state = 'flee'; t.rec.heading += Math.PI; t.rec.life = 0.4;
+      if (berenNacht) { berenNacht.gone++; if (berenNacht.gone >= config.campagne.beren) { berenNacht = null; cb.onBerenGewonnen && cb.onBerenGewonnen(); clearBears(); } }
+    }
+    cb.onBuit && cb.onBuit(t.kind, G.buit[t.kind] || 1);
+  }
+  function applyHit(t, weapon) {
+    const res = tref(t.rec, weapon.schade);
+    // the knock-back: away from the player, and a flash of the model
+    const dx = t.rec.x - player.x, dz = t.rec.z - player.z, d = Math.hypot(dx, dz) || 1;
+    t.rec.x += (dx / d) * config.gevecht.terugdeins;
+    t.rec.z += (dz / d) * config.gevecht.terugdeins;
+    if (t.rec.pause != null) t.rec.pause = Math.max(t.rec.pause || 0, 0.6);
+    t.holder.scale.setScalar(1.3);
+    setTimeout(() => t.holder.scale.setScalar(1), 120);
+    game.audio.play(res === 'poef' ? 'pop' : 'thud');
+    if (res === 'poef') enemyBeaten(t);
+  }
+  function shoot(action, now) {
+    const w = action.weapon;
+    if (now - lastShotAt < w.herlaadMs) { game.audio.play('tap'); return; }
+    lastShotAt = now;
+    hakUntil = now + 260;
+    game.audio.play('whoosh');
+    const from = new T.Vector3(player.x, player.ground + 1.2, player.z);
+    const t = action.target;
+    const to = new T.Vector3(t.rec.x, groundOf(t.rec.x, t.rec.z) + 0.9, t.rec.z);
+    const mesh = new T.Mesh(new T.SphereGeometry(w.id === 'alien' ? 0.16 : 0.12, 8, 6), new T.MeshBasicMaterial({ color: new T.Color(w.kleur) }));
+    mesh.position.copy(from);
+    scene.add(mesh);
+    shots.push({ mesh, from, to, t0: now, dur: 180 + t.d * 12, target: t, weapon: w });
+  }
+  function updateShots(now) {
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const s = shots[i];
+      const f = Math.min(1, (now - s.t0) / s.dur);
+      s.mesh.position.lerpVectors(s.from, s.to, f);
+      s.mesh.position.y += Math.sin(f * Math.PI) * 0.8;
+      if (f >= 1) { scene.remove(s.mesh); shots.splice(i, 1); applyHit(s.target, s.weapon); }
+    }
+    for (let i = poofs.length - 1; i >= 0; i--) {
+      const p = poofs[i];
+      const f = (now - p.t0) / 450;
+      if (f >= 1) { scene.remove(p.mesh); poofs.splice(i, 1); continue; }
+      p.mesh.position.x += p.vx * 0.016; p.mesh.position.y += p.vy * 0.016; p.mesh.position.z += p.vz * 0.016;
+      p.mesh.scale.setScalar(1 + f * 1.5);
+      p.mesh.material.opacity = 0.95 * (1 - f);
+    }
+  }
   function bearNear() {
     const nb = nearestBear();
     const b = nb ? nb.b : remoteBear && remoteBear.state === 'come' ? remoteBear.holder.position : null;
@@ -885,6 +976,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const px = player.x, pz = player.z;
     if (fishing) return { type: fishing.biteUntil ? 'trek' : 'vis', label: fishing.biteUntil ? 'TREK' : 'WACHT', target: null };
     for (const [id, r] of remotes) if ((r.down || r.pose === 'down') && Math.hypot(px - r.x, pz - r.z) < 2.6) return { type: 'wek', label: 'WEK', target: id };   // a fainted friend (V6.2)
+    const sa = shootAction();   // V9.2: a weapon in range beats BOE
+    if (sa) return sa;
     if (bearNear() || wolfNear() || pirateNear()) return { type: 'boe', label: 'BOE', target: null };
     if (gear.tent && daynight.darkness > 0.5 && Math.hypot(px - TENT_AT.x, pz - TENT_AT.z) < REACH.tent) return { type: 'slaap', label: 'SLAAP', target: null };
     for (const m of mounds) if (m.mesh.visible && Math.hypot(px - m.x, pz - m.z) < 2.0) return { type: 'graaf', label: 'GRAAF', target: m.id };   // V8.3
@@ -933,6 +1026,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (!action) return;
     switch (action.type) {
       case 'kamp': cb.onKamp && cb.onKamp(); return;
+      case 'schiet': shoot(action, now); return;   // V9.2
       case 'graaf': {   // V8.3: dig at a mound (needs the schep); the answer comes from avontuur.js after the swing
         if (!state.eiland.tools.schep) { cb.onSay && cb.onSay('lines.schepNodig'); return; }
         hakUntil = now + 420;
@@ -1276,6 +1370,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     // the night bookkeeping (fire, hunger, ghosts, bear, deer) runs on real elapsed time, up to a second per frame,
     // so a slow frame rate (CI, an old iPad) does not slow the world down
     updateNight(now, Math.min(1.0, (now - prevNow) / 1000));
+    updateShots(now);   // V9.2
     engine.noteSim(performance.now() - frameStart);   // V9.1: how much of the frame was ours before the draw
     engine.render(scene, camera);
   }
@@ -1327,6 +1422,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     piratenAt(x, z) { pirates.forEach((pr, i) => { pr.p.x = x + i * 1.2; pr.p.z = z; pr.p.pause = 0; }); },
     get piraten() { return pirates.map((pr) => ({ x: pr.p.x, z: pr.p.z, state: pr.p.state })); },
     get piratenNacht() { return piratenInfo ? { ...piratenInfo, boot: boot.visible } : null; },
+    // V9.2: the fight for the tests: the enemies' lives and shots in flight
+    get levens() { return { wolven: wolves.map((v) => v.w.hp), spoken: ghosts.map((g) => g.g.hp), beren: bears.map((b) => b.b.hp), piraten: pirates.map((p) => p.p.hp) }; },
+    get schoten() { return shots.length; },
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
     setDown(v) { down = !!v; },
     get down() { return down; },
@@ -1364,6 +1462,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     spawnDeer,
     removeDeer: clearDeer,
     spawnWolves,
+    scareWolves,   // V9.2 tests
     removeWolves: clearWolves,
     get wolves() { return wolves.map((v) => ({ x: v.w.x, z: v.w.z, state: v.w.state })); },
     /** Put one wolf right behind the player, lunging (tests). */
