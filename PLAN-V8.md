@@ -79,7 +79,7 @@ dat de spanning opbouwt. Drie stappen die elk iets zichtbaars en hoorbaars toevo
 - Tests: unit kaartstukken/weekzaad, e2e: teleport naar een graafplek, GRAAF met schep, vijfde stuk → X op het
   kaartje → kist.
 
-### V8.4 De piraten (avond 4)
+### V8.4 De piraten (avond 4) — gebouwd 17 september, zie PROGRESS Run 9 (samen-verdeling niet gebouwd)
 - Vanaf nacht 8 (en daarna één op de drie nachten) verschijnt bij zonsondergang een **piratenboot aan de horizon**
   (je ziet hem al bij daglicht dichterbij komen); 60 s na donker landt hij op het zuidstrand en lopen **drie piraten**
   naar het kamp om de houtstapel en je rugzak te plunderen. Ze zijn langzaam en dragen lantaarns: je ziet ze komen

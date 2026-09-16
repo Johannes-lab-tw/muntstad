@@ -67,6 +67,58 @@ export function bearModel() {
   return { group, update };
 }
 
+/** V8.4: a pirate: striped shirt, red bandana, eye patch, a lantern in the hand. update(t, { walking }) swings the legs. */
+export function piraatModel() {
+  const group = new T.Group();
+  const skin = '#f2c9a0';
+  const b = new Builder({ r: 0.06 });
+  b.box(-0.32, -0.2, 0.75, 0.64, 0.4, 0.7, '#ff5f5f', { r: 0.12 });                 // shirt
+  for (const z of [0.85, 1.05, 1.25]) b.box(-0.33, -0.21, z, 0.66, 0.42, 0.08, '#ffffff', { r: 0.02 });   // stripes
+  b.box(-0.34, -0.22, 0.7, 0.68, 0.44, 0.1, '#2b2f45', { r: 0.03 });               // belt
+  b.sphere(0, 0, 1.75, 0.3, skin, 12);                                             // head
+  b.sphere(0, 0, 1.86, 0.3, '#c8102e', 12);                                        // bandana
+  b.box(-0.08, -0.34, 1.7, 0.16, 0.1, 0.14, '#c8102e', { r: 0.02 });               // its knot
+  b.sphere(-0.11, 0.26, 1.8, 0.05, INK, 6);                                        // eye
+  b.sphere(0.11, 0.26, 1.8, 0.08, INK, 6);                                         // eye patch
+  b.box(0.42, -0.1, 0.9, 0.16, 0.2, 0.75, '#ff5f5f', { r: 0.05 });                 // arm with the lantern
+  b.box(-0.58, -0.1, 0.9, 0.16, 0.2, 0.75, '#ff5f5f', { r: 0.05 });
+  const bm = b.build();
+  group.add(bm);
+  const lamp = new T.Mesh(new T.SphereGeometry(0.13, 8, 6), new T.MeshStandardMaterial({ color: 0xffe28a, emissive: 0xffc23f, emissiveIntensity: 1.6 }));
+  lamp.position.set(0.5, 0.8, 0.1);
+  group.add(lamp);
+  const legs = [];
+  for (const dx of [-0.16, 0.16]) {
+    const l = new Builder({ r: 0.05 });
+    l.box(-0.13, -0.16, -0.72, 0.26, 0.32, 0.72, '#3a4160', { r: 0.06 });
+    const m = l.build();
+    m.position.set(dx, 0.75, 0);
+    group.add(m);
+    legs.push(m);
+  }
+  function update(t, { walking = true } = {}) {
+    legs.forEach((l, i) => { l.rotation.x = walking ? Math.sin(t / 260 + i * Math.PI) * 0.6 : 0; });
+    bm.position.y = walking ? Math.abs(Math.sin(t / 260)) * 0.05 : 0;
+    lamp.material.emissiveIntensity = 1.3 + Math.sin(t / 90) * 0.4;
+  }
+  return { group, update };
+}
+
+/** V8.4: the pirate boat: a dark hull, a mast with a black sail and a red flag. */
+export function bootModel() {
+  const b = new Builder({ r: 0.08 });
+  b.box(-3.2, -1.3, 0, 6.4, 2.6, 1.3, '#4a2f1a', { r: 0.3 });
+  b.box(-3.0, -1.1, 1.3, 6.0, 2.2, 0.12, '#8a5a35', { r: 0.03 });
+  b.box(-3.4, -1.4, 1.0, 6.8, 2.8, 0.22, '#2f1d10', { r: 0.06 });
+  b.cyl(0.4, 0, 1.4, 0.1, 5.2, '#8a5a35', 8);
+  b.box(-1.6, -0.06, 2.6, 3.2, 0.12, 3.0, '#1b1f3b', { r: 0.02 });   // the sail
+  b.box(0.3, -0.05, 6.5, 0.9, 0.1, 0.5, '#c8102e', { r: 0.02 });    // the flag
+  b.sphere(0, 0.12, 4.1, 0.28, '#ffffff', 8);                          // the skull on the sail
+  const m = b.build();
+  m.castShadow = false;
+  return m;
+}
+
 /** The Nachthert (V5.3): a slim deer with glowing eyes that runs at you in the dark and bumps you over. */
 export function deerModel() {
   const group = new T.Group();

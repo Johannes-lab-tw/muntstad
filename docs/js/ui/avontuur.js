@@ -17,6 +17,7 @@ import { currentHoofdstuk, campagneEvent, berenVerloren, isGered } from '../camp
 import { currentKeten, ketenEvent, PLEKKEN } from '../ketens.js';
 import { burnFire, stokeFire, canStoke, ghostSteal, dawnReward, fireLevel, levelSpan } from '../nacht.js';
 import { vindKaartstuk, graafSchat, weekKey } from '../schat.js';
+import { plunder } from '../piraten.js';
 import { perks, drainHunger, eat, canEat, faint, deerBump, coolDown, freeze, cook } from '../uitdaging.js';
 import { CYCLE } from '../3d/daycycle.js';
 
@@ -557,6 +558,25 @@ export function createAvontuur(game) {
       onAction,
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
       onSound(name) { game.audio.play(name); },   // V8.2
+      onPlunder() {   // V8.4: the pirates reached the fire
+        const r = plunder(game.state, game.config.piraten);
+        game.update(() => r.state);
+        game.save();
+        game.audio.play('thud');
+        game.mentor.say('lines.piratenPlunder', {}, { kind: 'reaction' });
+        hudKey = '';
+        renderHud(game.state);
+      },
+      onPiratenGewonnen(n) {   // V8.4: all pirates ran: a gold coin each
+        game.update((s) => ({ ...s, wallet: s.wallet + n, earnedWork: s.earnedWork + n }));
+        game.save();
+        game.audio.play('fanfare');
+        game.fx.confetti();
+        game.mentor.say('lines.piratenWeg', { n: formatCoins(n) }, { kind: 'reaction' });
+        const p = game.walletPoint();
+        game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(n)}`, '#2a9d3a');
+        game.bumpWallet();
+      },
       onGraaf(id) {   // V8.3: a mound of earth: a map piece, or the treasure at the X; true = the mound is gone
         if (id === 'schat') {
           const r = graafSchat(game.state, game.config, weekKey(game.now()));

@@ -98,6 +98,20 @@ export const CONFIG = Object.freeze({
 
   // The night on the island (PLAN-V4 R4). Balance: a night (3 min) burns ≈ 8 pieces of wood; by hand that is 24 taps,
   // with the axe 4 taps. The reward for a night with the fire still burning grows with every night.
+  // V8.4: the pirates (docs/js/piraten.js): a boat on the south beach a minute after dark, pirates walk to the fire
+  piraten: {
+    vanafNacht: 8,                    // the first pirate night
+    elke: 3,                          // and then every third night
+    aantal: 3,                        // pirates per boat
+    speed: 1.4,                       // m/s: slower than your walk (2.6), you see them come over the beach
+    reach: 1.7,                       // this close to the fire = plunder
+    naDonkerMs: 60 * 1000,            // they land this long after dark
+    deel: 0.3,                        // share of every kind in the bag they take
+    houtWeg: 20,                      // pieces of wood they take from the fire
+    munt: 10,                         // the gold coin each pirate drops when all of them ran
+    hondAfstand: 3,                   // the dog chases a pirate this close to it
+  },
+
   // V8.3: the treasure map (docs/js/schat.js): five pieces under mounds, a weekly X, coins and the pirate hat once
   schat: {
     coins: 300,                       // the treasure at the X, once a week

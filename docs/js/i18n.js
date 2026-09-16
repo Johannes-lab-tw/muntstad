@@ -216,6 +216,13 @@ export const T = {
     schatWeer: 'Deze schat heb je deze week al gevonden. Volgende week ligt er een nieuwe.',
     schepNodig: 'Hier zit iets in de grond. Koop een schep bij het vuur.',
     graafNiets: 'Hier heb je al gegraven.',
+    // V8.4: the pirates
+    piratenBoot: 'Een piratenboot! Vannacht komen ze aan land. Zorg voor licht en roep BOE!',
+    piratenKomen: 'Piraten op het strand! Ze lopen naar het kamp.',
+    piraatWeg: 'Weg is hij! Nog {n}.',
+    piratenWeg: 'Alle piraten weg! Ze lieten gouden munten vallen: {n} munten.',
+    piratenPlunder: 'De piraten namen spullen mee en hout uit het vuur. Morgen beter!',
+    hondJaagt: 'Je hond jaagt een piraat weg! Goed zo!',
   },
   // V7.7 (PLAN-V7 §C.2 rule 6): the bubble form of each line for a child who does not read yet: one picture and at most
   // three words; the voice says the full line. Drafted by Ollama from the lines above, shortened and checked by hand.
@@ -336,6 +343,12 @@ export const T = {
     schatWeer: '📅 Volgende week weer',
     schepNodig: '⛏️ Koop een schep',
     graafNiets: '🕳️ Al gegraven',
+    piratenBoot: '🏴‍☠️ Piraten vannacht!',
+    piratenKomen: '🏴‍☠️ Ze komen!',
+    piraatWeg: '🏃 Nog {n}!',
+    piratenWeg: '🪙 {n} munten!',
+    piratenPlunder: '🏴‍☠️ Spullen weg',
+    hondJaagt: '🐶 Goed zo!',
   },
 
   milestones: {
