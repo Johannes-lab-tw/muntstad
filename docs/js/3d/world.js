@@ -146,23 +146,33 @@ export function cushionMesh(x, y, w, d, r, { depth = 1.4, bt = 0.42, bs = 0.5 } 
 function islandMesh() { return cushionMesh(0, 0, ISLAND.w, ISLAND.d, ISLAND.r); }
 
 /** Animated sea: a big plane with gentle waves. */
+// V8.1: the waves live in the vertex shader (a time uniform), so the sea costs nothing on the CPU and moves on every
+// tier; before, 4 225 vertices were recomputed and uploaded every frame and the lite tier froze the water
+const SEA_WAVES = /* glsl */`
+uniform float uTime;
+void seaWave(vec2 p, out float h, out vec2 dh) {
+  float t = uTime;
+  float a = p.x * 0.55 + t / 620.0, b = p.y * 0.7 - t / 830.0, c = (p.x + p.y) * 0.3 + t / 1500.0;
+  h = sin(a) * 0.09 + cos(b) * 0.07 + sin(c) * 0.05;
+  dh = vec2(cos(a) * 0.09 * 0.55 + cos(c) * 0.05 * 0.3, -sin(b) * 0.07 * 0.7 + cos(c) * 0.05 * 0.3);
+}
+`;
 export function createSea(cx, cz, size = 320) {
-  const water = new T.Mesh(new T.PlaneGeometry(size, size, 64, 64), MAT.water);
+  const material = MAT.water.clone();
+  const uTime = { value: 0 };
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = uTime;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\n' + SEA_WAVES)
+      .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n{ float h; vec2 dh; seaWave(position.xy, h, dh); objectNormal = normalize(vec3(-dh, 1.0)); }')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n{ float h; vec2 dh; seaWave(position.xy, h, dh); transformed.z += h; }');
+  };
+  material.customProgramCacheKey = () => 'sea-waves';
+  const water = new T.Mesh(new T.PlaneGeometry(size, size, 64, 64), material);
   water.rotation.x = -Math.PI / 2;
   water.position.set(cx, WATER_Y, cz);
   water.receiveShadow = true;
-  const wpos = water.geometry.attributes.position;
-  const wbase = wpos.array.slice();
-  function update(t, lite) {
-    if (lite) return;
-    const a = wpos.array;
-    for (let i = 0; i < wpos.count; i++) {
-      const x = wbase[i * 3], y = wbase[i * 3 + 1];
-      a[i * 3 + 2] = Math.sin(x * 0.55 + t / 620) * 0.09 + Math.cos(y * 0.7 - t / 830) * 0.07 + Math.sin((x + y) * 0.3 + t / 1500) * 0.05;
-    }
-    wpos.needsUpdate = true;
-    water.geometry.computeVertexNormals();
-  }
+  function update(t) { uTime.value = t; }
   return { mesh: water, update };
 }
 export { WATER_Y };

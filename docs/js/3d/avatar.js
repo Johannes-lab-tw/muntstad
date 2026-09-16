@@ -241,7 +241,7 @@ export function avatarModel(look = {}) {
   function update(t, pose = 'idle', extra = {}) {
     const ph = extra.phase ?? phase;
     let swing = 0, armUp = 0, bob = 0, spinA = 0;
-    if (pose === 'walk') { swing = Math.sin(t / 110 + ph); bob = Math.abs(swing) * 0.03; }
+    if (pose === 'walk') { swing = Math.sin(extra.stride != null ? extra.stride : t / 110 + ph); bob = Math.abs(swing) * 0.03; }   // V8.1: stride = distance walked, so the feet never slide
     else if (pose === 'idle') { bob = Math.sin(t / 900 + ph) * 0.015; swing = Math.sin(t / 900 + ph) * 0.06; }
     else if (pose === 'jump') { armUp = 1; }
     else if (pose === 'dance') { swing = Math.sin(t / 140) * 0.8; armUp = Math.abs(Math.sin(t / 140)); bob = Math.abs(Math.sin(t / 140)) * 0.12; }

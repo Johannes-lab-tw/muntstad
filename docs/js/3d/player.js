@@ -9,7 +9,8 @@ export const PLAYER = Object.freeze({
   radius: 0.36,        // body radius for collisions
   walk: 2.6,           // units per second
   run: 4.6,
-  accel: 18,           // how fast the speed follows the stick
+  accel: 24,           // how fast the speed follows the stick (V8.1: was 18, felt sluggish on the iPad)
+  decel: 30,           // ... and how fast it drops when the stick lets go
   turn: 11,            // heading follows the move direction at this rate (rad/s scale)
   jumpSpeed: 5.6,      // gives a hop of ≈ 1.1 units
   gravity: 15,
@@ -143,7 +144,7 @@ export function stepPlayer(p, input, dt, env) {
   let ix = input.x || 0, iy = input.y || 0;
   let mag = Math.hypot(ix, iy);
   if (mag > 1) { ix /= mag; iy /= mag; mag = 1; }
-  const dead = mag < 0.12;
+  const dead = mag < 0.1;
   const wantRun = !dead && (input.run || mag >= P.runAt);
   const target = dead ? 0 : (wantRun ? P.run : P.walk) * Math.min(1, mag / P.runAt) * (env.speedMul || 1);   // shoes make you faster, hunger slower
   // move direction in the world: forward = the camera's looking direction on the ground
@@ -159,7 +160,7 @@ export function stepPlayer(p, input, dt, env) {
     p.heading = turnTowards(p.heading, Math.atan2(dx, dz), P.turn, dt);
   }
   // speed follows the stick smoothly; airborne the direction is kept (no air control surprises)
-  const k = Math.min(1, P.accel * dt);
+  const k = Math.min(1, (target < p.speed ? P.decel : P.accel) * dt);
   p.speed += (target - p.speed) * k;
   if (!dead && p.grounded) { p.vx = dx * p.speed; p.vz = dz * p.speed; }
   else if (p.grounded) { p.vx = 0; p.vz = 0; p.speed = 0; }

@@ -2,7 +2,24 @@
 
 **Live:** https://johannes-lab-tw.github.io/muntstad/
 
-## 0. Achtste ronde: de hout-fout en het spel voor een zesjarige (13 en 14 september 2026)
+## 0. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
+
+Johannes plakte na de vierde iPad-test de eerste echte MELD-code: `iPad 1180x688 dpr2 · fps 60 tier 2`. Dat ene
+woord **tier 2** verklaarde zijn klachten (het eiland hapert, het water hapert, lopen voelt niet lekker): het spel had
+zichzelf naar de kaalste stand gezet en kon daar nooit meer uit, want "omhoog" vroeg een frametijd die een iPad van
+60 Hz niet kan halen. Daarnaast wil hij meer spanning in het avontuur en een dorp dat niet te makkelijk is: meer
+upgrades die het volgende openen, geld dat ergens aan opgaat en dat je moet zien te behouden. Dat is PLAN-V8.md,
+zeven avonden. De eerste is gebouwd:
+
+1. **v8.1, vloeiend op de iPad.** De kwaliteitsregeling telt hikken (een tegel die gebouwd wordt, een shader) niet
+   meer mee, kijkt naar de mediaan en klimt bij 60 beelden per seconde weer omhoog; op een iPad begint het spel op
+   anderhalve pixel per punt in plaats van twee. Een tegel van het eiland wordt in drie stappen over drie beelden
+   gebouwd in plaats van in één. De zee golft nu in de videokaart in plaats van in de processor, dus ze beweegt op
+   elke stand. Lopen reageert sneller op de duim en stopt sneller, en de benen zwaaien met de afgelegde meters mee.
+   De MELD-code toont voortaan per scherm de frametijden (mediaan, p95, hikken per minuut), de stand en de pixelratio,
+   plus de videokaart. Bewijs volgt met de volgende MELD-code van Johannes.
+
+## 0-vorig. Achtste ronde: de hout-fout en het spel voor een zesjarige (13 en 14 september 2026)
 
 Johannes testte v7.0 met zijn zoon op 7 september: **Samen spelen werkt**, maar hout toevoegen deed het maar één stuk en
 daarna zei Muntje "Je hebt geen hout" met 38 stuks in de rugzak. Daarna de vraag: dit kan voor een ervaren gamer van
