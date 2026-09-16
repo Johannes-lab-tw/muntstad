@@ -72,6 +72,8 @@ export function createAvontuur(game) {
   const flauwTekst = document.getElementById('av-flauw-tekst');
   const mapEl = document.getElementById('av-map');
   const vignetteEl = document.getElementById('av-vignette');
+  const bannerEl = document.getElementById('av-banner');   // V9.2
+  let bannerTimer = 0;
   let minimap = null;   // V6.2e: drawn the first time the island shows
   game.on('samenpad', (open) => { if (visible) controls.setEnabled(!open); });   // the SAMEN pad covers the stick
   eetBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); onEat(); });
@@ -567,6 +569,20 @@ export function createAvontuur(game) {
         hudKey = '';
         renderHud(game.state);
       },
+      onBuit(kind, n) {   // V9.2: a beaten enemy drops a coin or two
+        game.update((s) => ({ ...s, wallet: s.wallet + n, earnedWork: s.earnedWork + n }));
+        const p = game.walletPoint();
+        game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(n)}`, '#2a9d3a');
+        game.bumpWallet();
+        game.audio.play('coin');
+      },
+      onNachtPlan(plan, armed) {   // V9.2: the dusk banner, five seconds, and Muntje's nudge
+        bannerEl.textContent = plan.tekst;
+        bannerEl.classList.remove('hidden');
+        clearTimeout(bannerTimer);
+        bannerTimer = setTimeout(() => bannerEl.classList.add('hidden'), 5000);
+        if (plan.wolven || plan.piraten || plan.beren) setTimeout(() => { if (visible) game.mentor.say(armed ? 'lines.nachtWapen' : 'lines.geenWapen', {}, { kind: 'reaction' }); }, 12000);
+      },
       onPiratenGewonnen(n) {   // V8.4: all pirates ran: a gold coin each
         game.update((s) => ({ ...s, wallet: s.wallet + n, earnedWork: s.earnedWork + n }));
         game.save();
@@ -641,6 +657,7 @@ export function createAvontuur(game) {
       game.audio.setAmbient(null);
       game.audio.setWeer(null);
       lastWeer = '';
+      bannerEl.classList.add('hidden');
       game.audio.setTheme('dorp');
       kamp.close();
       cancelAnimationFrame(raf);

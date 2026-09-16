@@ -17,6 +17,11 @@ stap van V9 is daarom weer tempo:
    dichtstbijzijnde die echt branden. Op de lagere standen gebruikt het eiland een goedkoper materiaal met dezelfde
    kleuren en een grover terrein. De stand wordt per scherm onthouden, zodat het dorp niet meer de kale stand van het
    eiland erft. De MELD-code toont nu ook tekenopdrachten, driehoeken en hoeveel van een beeld rekenen en tekenen kost.
+2. **v9.2, verdedigen doe je zelf.** Bij het vuur koop je wapens: een speer (50), een katapult (90), een waterspuit
+   tegen spoken (120), een boemerang (200) en een alienpistool (400). Komt een wolf, piraat, beer of spook in bereik,
+   dan wordt de grote knop het wapen: tik en je gooit of schiet. Wolven en piraten hebben twee levens, een beer vier,
+   een spook één; raak is terugdeinzen en een flits, op nul is poef en een paar munten. De roedel groeit met de
+   nachten. Bij schemer zegt een banner wat er komt: "Nacht 8: 🐺🐺🐺 🐻 👻". Geen bloed, niets blijft liggen.
 
 ## 0-vorig. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
 

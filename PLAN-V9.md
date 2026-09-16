@@ -47,7 +47,7 @@ werk/winkel/huis p50 17 p95 18-19 tier 0 px 1.50 · stad/dorp p50 17 tier 2 (erf
 
 ## B. De spelkern van Nacht (V9.2 t/m V9.5)
 
-### V9.2 Verdedigen doe je zelf (avond 2)
+### V9.2 Verdedigen doe je zelf (avond 2) — gebouwd 17 september, zie PROGRESS Run 10
 - **Wapens** met een tik op het doel: speer (werpen, komt terug), katapult (bessen), waterspuit (spoken), later een
   boemerang en het alienpistool (licht, vijanden poffen). Elk wapen heeft een bereik en een herlaadtijd; de actieknop
   wordt het wapen zodra een vijand in bereik is, zoals BOE nu.
