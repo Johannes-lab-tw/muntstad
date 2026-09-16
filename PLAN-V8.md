@@ -68,7 +68,7 @@ dat de spanning opbouwt. Drie stappen die elk iets zichtbaars en hoorbaars toevo
 - Tests: unit voor de weerloting (zaad, regels), e2e: storm afgedwongen via `window.__muntstad` → vuur zakt sneller →
   met afdak niet; bliksemboom geeft hout.
 
-### V8.3 De schatkaart en de schep (avond 3)
+### V8.3 De schatkaart en de schep (avond 3) — gebouwd 17 september, zie PROGRESS Run 9
 - **Vijf kaartstukken** liggen verstopt bij de vijf plekken die nu nog weinig doen: ruïne, moeras, bergtop,
   vuurtorenhut, grot. Elk stuk zit onder een **graafplek** (hoopje aarde met een kraai erop) die je pas ziet als je de
   plek ontdekt hebt. Nieuw gereedschap **Schep** (80 munten, bij het vuur); actie GRAAF.

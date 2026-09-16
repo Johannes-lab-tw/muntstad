@@ -208,6 +208,14 @@ export const T = {
     regen: 'Het regent. Het vuur eet nu meer hout. Blijf stoken!',
     bliksem: 'Bliksem! Die boom brandt de hele nacht. Morgen ligt er hout.',
     bliksemHout: 'Van de verbrande boom: {n} stukken hout!',
+    // V8.3: the treasure map
+    kaartstuk: 'Een stuk van de schatkaart! Nog {n} te vinden.',
+    kaartCompleet: 'De kaart is compleet! Kijk op je kaartje: daar staat een kruis.',
+    schat: 'Een schat! {n} munten. En een echte piratenhoed!',
+    schatMunten: 'Een schat! {n} munten!',
+    schatWeer: 'Deze schat heb je deze week al gevonden. Volgende week ligt er een nieuwe.',
+    schepNodig: 'Hier zit iets in de grond. Koop een schep bij het vuur.',
+    graafNiets: 'Hier heb je al gegraven.',
   },
   // V7.7 (PLAN-V7 §C.2 rule 6): the bubble form of each line for a child who does not read yet: one picture and at most
   // three words; the voice says the full line. Drafted by Ollama from the lines above, shortened and checked by hand.
@@ -321,6 +329,13 @@ export const T = {
     regen: '🌧️ Blijf stoken',
     bliksem: '⚡ Boom brandt!',
     bliksemHout: '🪵 {n} hout erbij!',
+    kaartstuk: '🗺️ Nog {n}!',
+    kaartCompleet: '🗺️ Kijk op kaartje',
+    schat: '🏴‍☠️ Een schat!',
+    schatMunten: '💰 Een schat!',
+    schatWeer: '📅 Volgende week weer',
+    schepNodig: '⛏️ Koop een schep',
+    graafNiets: '🕳️ Al gegraven',
   },
 
   milestones: {

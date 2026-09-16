@@ -16,6 +16,7 @@ import { CAMPAGNE } from '../../content/campagne.js';
 import { currentHoofdstuk, campagneEvent, berenVerloren, isGered } from '../campagne.js';
 import { currentKeten, ketenEvent, PLEKKEN } from '../ketens.js';
 import { burnFire, stokeFire, canStoke, ghostSteal, dawnReward, fireLevel, levelSpan } from '../nacht.js';
+import { vindKaartstuk, graafSchat, weekKey } from '../schat.js';
 import { perks, drainHunger, eat, canEat, faint, deerBump, coolDown, freeze, cook } from '../uitdaging.js';
 import { CYCLE } from '../3d/daycycle.js';
 
@@ -521,7 +522,7 @@ export function createAvontuur(game) {
     scene3.render(now);
     el.classList.toggle('moving', controls.active);   // V7.2: while walking, the buttons that are not the action step back
     if (!minimap) minimap = createMinimap(mapEl);
-    minimap.update(scene3.hook.player, scene3.hook.remotes, scene3.hook.darkness, { fireR: fireRadius(game.state.nacht, game.config) }, now);
+    minimap.update(scene3.hook.player, scene3.hook.remotes, scene3.hook.darkness, { fireR: fireRadius(game.state.nacht, game.config), kaart: scene3.hook.kaart }, now);
     raf = requestAnimationFrame(loop);
   }
   window.addEventListener('resize', () => { if (visible && scene3) scene3.resize(); });
@@ -556,6 +557,28 @@ export function createAvontuur(game) {
       onAction,
       onSay(key) { game.mentor.say(key, {}, { kind: 'reaction' }); },
       onSound(name) { game.audio.play(name); },   // V8.2
+      onGraaf(id) {   // V8.3: a mound of earth: a map piece, or the treasure at the X; true = the mound is gone
+        if (id === 'schat') {
+          const r = graafSchat(game.state, game.config, weekKey(game.now()));
+          if (!r.ok) { game.mentor.say('lines.schatWeer', {}, { kind: 'reaction' }); return false; }
+          game.update(() => r.state);
+          game.save();
+          game.audio.play('fanfare');
+          game.fx.confetti();
+          game.mentor.say(r.hoed ? 'lines.schat' : 'lines.schatMunten', { n: formatCoins(r.coins) }, { kind: 'reaction' });
+          const p = game.walletPoint();
+          game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(r.coins)}`, '#2a9d3a');
+          game.bumpWallet();
+          return true;
+        }
+        const r = vindKaartstuk(game.state, id);
+        if (!r.ok) { game.mentor.say('lines.graafNiets', {}, { kind: 'reaction' }); return false; }
+        game.update(() => r.state);
+        game.save();
+        game.audio.play('sparkle');
+        game.mentor.say(r.over === 0 ? 'lines.kaartCompleet' : 'lines.kaartstuk', { n: r.over }, { kind: 'reaction' });
+        return true;
+      },
       onBliksemHout(n) {   // V8.2: the burnt tree leaves wood at dawn
         game.update((s) => { const max = perks(s.eiland, game.config).bagMax; const bag = { ...s.eiland.bag, hout: Math.min(max, (s.eiland.bag.hout || 0) + n) }; return { ...s, eiland: { ...s.eiland, bag } }; });
         game.mentor.say('lines.bliksemHout', { n }, { kind: 'reaction' });

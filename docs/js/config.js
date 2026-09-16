@@ -60,6 +60,8 @@ export const CONFIG = Object.freeze({
       { id: 'hoog_hek', name: 'Hoog hek', icon: '🏰', price: 250, tekst: 'Een groter hek: het hele kamp is veilig.' },
       // V8.2: weather
       { id: 'afdak',    name: 'Afdak',    icon: '⛱️', price: 120, tekst: 'Een dak boven het vuur. Regen dooft het niet.' },
+      // V8.3: the treasure map
+      { id: 'schep',    name: 'Schep',    icon: '⛏️', price: 80,  tekst: 'Graaf bij de hoopjes aarde. Daar zit iets in.' },
       { id: 'hut2',     name: 'Tweede hut', icon: '🛖', price: 300, tekst: 'Een hut voor wie meespeelt.' },
       { id: 'klimschoenen', name: 'Klimschoenen', icon: '🥾', price: 150, tekst: 'Je kunt de sneeuw op, tot de top van de berg.' },   // V6.6: chapter 4
     ],
@@ -96,6 +98,12 @@ export const CONFIG = Object.freeze({
 
   // The night on the island (PLAN-V4 R4). Balance: a night (3 min) burns ≈ 8 pieces of wood; by hand that is 24 taps,
   // with the axe 4 taps. The reward for a night with the fire still burning grows with every night.
+  // V8.3: the treasure map (docs/js/schat.js): five pieces under mounds, a weekly X, coins and the pirate hat once
+  schat: {
+    coins: 300,                       // the treasure at the X, once a week
+    hoed: 'piratenhoed',              // the hat you win the first time (in fun, schat: true = not for sale)
+  },
+
   // V8.2: the weather of the island (docs/js/weer.js): one kind per day from the day number and the save's seed
   weer: {
     eersteStormDag: 3,                // never a storm in the first three days
@@ -311,6 +319,7 @@ export const CONFIG = Object.freeze({
     { id: 'vuurwerk-avond', name: 'Vuurwerkshow', icon: '🎇', price: 100000,  kind: 'pronk' },
     { id: 'standbeeld', name: 'Gouden standbeeld', icon: '🗿', price: 250000, kind: 'pronk' },
     { id: 'gouden-hoed', name: 'Gouden hoed',   icon: '👑', price: 500000,  kind: 'hat' },
+    { id: 'piratenhoed', name: 'Piratenhoed',   icon: '🏴‍☠️', price: 60, kind: 'hat', schat: true },   // V8.3: only from the treasure at the X, never in the shop
     { id: 'jacht',      name: 'Jacht',          icon: '🛥️', price: 1000000, kind: 'pronk' },
     { id: 'straatnaam', name: 'Eigen straat',   icon: '🪧', price: 2000000, kind: 'pronk' },
     { id: 'auto',       name: 'Auto',           icon: '🚗', price: 500, kind: 'vehicle' },

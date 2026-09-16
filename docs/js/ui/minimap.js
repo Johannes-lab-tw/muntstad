@@ -55,6 +55,16 @@ export function createMinimap(canvas) {
     ctx.font = `${Math.round(size * 0.09)}px sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const m of marks) ctx.fillText(m.t, m.x * k, m.z * k);
+    // V8.3: the treasure map: the X of this week once the five pieces are found, else how many you have
+    if (extra.kaart) {
+      if (extra.kaart.x) { ctx.font = `${Math.round(size * 0.11)}px sans-serif`; ctx.fillText('❌', extra.kaart.x.x * k, extra.kaart.x.z * k); }
+      else if (extra.kaart.n < extra.kaart.total) {
+        ctx.font = `bold ${Math.round(size * 0.085)}px sans-serif`;
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(20, 24, 50, 0.85)'; ctx.fillStyle = '#fff';
+        const t = `🗺️ ${extra.kaart.n}/${extra.kaart.total}`;
+        ctx.strokeText(t, size * 0.5, size * 0.92); ctx.fillText(t, size * 0.5, size * 0.92);
+      }
+    }
     for (const r of remotes) {
       ctx.beginPath(); ctx.arc(r.x * k, r.z * k, size * 0.028, 0, Math.PI * 2);
       ctx.fillStyle = '#b76cff'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();

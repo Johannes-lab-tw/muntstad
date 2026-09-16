@@ -68,6 +68,14 @@ function hat(b, id, top) {
       b.cyl(0, 0, top + 0.14 * s, 0.36 * s, 0.12 * s, '#ff5f5f', 16);
       b.sphere(0.22 * s, 0.24 * s, top + 0.6 * s, 0.06 * s, '#ffffff', 6);
       break;
+    case 'piratenhoed':   // V8.3: a black tricorn with a gold band and a skull on the front
+      b.cyl(0, 0, top, 0.64 * s, 0.07 * s, '#1b1f3b', 20);
+      b.box(-0.6 * s, 0.3 * s, top + 0.05 * s, 1.2 * s, 0.14 * s, 0.32 * s, '#1b1f3b', { r: 0.03 });
+      b.sphere(0, 0, top + 0.12 * s, 0.38 * s, '#252a48', 14);
+      b.cyl(0, 0, top + 0.06 * s, 0.4 * s, 0.07 * s, '#ffc21c', 16);
+      b.sphere(0, 0.38 * s, top + 0.3 * s, 0.09 * s, '#ffffff', 8);
+      b.box(-0.07 * s, 0.44 * s, top + 0.17 * s, 0.14 * s, 0.04 * s, 0.05 * s, '#ffffff', { r: 0.01 });
+      break;
     case 'kroon':
       b.cyl(0, 0, top, 0.34 * s, 0.22 * s, '#ffc21c', 12);
       for (let i = 0; i < 5; i++) {
