@@ -940,7 +940,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   function setState(s) { state = s; }
 
   const SUBSTEP = 1 / 60;
-  let lastTime = 0, prevNow = 0, simAcc = 0, jumps = 0, pendingJump = false;
+  let lastTime = 0, prevNow = 0, simAcc = 0, jumps = 0, pendingJump = false, walkDist = 0;
   const focus = new T.Vector3();
   function render(now) {
     if (engine.checkSize()) resize();   // V7.0: the container changed size without a usable resize event (iPad rotation)
@@ -986,7 +986,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     avatar.group.rotation.y = player.heading;
     const pose = down ? 'down' : !player.grounded ? 'jump' : hakUntil > now ? 'hak' : fishing ? 'vis' : myEmoteUntil > now ? myEmote : player.moving ? 'walk' : 'idle';
     avatar.group.rotation.z = down ? Math.PI / 2 : 0;   // fainted: on your side
-    avatar.update(player.running && player.grounded ? now * 1.45 : now, down ? 'idle' : pose, { z: player.ground + player.y + (down ? 0.35 : 0) });
+    if (player.grounded) walkDist += player.speed * dt;   // V8.1: the legs swing with the metres, not with the clock
+    avatar.update(now, down ? 'idle' : pose, { z: player.ground + player.y + (down ? 0.35 : 0), stride: walkDist * 4.2 });
     if (pet) {
       pet.group.position.set(dog.x, dog.ground, dog.z);
       pet.group.rotation.y = dog.heading;

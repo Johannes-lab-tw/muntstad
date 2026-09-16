@@ -19,6 +19,9 @@ export function createTiles(map, { statics = [], isLite = () => false } = {}) {
   let dirty = false;
   const queue = [];
 
+  // V8.1: a tile is built in three phases, one per frame, so no single frame carries the whole tile (that hitch made
+  // the quality regulator drop an iPad to the lowest tier): 1 terrain (the ground exists at once), 2 forest meshes,
+  // 3 obstacles, shells and bushes into the grids
   function build(tx, tz) {
     const key = map.tileKey(tx, tz);
     if (tiles.has(key)) return tiles.get(key);
@@ -26,23 +29,36 @@ export function createTiles(map, { statics = [], isLite = () => false } = {}) {
     const g = new T.Group();
     const terrain = tileTerrain(map, bounds, isLite() ? 1.0 : 0.5);
     g.add(terrain);
-    const placements = placeForest(map, 7, bounds);
-    const forest = buildForest(placements);
-    g.add(forest.group);
-    for (const o of forest.obstacles) o.tile = key;
-    const shells = placements.shell.map((s, index) => ({ ...s, index, tile: key, kind: 'shell', r: 0.3, taken: false }));
-    const bushes = placements.bush2.map((b, index) => ({ ...b, index, tile: key, kind: 'bush2', r: 0.5, restUntil: 0 }));
-    for (const k of Object.keys(forest.meshes)) forest.meshes[k].userData = { tile: key, kind: k };
-    if (lite) for (const k of ['grass', 'flower']) if (forest.meshes[k]) forest.meshes[k].visible = false;
-    const t = { key, tx, tz, group: g, terrain, forest, obstacles: forest.obstacles, shells, bushes, shown: false };
+    const t = { key, tx, tz, bounds, group: g, terrain, forest: null, placements: null, obstacles: [], shells: [], bushes: [], shown: false, phase: 1 };
     tiles.set(key, t);
     return t;
   }
+  function advance(t) {
+    if (t.phase === 1) {
+      const placements = placeForest(map, 7, t.bounds);
+      const forest = buildForest(placements);
+      t.group.add(forest.group);
+      for (const o of forest.obstacles) o.tile = t.key;
+      for (const k of Object.keys(forest.meshes)) forest.meshes[k].userData = { tile: t.key, kind: k };
+      if (lite) for (const k of ['grass', 'flower']) if (forest.meshes[k]) forest.meshes[k].visible = false;
+      t.forest = forest;
+      t.placements = placements;
+      t.phase = 2;
+    } else if (t.phase === 2) {
+      t.obstacles = t.forest.obstacles;
+      t.shells = t.placements.shell.map((s, index) => ({ ...s, index, tile: t.key, kind: 'shell', r: 0.3, taken: false }));
+      t.bushes = t.placements.bush2.map((b, index) => ({ ...b, index, tile: t.key, kind: 'bush2', r: 0.5, restUntil: 0 }));
+      t.placements = null;
+      t.phase = 3;
+      if (t.shown) dirty = true;
+    }
+  }
+  const complete = (t) => t.phase >= 3;
   function show(t) { if (!t.shown) { group.add(t.group); t.shown = true; dirty = true; } }
   function drop(t) {
     if (t.shown) group.remove(t.group);
     t.terrain.geometry.dispose();
-    for (const m of Object.values(t.forest.meshes)) { m.geometry.dispose(); m.dispose(); }
+    if (t.forest) for (const m of Object.values(t.forest.meshes)) { m.geometry.dispose(); m.dispose(); }
     tiles.delete(t.key);
     dirty = true;
   }
@@ -60,7 +76,7 @@ export function createTiles(map, { statics = [], isLite = () => false } = {}) {
     const [ptx, ptz] = map.tileOf(Math.min(map.size - 1, Math.max(0, px)), Math.min(map.size - 1, Math.max(0, pz)));
     // drop tiles beyond the prefetch ring
     for (const t of [...tiles.values()]) if (Math.max(Math.abs(t.tx - ptx), Math.abs(t.tz - ptz)) > PREFETCH) drop(t);
-    // show what is within the ring (build the nearest missing one, one per call)
+    // show what is within the ring; one build step per call (a missing tile's terrain, or one more phase of a tile)
     let built = false;
     for (let dz = -RING; dz <= RING; dz++) for (let dx = -RING; dx <= RING; dx++) {
       const tx = ptx + dx, tz = ptz + dz;
@@ -69,24 +85,27 @@ export function createTiles(map, { statics = [], isLite = () => false } = {}) {
       let t = tiles.get(key);
       if (!t) { if (built) continue; t = build(tx, tz); built = true; }
       show(t);
+      if (!complete(t) && !built) { advance(t); built = true; }
     }
-    // prefetch one tile further out when nothing else was built this frame
+    // prefetch one step further out when nothing else was built this frame
     if (!built) {
       outer: for (let dz = -PREFETCH; dz <= PREFETCH; dz++) for (let dx = -PREFETCH; dx <= PREFETCH; dx++) {
         if (Math.max(Math.abs(dx), Math.abs(dz)) <= RING) continue;
         const tx = ptx + dx, tz = ptz + dz;
         if (tx < 0 || tz < 0 || tx >= map.tiles || tz >= map.tiles) continue;
-        if (!tiles.has(map.tileKey(tx, tz))) { build(tx, tz); break outer; }
+        const t = tiles.get(map.tileKey(tx, tz));
+        if (!t) { build(tx, tz); break outer; }
+        if (!complete(t)) { advance(t); break outer; }
       }
     }
     if (dirty) rebuildGrids();
   }
   /** Build everything within the ring at once (prebuild, and after a teleport: the ground must exist this frame). */
-  function warm(px, pz) { for (let i = 0; i < 9; i++) update(px, pz); }
+  function warm(px, pz) { for (let i = 0; i < 27; i++) update(px, pz); }
 
   function meshesOf(kind) {
     const out = [];
-    for (const t of tiles.values()) if (t.shown && t.forest.meshes[kind]) out.push(t.forest.meshes[kind]);
+    for (const t of tiles.values()) if (t.shown && t.forest && t.forest.meshes[kind]) out.push(t.forest.meshes[kind]);
     return out;
   }
   function tileOfItem(it) { return tiles.get(it.tile); }
@@ -98,12 +117,12 @@ export function createTiles(map, { statics = [], isLite = () => false } = {}) {
     if (kind === 'bush2') return t.bushes[index] || null;
     return t.obstacles.find((o) => o.kind === kind && o.index === index) || null;
   }
-  function setPose(it, scale, tilt = 0, yaw = null) { const t = tileOfItem(it); if (t) t.forest.setPose(it.kind, it.index, scale, tilt, yaw); }
+  function setPose(it, scale, tilt = 0, yaw = null) { const t = tileOfItem(it); if (t && t.forest) t.forest.setPose(it.kind, it.index, scale, tilt, yaw); }
   function setScale(it, scale) { setPose(it, scale); }
-  function animate(now, dt, darkness) { for (const t of tiles.values()) if (t.shown) t.forest.animate(now, dt, darkness); }
+  function animate(now, dt, darkness) { for (const t of tiles.values()) if (t.shown && t.forest) t.forest.animate(now, dt, darkness); }
   function setLite(v) {
     lite = v;
-    for (const t of tiles.values()) for (const k of ['grass', 'flower']) if (t.forest.meshes[k]) t.forest.meshes[k].visible = !v;
+    for (const t of tiles.values()) if (t.forest) for (const k of ['grass', 'flower']) if (t.forest.meshes[k]) t.forest.meshes[k].visible = !v;
   }
   /** Every obstacle of a kind among the shown tiles (tests, the nearest-tree hook). */
   function allObstacles() { const out = []; for (const t of tiles.values()) if (t.shown) for (const o of t.obstacles) out.push(o); return out; }

@@ -2,6 +2,7 @@
 // (iOS Safari allows only a handful of WebGL contexts, and one context is kinder to the battery).
 // Adaptive quality: when frames get slow the pixel ratio and shadow resolution step down, and back up when steady.
 import * as T from '../../vendor/three.module.min.js';
+import { createQuality } from './quality.js';
 
 export function createEngine() {
   const renderer = new T.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance', stencil: false });
@@ -20,20 +21,26 @@ export function createEngine() {
   // a software renderer (SwiftShader in headless Chromium / CI) or a tiny CPU starts and stays in lite mode:
   // no shadows, pixel ratio 1, still water. Real iPads never hit this branch.
   let forcedLite = false;
+  let gpuName = '', cores = navigator.hardwareConcurrency || 0;
   try {
     const gl = renderer.getContext();
     const info = gl.getExtension('WEBGL_debug_renderer_info');
-    const name = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
-    const cores = navigator.hardwareConcurrency || 8;
-    if (cores <= 2 || (/swiftshader|llvmpipe|software/i.test(name) && cores <= 4)) forcedLite = true; // CI runners; a fast desktop keeps full quality in dev-shot
+    gpuName = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
+    const c = cores || 8;
+    if (c <= 2 || (/swiftshader|llvmpipe|software/i.test(gpuName) && c <= 4)) forcedLite = true; // CI runners; a fast desktop keeps full quality in dev-shot
   } catch (e) { /* ignore */ }
+  // V8.1: the regulator is pure (3d/quality.js): hitches are counted, not measured; the median decides; at 60 Hz a
+  // lowered tier climbs back (the old rule needed < 13 ms, which a 60 Hz iPad never reaches, so it stayed at tier 2)
+  const quality = createQuality({ tier: forcedLite ? 2 : 0, forced: forcedLite });
+  // an iPad in a Safari tab draws 2 360 × 1 376 pixels at dpr 2: start at 1.5 there, the town and island look the same
+  const isIpad = /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   // ?lowres=1 (tests on software renderers): draw at half resolution, everything else unchanged
   const lowres = /[?&]lowres=1/.test(location.search);
   function pixelRatio() {
     if (lowres) return 0.5;
-    const base = Math.min(2, window.devicePixelRatio || 1);
-    return tier === 2 ? Math.min(base, 1) : tier === 1 ? base * 0.8 : base;
+    const base = Math.min(isIpad ? 1.5 : 2, window.devicePixelRatio || 1);
+    return tier === 2 ? Math.min(base, 1) : tier === 1 ? Math.min(base, isIpad ? 1.25 : base * 0.8) : base;
   }
   function applyTier() {
     renderer.shadowMap.enabled = tier < 2;
@@ -53,6 +60,7 @@ export function createEngine() {
     if (canvas.parentNode !== el) el.appendChild(canvas);
     container = el;
     resize();
+    quality.reset();   // a new screen starts a fresh measuring window
   }
   // V7.0: iPadOS sometimes reports the old size in the resize event after a rotation; the scenes ask every 20th frame
   // whether the container has quietly changed size and resize themselves if so (a reflow every third of a second is cheap)
@@ -63,21 +71,16 @@ export function createEngine() {
   }
 
   // ---------- adaptive quality ----------
-  let acc = 0, n = 0, lastChange = 0, lastAvgMs = 0;
+  let lastAvgMs = 0;
   function trackFrame(dtMs, now) {
-    acc += dtMs;
-    n++;
-    if (n < 90) return;
-    const avg = acc / n;
-    lastAvgMs = avg;
-    acc = 0; n = 0;
-    if (forcedLite) return;
-    if (avg > 26 && tier < 2 && now - lastChange > 2000) setTier(tier + 1, now);
-    else if (avg < 13 && tier > 0 && now - lastChange > 8000) setTier(tier - 1, now);
+    const t = quality.push(dtMs, now);
+    const st = quality.stats(now);
+    if (st.n) lastAvgMs = st.p50;
+    if (t !== null) setTier(t, now);
   }
   function setTier(t, now = performance.now()) {
     tier = t;
-    lastChange = now;
+    if (quality.tier !== t) quality.tier = t;
     applyTier();
     resize();
     for (const fn of tierListeners) fn(tier);
@@ -95,6 +98,9 @@ export function createEngine() {
     get H() { return H; },
     get tier() { return tier; },
     get fps() { return lastAvgMs > 0 ? Math.round(1000 / lastAvgMs) : 0; },   // V6.8: for the MELD code on PAPA
+    /** V8.1: the last measuring window for the MELD code: { p50, p95, n, hitchesPerMin, tier, pixelRatio }. */
+    get stats() { return { ...quality.stats(performance.now()), pixelRatio: renderer.getPixelRatio() }; },
+    get info() { return { gpu: gpuName, cores, isIpad, forcedLite }; },
     get container() { return container; },
   };
 }

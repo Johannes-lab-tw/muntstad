@@ -27,7 +27,7 @@ munten 3215 makers 1 nacht 5 vuur 328 warm 100 maag 96 hoofdstuk 2 keten 5/0 · 
   hoofdstukbeloningen 50-500) en de nacht-beloningen brengen meer op dan het dorp in dit stadium. Dat is het "te
   makkelijk" van punt 3.
 
-## A. Vloeiend op de iPad (V8.1, avond 1)
+## A. Vloeiend op de iPad (V8.1, avond 1) — gebouwd 16/17 september, zie PROGRESS Run 9
 
 1. **Kwaliteitsregeling gerepareerd** (`3d/engine.js`). Hikken (frames > 80 ms: tegels bouwen, shaders, tabwissel)
    tellen niet mee in het gemiddelde; de regeling kijkt naar de mediaan van 3 s. Omlaag bij > 24 ms, omhoog bij
