@@ -203,6 +203,11 @@ export const T = {
     maxLevel: 'Je {ding} is helemaal top. Level 5!',
     trampoline: 'Hoog! Nog een keer?',
     fireworks: 'Wauw, vuurwerk!',
+    // V8.2: weather
+    storm: 'Storm! De regen dooft het vuur sneller. Een afdak houdt het droog.',
+    regen: 'Het regent. Het vuur eet nu meer hout. Blijf stoken!',
+    bliksem: 'Bliksem! Die boom brandt de hele nacht. Morgen ligt er hout.',
+    bliksemHout: 'Van de verbrande boom: {n} stukken hout!',
   },
   // V7.7 (PLAN-V7 §C.2 rule 6): the bubble form of each line for a child who does not read yet: one picture and at most
   // three words; the voice says the full line. Drafted by Ollama from the lines above, shortened and checked by hand.
@@ -312,6 +317,10 @@ export const T = {
     maxLevel: '⭐ Level 5!',
     trampoline: '🤸 Nog een keer?',
     fireworks: '🎆 Wauw!',
+    storm: '⛈️ Koop een afdak',
+    regen: '🌧️ Blijf stoken',
+    bliksem: '⚡ Boom brandt!',
+    bliksemHout: '🪵 {n} hout erbij!',
   },
 
   milestones: {

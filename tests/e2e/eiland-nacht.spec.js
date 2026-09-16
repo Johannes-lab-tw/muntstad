@@ -162,3 +162,33 @@ test('with the lantern a ghost next to you cannot steal; the tent lets you sleep
   await expect.poll(async () => (await hook(page)).darkness, { timeout: 60000 }).toBeLessThan(1);
   expect(errors()).toEqual([]);
 });
+
+// V8.2: the weather. A storm makes the fire eat three times the wood (the afdak keeps it dry), the day badge shows it,
+// lightning strikes the tree beside the camp in the night and the burnt tree leaves wood at dawn.
+test('V8.2 storm: the fire burns three times as fast, the badge shows it, lightning burns the tree and dawn leaves wood', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island(); s.nacht = { fire: 120, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  const weer = () => page.evaluate(() => window.__muntstad.avontuur.weer);
+  await page.evaluate(() => window.__muntstad.avontuur.setWeer('storm'));
+  expect((await weer()).mul).toBe(3);
+  await expect(page.locator('#av-nacht')).toContainText('⛈️', { timeout: 40000 });
+  // night: the strike is forced (the real one comes 40 s after dark); the tree burns and counts as a light
+  await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 40000 }).toBe(1);
+  const before = (await state(page)).eiland.bag.hout;
+  await page.evaluate(() => window.__muntstad.avontuur.strikeNow());
+  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.bliksem), { timeout: 40000 }).toBe(true);
+  await expect.poll(() => mentorHas(page, 'Bliksem'), { timeout: 40000 }).toBe(true);
+  expect((await hook(page)).lights.length).toBeGreaterThanOrEqual(2);
+  // dawn: the burnt tree leaves six pieces of wood
+  await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.3));
+  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 40000 }).toBe(before + 6);
+  await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.bliksem), { timeout: 40000 }).toBe(false);
+  // sun again: the multiplier is back to one
+  await page.evaluate(() => window.__muntstad.avontuur.setWeer('zon'));
+  expect((await weer()).mul).toBe(1);
+  expect(errors()).toEqual([]);
+});

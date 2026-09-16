@@ -133,6 +133,13 @@ on every screen in V7.3:
   optional badge bottom-right (the fire level). `.low` turns it red and pulses.
 - `.tile` — a picture with a number badge (the backpack); `.n.full` turns the badge red.
 
+**V8.2: weather.** One kind per day (`weer.js`), shown in the day badge. Rain is an InstancedMesh of 260 thin streaks in a
+24 × 12 × 24 m box round the player (slanted by wind, half of them on tier 2); grey weather lerps sky and fog towards
+`#8c9aa8` and pulls the fog closer (`daynight.setGloom`); a lightning flash whitens the sky for 140-220 ms. The
+lightning tree beside the camp is a Builder tree with four cone flames and an orange point light while it burns; the
+afdak is four poles and a flat terracotta roof 3.6 m over the fire. Wind is shown by the rain and the flags, not by
+tilting tree instances (too expensive per frame).
+
 **V7.7: Muntje's bubble.** `#bubble` is `position: fixed`, centred at the top under the top bar (on the island right of
 the bag row and under the map; on WINKEL, HUIS, START, the gate and PAPA low beside Muntje), no tail. With `.kort` it
 shows one emoji and at most three words at 34 px (`kort.<key>` in i18n.js) and goes after 4 s; the voice says the
