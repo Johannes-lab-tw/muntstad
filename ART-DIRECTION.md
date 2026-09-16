@@ -133,6 +133,11 @@ on every screen in V7.3:
   optional badge bottom-right (the fire level). `.low` turns it red and pulses.
 - `.tile` — a picture with a number badge (the backpack); `.n.full` turns the badge red.
 
+**V8.4: the pirates.** A pirate is a small figure in the avatar's proportions: red shirt with three white stripes, dark
+trousers, a skin sphere head with a red bandana (knot at the back), a black eye patch, and an emissive yellow lantern
+in the right hand that flickers. The boat is a 6.4 m dark hull with a deck, a mast, a black sail with a white skull and
+a red flag; it bobs on the sea off the south beach. `#c8102e` is the pirate red (deeper than the game's `--red`).
+
 **V8.3: the treasure map.** Mounds are three brown puffs with a black crow (orange beak); the X mound carries two crossed
 red bars. The ruin: five broken walls (`#b9b1a3` with a darker crumbled top), an old well (stone ring, two posts, a
 terracotta roof) and a signpost with a `?` text plane. The pirate hat is a black tricorn with a gold band and a white

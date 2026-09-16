@@ -16,7 +16,7 @@ import { createTiles } from './tiles.js';
 import { createCamp } from './camp.js';
 import { createVuurtoren } from './vuurtoren.js';
 import { createDayNight } from './daynight.js';
-import { ghostModel, bearModel, tentModel, torchModel, fenceModel, deerModel, dropModel, wolfModel } from './spoken.js';
+import { ghostModel, bearModel, tentModel, torchModel, fenceModel, deerModel, dropModel, wolfModel, piraatModel, bootModel } from './spoken.js';
 import { perks, nightRules, hungerSpeedMul, coldSpeedMul, isCold } from '../uitdaging.js';
 import { Builder, textPlane } from './build.js';
 import { isFunActive } from '../economy.js';
@@ -25,6 +25,7 @@ import { fireRadius, fireLevel, isLit, stepGhost, bearTonight, stepBear, scareBe
 import { plekAt } from '../ketens.js';
 import { weerVoorDag, burnMul as weerBurnMul, seedOf, WEER } from '../weer.js';
 import { KAARTSTUKKEN, X_PLEKKEN, kaartStukken, kaartCompleet, schatPlek, weekKey } from '../schat.js';
+import { piratenNacht, stepPiraat, scarePiraat, buit } from '../piraten.js';
 import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
@@ -528,6 +529,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     return best;
   }
   function doScare() {
+    const pr = nearestPirate();   // V8.4: pirates are cowards: one BOE and the nearest runs back to the boat
+    if (pr && Math.hypot(player.x - pr.p.x, player.z - pr.p.z) < REACH.bear) { scarePiraat(pr.p, { x: player.x, z: player.z }); game.audio.play('yarr'); piraatWeg(); return; }
     const wolvesRan = scareWolves();
     const b = nearestBear();
     if (!b) { if (!wolvesRan) cb.onSay && cb.onSay('lines.bearScared'); return; }
@@ -539,6 +542,55 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     berenNacht = null;
     clearBears();
     cb.onBerenVerloren && cb.onBerenVerloren();
+  }
+  // ---------- V8.4: the pirates: a boat off the south beach, three pirates walking to the fire ----------
+  const pirates = [];   // { p: { x, z, heading, state, pause, life }, model, holder }
+  let piratenInfo = null;   // { weg, geplunderd } during a pirate night
+  const BOOT_AT = { x: PIER.x + 20, z: PIER.z + 8 };
+  const boot = bootModel();
+  boot.position.set(BOOT_AT.x, -0.1, BOOT_AT.z);
+  boot.rotation.y = Math.PI * 0.5;
+  boot.visible = false;
+  scene.add(boot);
+  function spawnPirates() {
+    const P = config.piraten;
+    for (let i = 0; i < P.aantal; i++) {
+      const x = PIER.x + 8 + i * 3, z = PIER.z - 14;
+      const model = piraatModel();
+      const holder = new T.Group();
+      holder.add(model.group);
+      holder.position.set(x, map.heightAt(x, z), z);
+      scene.add(holder);
+      pirates.push({ p: { x, z, heading: Math.PI, state: 'come', pause: i * 1.5 }, model, holder });
+    }
+    cb.onSound && cb.onSound('yarr');
+    cb.onSay && cb.onSay('lines.piratenKomen');
+  }
+  function clearPirates() { for (const pr of pirates) scene.remove(pr.holder); pirates.length = 0; boot.visible = false; piratenInfo = null; }
+  function nearestPirate() {
+    let best = null, bd = Infinity;
+    for (const pr of pirates) { if (pr.p.state !== 'come') continue; const d = Math.hypot(player.x - pr.p.x, player.z - pr.p.z); if (d < bd) { bd = d; best = pr; } }
+    return best;
+  }
+  function pirateNear() { const pr = nearestPirate(); return !!pr && Math.hypot(player.x - pr.p.x, player.z - pr.p.z) < REACH.bear; }
+  /** A pirate ran (BOE or the dog): count it; all of them gone before the plunder = they drop their gold. */
+  function piraatWeg(say = true) {
+    if (!piratenInfo) return;
+    piratenInfo.weg++;
+    const left = config.piraten.aantal - piratenInfo.weg;
+    if (left <= 0 && !piratenInfo.geplunderd) {
+      piratenInfo = null;
+      cb.onPiratenGewonnen && cb.onPiratenGewonnen(buit(config.piraten));
+      setTimeout(() => { boot.visible = false; }, 6000);
+      return;
+    }
+    if (say) cb.onSay && cb.onSay(left > 0 ? 'lines.piraatWeg' : 'lines.bearGone');
+  }
+  function startPiratenNacht(now) {
+    piratenInfo = { weg: 0, geplunderd: false };
+    boot.visible = true;
+    setTimeout(() => { if (wasDark) cb.onSay && cb.onSay('lines.piratenBoot'); }, 9000);
+    setTimeout(() => { if (wasDark && piratenInfo && !pirates.length) spawnPirates(); }, config.piraten.naDonkerMs);
   }
   // ---------- the shadow wolves (V6.2): a pack from night 5 that circles you in the dark and shakes your bag ----------
   const wolves = [];   // { w: { x, z, heading, state, ang, wait }, model, holder }
@@ -711,6 +763,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
         setTimeout(() => { if (wasDark && !guest && !wolvesCame) spawnWolves(); }, 15000);   // the pack comes a bit into the night, once
       }
       strikeAt = weerNu() === 'storm' && !guest ? now + config.weer.bliksemNaMs : 0;   // V8.2: a storm night has one lightning strike
+      if (!guest && piratenNacht(n.nights, config.piraten)) startPiratenNacht(now);   // V8.4
     }
     if (strikeAt && isDark && now >= strikeAt) { strikeAt = 0; strike(now); }
     if (weerNu() === 'storm' && now > nextThunder) {
@@ -724,6 +777,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       wasDark = false;
       cb.onDawn && cb.onDawn(fireWasBurning && n.fire > 0);
       if (bliksem.burning) { setBurning(false); strikeAt = 0; cb.onBliksemHout && cb.onBliksemHout(config.weer.bliksemHout); }   // V8.2
+      clearPirates();   // V8.4: dawn sends the boat away
       clearNight();
       clearDeer();
       clearWolves();
@@ -764,6 +818,23 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       }
     }
     if (berenNacht && isDark && state.nacht.fire <= 0) berenLose();
+    // V8.4: the pirates walk to the fire; the dog chases one that comes close to it
+    for (let i = pirates.length - 1; i >= 0; i--) {
+      const pr = pirates[i];
+      if (pr.p.state === 'come' && pet && Math.hypot(dog.x - pr.p.x, dog.z - pr.p.z) < config.piraten.hondAfstand) { scarePiraat(pr.p, { x: dog.x, z: dog.z }); cb.onSay && cb.onSay('lines.hondJaagt'); piraatWeg(false); }
+      const res = stepPiraat(pr.p, { target: { x: CAMP.x, z: CAMP.z }, dt }, config.piraten);
+      if (res === 'plunder' && piratenInfo && !piratenInfo.geplunderd) {
+        piratenInfo.geplunderd = true;
+        cb.onPlunder && cb.onPlunder();
+        for (const o of pirates) if (o.p.state === 'come') { o.p.state = 'flee'; o.p.heading = Math.atan2(BOOT_AT.x - o.p.x, BOOT_AT.z - o.p.z); o.p.life = 30; }
+        setTimeout(() => { boot.visible = false; piratenInfo = null; }, 12000);
+      } else if (res === 'plunder') { pr.p.state = 'flee'; pr.p.heading = Math.atan2(BOOT_AT.x - pr.p.x, BOOT_AT.z - pr.p.z); pr.p.life = 30; }
+      if (res === 'gone') { scene.remove(pr.holder); pirates.splice(i, 1); continue; }
+      pr.holder.position.set(pr.p.x, groundOf(pr.p.x, pr.p.z), pr.p.z);
+      pr.holder.rotation.y = pr.p.heading;
+      pr.model.update(now, { walking: pr.p.pause <= 0 });
+    }
+    if (boot.visible) { boot.position.y = -0.1 + Math.sin(now / 900) * 0.12; boot.rotation.z = Math.sin(now / 1300) * 0.03; }
     broadcastWorld(now);
   }
 
@@ -782,7 +853,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const px = player.x, pz = player.z;
     if (fishing) return { type: fishing.biteUntil ? 'trek' : 'vis', label: fishing.biteUntil ? 'TREK' : 'WACHT', target: null };
     for (const [id, r] of remotes) if ((r.down || r.pose === 'down') && Math.hypot(px - r.x, pz - r.z) < 2.6) return { type: 'wek', label: 'WEK', target: id };   // a fainted friend (V6.2)
-    if (bearNear() || wolfNear()) return { type: 'boe', label: 'BOE', target: null };
+    if (bearNear() || wolfNear() || pirateNear()) return { type: 'boe', label: 'BOE', target: null };
     if (gear.tent && daynight.darkness > 0.5 && Math.hypot(px - TENT_AT.x, pz - TENT_AT.z) < REACH.tent) return { type: 'slaap', label: 'SLAAP', target: null };
     for (const m of mounds) if (m.mesh.visible && Math.hypot(px - m.x, pz - m.z) < 2.0) return { type: 'graaf', label: 'GRAAF', target: m.id };   // V8.3
     if (xMound.on && Math.hypot(px - xMound.x, pz - xMound.z) < 2.0) return { type: 'graaf', label: 'GRAAF', target: 'schat' };
@@ -1216,6 +1287,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     // V8.3: the treasure map: pieces found, whether the X is out and where; the mounds for the tests
     get kaart() { const have = state ? kaartStukken(state.eiland) : []; return { n: have.length, total: KAARTSTUKKEN.length, compleet: !!state && kaartCompleet(state.eiland), x: xMound.on ? { x: xMound.x, z: xMound.z } : null }; },
     graafplekken: Object.fromEntries(KAARTSTUKKEN.map((k) => [k.id, { x: k.x, z: k.z }])),
+    // V8.4: the pirates for the tests: start a pirate night now (they land at once), move them, read them
+    piratenNu() { if (!piratenInfo) { piratenInfo = { weg: 0, geplunderd: false }; boot.visible = true; } if (!pirates.length) spawnPirates(); },
+    piratenAt(x, z) { pirates.forEach((pr, i) => { pr.p.x = x + i * 1.2; pr.p.z = z; pr.p.pause = 0; }); },
+    get piraten() { return pirates.map((pr) => ({ x: pr.p.x, z: pr.p.z, state: pr.p.state })); },
+    get piratenNacht() { return piratenInfo ? { ...piratenInfo, boot: boot.visible } : null; },
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
     setDown(v) { down = !!v; },
     get down() { return down; },

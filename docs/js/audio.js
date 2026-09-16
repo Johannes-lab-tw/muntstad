@@ -142,6 +142,7 @@ export function createAudio() {
     thunder() { noise({ dur: 1.6, gain: 0.28, filter: 'lowpass', freq: 180, slideTo: 60 }); noise({ start: 0.25, dur: 1.2, gain: 0.16, filter: 'lowpass', freq: 400, slideTo: 90 }); tone({ freq: 55, type: 'sawtooth', dur: 1.2, gain: 0.08, slideTo: 35, attack: 0.02 }); },
     heart() { tone({ freq: 70, type: 'sine', dur: 0.12, gain: 0.22, slideTo: 45 }); tone({ freq: 62, type: 'sine', start: 0.18, dur: 0.14, gain: 0.16, slideTo: 40 }); },
     patter() { for (let i = 0; i < 4; i++) noise({ start: i * 0.28, dur: 0.24, gain: 0.035, filter: 'highpass', freq: 2500 }); },
+    yarr() { tone({ freq: 140, type: 'sawtooth', dur: 0.5, gain: 0.12, slideTo: 90, attack: 0.05 }); tone({ freq: 210, type: 'square', start: 0.3, dur: 0.25, gain: 0.06, slideTo: 150 }); },   // V8.4: the pirates
   };
 
   // ---- ambience on the island: birds by day, an owl and the fire by night (a few soft sounds a minute) ----

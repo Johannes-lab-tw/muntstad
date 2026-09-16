@@ -30,6 +30,11 @@ zeven avonden. De eerste is gebouwd:
    staat er een kruis op je kaartje en een hoop met een rood kruis in de wereld, elke week ergens anders. Daar
    graven geeft 300 munten en de eerste keer een echte piratenhoed (die is nergens te koop). De ruïne heeft nu muren,
    een oude put en een bordje met een vraagteken.
+4. **v8.4, de piraten.** Vanaf nacht 8, en dan om de drie nachten, ligt bij het donker een piratenboot voor het
+   zuidstrand; Muntje waarschuwt, en een minuut later lopen drie piraten met lantaarns langzaam over het strand naar
+   het kamp. Eén BOE en de dichtstbijzijnde rent terug naar de boot, en je hond jaagt er ook één weg. Alle drie weg
+   voordat ze bij het vuur zijn: ze laten elk een gouden munt vallen (30 munten). Haalt er één het vuur, dan nemen ze
+   een deel van je rugzak en twintig stukken hout mee. Munten raak je nooit kwijt.
 
 ## 0-vorig. Achtste ronde: de hout-fout en het spel voor een zesjarige (13 en 14 september 2026)
 

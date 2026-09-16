@@ -195,3 +195,41 @@ test('V8.2 storm: the fire burns three times as fast, the badge shows it, lightn
   expect((await weer()).mul).toBe(1);
   expect(errors()).toEqual([]);
 });
+
+// V8.4: the pirates. Forced pirate night: three pirates next to the player, BOE sends each one running, all three gone
+// = 30 coins; a second landing that reaches the fire plunders the bag and the fire.
+test('V8.4 pirates: BOE sends them running one by one for a gold coin each; when they reach the fire they plunder', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ bag: { hout: 10, schelp: 10, bes: 0, vis: 0 } }); s.nacht = { fire: 100, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 40000 }).toBe(1);
+  const piraten = () => page.evaluate(() => window.__muntstad.avontuur.piraten);
+  const h = await hook(page);
+  // away from the fire, so the dog and the fire play no part
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 30), h.camp);
+  await page.evaluate(() => window.__muntstad.avontuur.piratenNu());
+  await expect.poll(async () => (await piraten()).length, { timeout: 40000 }).toBe(3);
+  const walletBefore = Math.floor((await state(page)).wallet);
+  for (let i = 3; i > 0; i--) {
+    const p = (await hook(page)).player;
+    await page.evaluate(({ x, z }) => window.__muntstad.avontuur.piratenAt(x, z + 2.5), p);
+    await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('BOE');
+    await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+    await expect.poll(async () => (await piraten()).filter((q) => q.state === 'come').length, { timeout: 40000 }).toBe(i - 1);
+  }
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 40000 }).toBe(walletBefore + 30);
+  await expect.poll(() => mentorHas(page, 'piraten'), { timeout: 40000 }).toBe(true);
+  // the second landing reaches the fire: a share of the bag and twenty pieces of wood go with them
+  await expect.poll(async () => (await piraten()).length, { timeout: 40000 }).toBe(0);
+  const houtBefore = (await state(page)).eiland.bag.hout, fireBefore = (await state(page)).nacht.fire;
+  await page.evaluate(() => window.__muntstad.avontuur.piratenNu());
+  await expect.poll(async () => (await piraten()).length, { timeout: 40000 }).toBe(3);
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.piratenAt(x, z + 1.0), h.camp);
+  await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 40000 }).toBe(houtBefore - Math.floor(houtBefore * 0.3));
+  expect((await state(page)).nacht.fire).toBeLessThanOrEqual(fireBefore - 20 + 1);
+  await expect.poll(() => mentorHas(page, 'namen spullen'), { timeout: 40000 }).toBe(true);
+  expect(errors()).toEqual([]);
+});

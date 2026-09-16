@@ -271,7 +271,7 @@ function bumpWallet() {
 // ---------- screens ----------
 
 const TOPBAR_SCREENS = new Set(['stad', 'dorp', 'avontuur', 'werk', 'winkel', 'huis']);
-export const GAME_VERSION = 'v8.3';   // V6.8: shown in the MELD code on PAPA; bump with every tag
+export const GAME_VERSION = 'v8.4';   // V6.8: shown in the MELD code on PAPA; bump with every tag
 const recent = [];                    // the last screens, for the MELD code
 const perfLog = {};                   // V8.1: the last measuring window per 3D screen (p50/p95/hitches/tier), for the MELD code
 function noteEvent(what) { recent.push(`${new Date().toTimeString().slice(0, 8)} ${what}`); if (recent.length > 8) recent.shift(); }
