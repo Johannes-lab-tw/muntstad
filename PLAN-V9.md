@@ -82,7 +82,7 @@ werk/winkel/huis p50 17 p95 18-19 tier 0 px 1.50 · stad/dorp p50 17 tier 2 (erf
 
 ## C. De look en het geluid via Higgsfield (V9.6 en V9.7)
 
-### V9.6 Modellen en beeld (avond 6)
+### V9.6 Modellen en beeld (avond 6) — gebouwd 17 september, zie PROGRESS Run 10: piraat, beer, wolf, spook, boot; held, gebouwen, mist en bloom nog niet
 - Eerst tien conceptplaatjes (GPT Image via Higgsfield, één stijl: "cozy-scary", rond plastic overdag, mist en gloed
   's nachts) — Johannes kiest in de galerij, of Claude kijkt zelf via het browserpaneel.
 - Dan Meshy image-to-3D **met skelet en animatie** (lopen, rennen, springen, zwaaien) voor de held, de piraat, het spook,

@@ -39,6 +39,10 @@ stap van V9 is daarom weer tempo:
    banner bij schemer zegt BAAS, de baas heeft tien of twaalf levens die onderin in beeld staan, hij vreet aan het
    vuur en komt terug tot je hem verslaat of de zon opkomt. Verslagen geeft 100, 200 of 300 munten en de eerste keer
    een hoed die nergens te koop is (berenkroon, kapiteinshoed, moerasmuts). PAPA telt de verslagen bazen.
+6. **v9.6, echte modellen.** De piraten, de nachtbeer, de wolven, de spoken en de piratenboot zijn nu modellen uit de
+   Higgsfield-pijplijn (conceptplaatje → Meshy 3D → verkleind → in het spel, `docs/modellen/`), de piraat met een echt
+   skelet en een loopje. Ze staan in de cache en werken offline; zolang een bestand er niet is staat het oude
+   bouwmodel er. De held blijft van bouwblokken (zijn hoeden en kleuren zitten daarin). Kosten: ongeveer 200 credits.
 
 ## 0-vorig. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
 
