@@ -54,6 +54,11 @@ stap van V9 is daarom weer tempo:
    langzamer, dus sparen duurt langer en elke stap voelt verdiend. Vanaf de tweede dag gaat af en toe één geldmaker
    kapot: hij verdient niets tot REPAREER (15 % van zijn prijs), ook na een stormnacht op het eiland. PAPA laat de
    reparaties en de bouwwerken zien. De les blijft meetbaar (simulator: investeerder 3,6× de spender).
+9. **v10.1, samen vechten.** In SAMEN SPELEN is de nacht nu van iedereen: wat bij de host leeft (wolven, spoken, beren,
+   piraten, de baas, het vuur, het weer, de boot) zien alle spelers op dezelfde plek met dezelfde levens. Iedereen
+   schiet met zijn eigen wapens, de host telt de treffers en de buit gaat naar wie raak schoot; een verslagen baas
+   geeft elke speler de munten en de hoed. Wolven bijten wie het dichtst bij is, ook een gast; spoken stelen bij wie in
+   het donker staat. BOE van een gast jaagt de vijand naast die gast weg. Redden met WEK blijft zoals het was.
 
 ## 0-vorig. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
 
