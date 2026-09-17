@@ -1721,7 +1721,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     /** Put one wolf right behind the player, lunging (tests). */
     wolfAt(x, z) { spawnWolves(); const v = wolves[0]; v.w.x = x; v.w.z = z; v.w.state = 'lunge'; },
     /** Put the whole pack round the player (tests on a slow runner: they would take long to arrive). */
-    wolvesAt(x, z) { wolves.forEach((v, i) => { v.w.x = x + Math.cos(i * 2.1) * 3; v.w.z = z + Math.sin(i * 2.1) * 3; }); },
+    /** Put the whole pack round the player, circling and targetable again (a wolf that bit is fleeing for 6 s of sim time, minutes on the slow runner). */
+    wolvesAt(x, z) { wolves.forEach((v, i) => { v.w.x = x + Math.cos(i * 2.1) * 3; v.w.z = z + Math.sin(i * 2.1) * 3; v.w.state = 'circle'; v.w.wait = 0; v.w.life = undefined; }); },
     /** Put the deer right behind the player in charge mode (tests). */
     deerAt(x, z) { spawnDeer(); deer.d.x = x; deer.d.z = z; deer.d.state = 'charge'; },
     get bats() { return batsState; },
