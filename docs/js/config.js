@@ -310,9 +310,9 @@ export const CONFIG = Object.freeze({
   upgradeGroei: 2.5,                // V9.8: an upgrade costs ×2.5 per level up to level 5 (was ×2), ×2 per level after that
   // V9.8: town works, one-off purchases that open the next part of the town (PLAN-V8 §V8.5 → PLAN-V9 §D)
   werken: [
-    { id: 'vergunning', name: 'Bouwvergunning', icon: '📜', price: 5000 },
-    { id: 'brug',       name: 'De brug',        icon: '🌉', price: 25000, vereist: { werk: 'vergunning' } },
-    { id: 'kade',       name: 'De kade',        icon: '⚓', price: 100000, vereist: { werk: 'brug' } },
+    { id: 'vergunning', name: 'Bouwvergunning', kort: 'vergunning', icon: '📜', price: 5000 },   // kort: the word on a locked card ("📜 eerst vergunning")
+    { id: 'brug',       name: 'De brug',        kort: 'brug',       icon: '🌉', price: 25000, vereist: { werk: 'vergunning' } },
+    { id: 'kade',       name: 'De kade',        kort: 'kade',       icon: '⚓', price: 100000, vereist: { werk: 'brug' } },
   ],
   // V9.8: maintenance. From the second day of play on, each new calendar day has a chance that one maker breaks:
   // no income until REPAREER, which costs a share of its price. Never two at once; a storm night breaks one too.
