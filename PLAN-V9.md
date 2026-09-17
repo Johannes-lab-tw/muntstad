@@ -66,7 +66,7 @@ werk/winkel/huis p50 17 p95 18-19 tier 0 px 1.50 · stad/dorp p50 17 tier 2 (erf
   wolven en piraten twintig tellen tegen, toren = licht en overzicht).
 - Bewaar-code: nieuwe velden achteraan; oude codes laden.
 
-### V9.4 Verliezen, gered worden, opnieuw (avond 4)
+### V9.4 Verliezen, gered worden, opnieuw (avond 4) — gebouwd 17 september, zie PROGRESS Run 10
 - **Neer** (V6.2 WEK bestaat): de ander redt je alleen met een **reddingsdrank** of **verband** uit een kist of van de
   werkbank; zonder = wachten tot de ander er een haalt. Alleen spelen: niemand komt, dus na dertig tellen **begin je het
   avontuur opnieuw** (rugzak, kamp-level, tools en kaartstukken weg; dorp, munten, Bewaar-code en de campagnemunten

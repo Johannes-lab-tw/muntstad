@@ -18,7 +18,8 @@ import { currentKeten, ketenEvent, PLEKKEN } from '../ketens.js';
 import { burnFire, stokeFire, canStoke, ghostSteal, dawnReward, fireLevel, levelSpan } from '../nacht.js';
 import { vindKaartstuk, graafSchat, weekKey } from '../schat.js';
 import { plunder } from '../piraten.js';
-import { openKist, dagKey, GADGET_INFO } from '../werkbank.js';
+import { openKist, dagKey, GADGET_INFO, GADGETS, gebruikGadget } from '../werkbank.js';
+import { opnieuwAvontuur } from '../economy.js';
 import { seedOf } from '../weer.js';
 import { perks, drainHunger, eat, canEat, faint, deerBump, coolDown, freeze, cook } from '../uitdaging.js';
 import { CYCLE } from '../3d/daycycle.js';
@@ -92,6 +93,56 @@ export function createAvontuur(game) {
   emoteBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (!emoteRow.hidden && performance.now() - emoteOpenedAt < 300) return; showEmotes(emoteRow.hidden); });
   document.getElementById('av-zwaai').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('wave'); showEmotes(false); });
   document.getElementById('av-dans').addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (scene3) scene3.emote('dance'); showEmotes(false); });
+  // V9.4: the gadgets: one button with the count, a row of what you carry, a tap uses one
+  const gadgetBtn = document.getElementById('av-gadget');
+  const gadgetN = document.getElementById('av-gadget-n');
+  const gadgetRow = document.getElementById('av-gadget-row');
+  let gadgetTimer = 0, gadgetOpenedAt = 0;
+  function showGadgets(v) {
+    clearTimeout(gadgetTimer);
+    gadgetRow.hidden = !v;
+    if (v) { gadgetOpenedAt = performance.now(); gadgetTimer = setTimeout(() => { gadgetRow.hidden = true; }, 5000); }
+  }
+  function useGadget(id) {
+    if (!scene3) return;
+    const h = scene3.hook;
+    let ok = false, line = null;
+    if (id === 'net') { ok = h.gebruikNet(); line = ok ? 'lines.gadgetNet' : 'lines.gadgetNetNiets'; }
+    else if (id === 'noodfakkel') { h.noodfakkel(); ok = true; line = 'lines.gadgetNoodfakkel'; }
+    else if (id === 'fluit') { h.roepHond(); if (samen && samen.active) samen.send('fluit', {}); ok = true; line = 'lines.gadgetFluit'; }
+    else if (id === 'reddingsdrank') { ok = true; line = 'lines.gadgetDrank'; }
+    if (!ok) { game.mentor.say(line, {}, { kind: 'reaction' }); return; }
+    const c = game.config;
+    game.update((s) => { const r = gebruikGadget(s, id); if (!r.ok) return s; const t = r.state; return id === 'reddingsdrank' ? { ...t, eiland: { ...t.eiland, honger: Math.max(t.eiland.honger ?? 100, c.honger.afterFaint + 20) }, nacht: { ...t.nacht, warm: Math.max(t.nacht.warm ?? 100, c.kou.afterFaint + 20) } } : t; });
+    game.save();
+    game.audio.play(id === 'noodfakkel' ? 'firework' : 'unlock');
+    game.mentor.say(line, {}, { kind: 'reaction' });
+    hudKey = '';
+    renderHud(game.state);
+  }
+  gadgetBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); game.audio.play('tap'); if (!gadgetRow.hidden && performance.now() - gadgetOpenedAt < 300) return; showGadgets(gadgetRow.hidden); });
+  function renderGadgets(e) {
+    const g = e.gadgets || {};
+    const total = GADGETS.reduce((n, id) => n + (g[id] || 0), 0);
+    gadgetBtn.hidden = total === 0;
+    gadgetN.textContent = String(total);
+    if (total === 0) { gadgetRow.hidden = true; gadgetRow.innerHTML = ''; return; }
+    const want = GADGETS.filter((id) => g[id] > 0).map((id) => `${id}:${g[id]}`).join(',');
+    if (gadgetRow.dataset.key === want) return;
+    gadgetRow.dataset.key = want;
+    gadgetRow.innerHTML = '';
+    for (const id of GADGETS) {
+      if (!(g[id] > 0)) continue;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-ico btn-ico-s btn-purple';
+      b.dataset.gadget = id;
+      b.setAttribute('aria-label', GADGET_INFO[id].naam);
+      b.innerHTML = `<i class="ico">${GADGET_INFO[id].icon}</i><b class="n">${g[id]}</b>`;
+      b.addEventListener('pointerdown', (ev) => { ev.preventDefault(); showGadgets(false); useGadget(id); });
+      gadgetRow.appendChild(b);
+    }
+  }
   // keyboard: E / Enter = the action button
   window.addEventListener('keydown', (e) => {
     if (!visible || !scene3 || kamp.isOpen) return;
@@ -220,7 +271,7 @@ export function createAvontuur(game) {
     const full = bagCount(e) >= perks(e, game.config).bagMax;
     const peers = samen && samen.active ? samen.peers.size + 1 : 0;
     const nights = state.nacht.nights || 0;
-    const key = `${Object.values(e.bag).join(',')}|${fire}|${honger}|${warm}|${e.keten}|${e.stap}|${e.stapN}|${full}|${peers}|${nights}|${lastDark}|${state.campagne ? state.campagne.hoofdstuk + ':' + state.campagne.munten : ''}`;
+    const key = `${Object.values(e.bag).join(',')}|${Object.values(e.gadgets || {}).join(',')}|${e.kamp || 0}|${fire}|${honger}|${warm}|${e.keten}|${e.stap}|${e.stapN}|${full}|${peers}|${nights}|${lastDark}|${state.campagne ? state.campagne.hoofdstuk + ':' + state.campagne.munten : ''}`;
     if (key === hudKey) return;
     hudKey = key;
     // V6.2: the fire shows its level and how far it is to the next one; the cold as a blue bar
@@ -234,6 +285,7 @@ export function createAvontuur(game) {
       + `<span class="ring honger${honger < game.config.honger.slowBelow ? ' low' : ''}" style="--p:${honger};--rc:#45d65c" title="Eten"><i class="ico">🍎</i></span>`
       + `<span class="ring warm${warm < game.config.kou.slowBelow ? ' low' : ''}" style="--p:${warm};--rc:#4fb8ff" title="Warmte"><i class="ico">🌡️</i></span>`;
     eetBtn.hidden = !canEat(e);
+    renderGadgets(e);   // V9.4
     syncStook(state);
     // the dark rim closes in as you get cold (blue) or hungry (red)
     const coldF = Math.max(0, 1 - warm / game.config.kou.warnBelow), hungerF = Math.max(0, 1 - honger / game.config.honger.warnBelow);
@@ -338,8 +390,38 @@ export function createAvontuur(game) {
   function doFaint(why = 'honger') {
     fainting = true;
     game.audio.play('stumble');
+    if (((game.state.eiland.gadgets || {}).reddingsdrank || 0) > 0) { zelfRedden(why); return; }   // V9.4: your own potion saves you
     if (samen && samen.active && samen.peers.size > 0) { goDown(why); return; }
-    fallDown(why);
+    opnieuw(why);   // V9.4: alone and nobody to save you: the adventure starts over
+  }
+  /** V9.4: drink your own reddingsdrank the moment you would fall. */
+  function zelfRedden(why) {
+    const c = game.config;
+    game.update((s) => { const r = gebruikGadget(s, 'reddingsdrank'); const t = r.state; return { ...t, eiland: { ...t.eiland, honger: Math.max(t.eiland.honger ?? 100, c.honger.afterFaint) }, nacht: { ...t.nacht, warm: Math.max(t.nacht.warm ?? 100, c.kou.afterFaint) } }; });
+    game.save();
+    game.audio.play('upgrade');
+    game.mentor.say('lines.zelfGered', {}, { kind: 'reaction' });
+    hudKey = '';
+    renderHud(game.state);
+    setTimeout(() => { fainting = false; }, 1500);
+  }
+  /** V9.4: nobody could save you: the island starts over (the town and the coins stay). */
+  function opnieuw(why) {
+    flauwEl.hidden = false;
+    flauwTekst.textContent = game.T.kort.opnieuw;
+    requestAnimationFrame(() => flauwEl.classList.add('on'));
+    controls.setEnabled(false);
+    setTimeout(() => {
+      game.update((s) => opnieuwAvontuur(s, game.config));
+      game.save();
+      if (scene3) { scene3.setState(game.state); scene3.hook.herstart(); }
+      game.mentor.say('lines.opnieuw', {}, { kind: 'reaction' });
+      hudKey = '';
+      renderHud(game.state);
+      flauwEl.classList.remove('on');
+      controls.setEnabled(visible);
+      setTimeout(() => { flauwEl.hidden = true; flauwTekst.textContent = ''; fainting = false; }, 700);
+    }, 1400);
   }
   // V6.2: with friends around you first lie down; a friend who reaches you in time presses WEK and you keep your things
   let downTimer = 0, downWhy = 'honger';
@@ -351,8 +433,8 @@ export function createAvontuur(game) {
     controls.setEnabled(false);
     scene3.hook.setDown(true);
     samen.send('down', { w: why === 'kou' ? 1 : 0 });
-    game.mentor.say('lines.down', {}, { kind: 'reaction' });
-    let left = Math.round(game.config.net.wekMs / 1000);
+    game.mentor.say('lines.downWacht', {}, { kind: 'reaction' });
+    let left = Math.round(game.config.redden.wachtMs / 1000);   // V9.4: longer, a friend has to fetch a potion
     const tick = () => { flauwTekst.textContent = `${game.T.lines.downText} ${left}`; };
     tick();
     downTimer = setInterval(() => { left--; tick(); if (left <= 0) endDown(false); }, 1000);
@@ -371,7 +453,7 @@ export function createAvontuur(game) {
       flauwEl.classList.remove('on', 'down');
       controls.setEnabled(visible);
       setTimeout(() => { flauwEl.hidden = true; fainting = false; }, 700);
-    } else { flauwEl.classList.remove('down'); fallDown(downWhy); }
+    } else { flauwEl.classList.remove('down'); opnieuw(downWhy); }   // V9.4: nobody came with a potion
   }
   function fallDown(why) {
     flauwEl.hidden = false;
@@ -520,6 +602,7 @@ export function createAvontuur(game) {
     samen.on('change', () => { hudKey = ''; if (visible) renderHud(game.state); });
     samen.on('wake', () => { if (fainting && downTimer) endDown(true); });
     samen.on('down', () => { if (visible) game.mentor.say('lines.friendDown', {}, { kind: 'reaction' }); });
+    samen.on('fluit', () => { if (visible) game.mentor.say('lines.fluitVriend', {}, { kind: 'reaction' }); });   // V9.4
   }
 
   function loop(now) {
@@ -588,6 +671,15 @@ export function createAvontuur(game) {
         if (inh.coins) { const p = game.walletPoint(); game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(inh.coins)}`, '#2a9d3a'); game.bumpWallet(); }
         hudKey = '';
         renderHud(game.state);
+      },
+      onWek() {   // V9.4: waking a friend costs a reddingsdrank
+        const r = gebruikGadget(game.state, 'reddingsdrank');
+        if (!r.ok) { game.mentor.say('lines.wekNodig', {}, { kind: 'reaction' }); return false; }
+        game.update(() => r.state);
+        game.save();
+        hudKey = '';
+        renderHud(game.state);
+        return true;
       },
       onBuit(kind, n) {   // V9.2: a beaten enemy drops a coin or two
         game.update((s) => ({ ...s, wallet: s.wallet + n, earnedWork: s.earnedWork + n }));

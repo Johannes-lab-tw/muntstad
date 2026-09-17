@@ -28,7 +28,7 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
   const ctxB = await browser.newContext({ ...test.info().project.use });
   const a = await ctxA.newPage(), b = await ctxB.newPage();
   const errA = watchErrors(a), errB = watchErrors(b);
-  await seedSave(a, (s) => { s.wallet = 50; s.earnedWork = 50; s.settings.relayUrl = RELAY; s.eiland = { bag: { hout: 0, schelp: 0, bes: 0, vis: 0 }, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: {}, sold: 0, earned: 0 }; s.nacht = { fire: 40, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
+  await seedSave(a, (s) => { s.wallet = 50; s.earnedWork = 50; s.settings.relayUrl = RELAY; s.eiland = { bag: { hout: 0, schelp: 0, bes: 0, vis: 0 }, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: {}, sold: 0, earned: 0, gadgets: { reddingsdrank: 1 } }; s.nacht = { fire: 40, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
   await seedSave(b, (s) => { s.wallet = 20; s.earnedWork = 20; s.color = 'rood'; s.settings.relayUrl = RELAY; s.eiland = { bag: { hout: 3, schelp: 0, bes: 0, vis: 0 }, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: {}, sold: 0, earned: 0 }; s.nacht = { fire: 90, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
 
   // A: the parent opens the room

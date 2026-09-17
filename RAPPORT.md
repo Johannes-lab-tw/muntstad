@@ -27,6 +27,13 @@ stap van V9 is daarom weer tempo:
    reddingsdrank, een noodfakkel), en je bouwt het kamp op: muur, wachttoren met lantaarn, grote tent, opslagkist (meer
    in je rugzak) en je vlag. Over het eiland staan tien kisten waarvan er elke dag drie gevuld zijn, met per plek iets
    anders erin (in de ruïne munten, bij het moeras een reddingsdrank, op de berg stenen). Niets hiervan kost munten.
+4. **v9.4, verliezen mag.** Val je om van honger of kou, dan red je jezelf als je een reddingsdrank bij je hebt. Speel
+   je samen, dan lig je anderhalve minuut op de grond en kan je vriend je met WEK wakker maken, maar alleen met een
+   reddingsdrank; zonder drank moet hij er eerst een maken of vinden. Komt niemand, of speel je alleen zonder drank,
+   dan begint het avontuur opnieuw: rugzak, kamp, tools en kaartstukken zijn weg, je munten, je dorp en je
+   campagnemunten blijven. Gadgets zitten achter één knop naast de smiley: een net houdt een vijand vast, een
+   noodfakkel geeft twintig tellen fel licht, een fluit roept je hond en je vriend, een reddingsdrank vult maag en
+   warmte. De SAMEN-uitleg noemt de rollen: één stookt en bouwt, één schiet.
 
 ## 0-vorig. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
 

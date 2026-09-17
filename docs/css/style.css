@@ -1066,6 +1066,9 @@ img.btn-icon { width: 1.5em; height: 1.5em; object-fit: contain; }
 .av-vignette.on { opacity: 1; }
 .av-emotes { position: absolute; left: 146px; bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; align-items: flex-end; gap: 14px; z-index: 20; }
 .av-emote-row { display: flex; gap: 14px; }
+/* V9.4: the gadget button carries a count badge; the row buttons too */
+.av-emotes .btn { position: relative; }
+.av-emotes .btn .n { position: absolute; right: -8px; bottom: -8px; min-width: 26px; height: 26px; padding: 0 5px; border-radius: 13px; background: var(--ink); color: #fff; font-size: 20px; line-height: 26px; text-align: center; font-weight: 800; text-shadow: none; }
 .av-emote-row[hidden] { display: none; }
 
 /* V5.3: the faint fade, two columns of tools at the fire (the hunger and warmth bars became rings in V7.2) */
