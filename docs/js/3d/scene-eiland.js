@@ -882,7 +882,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   let fishing = null;       // { until, biteUntil }
   let forceGoldFish = false;   // tests: the next catch is the golden fish
   // ---------- V9.2: defending yourself: the nearest enemy, the weapon that works on it, shots in flight ----------
-  const shots = [];   // { mesh, from, to, t0, dur, target: { kind, rec, holder }, weapon }
+  const shots = [];
+  let poefs = 0;   // V9.2 tests: how many enemies poofed   // { mesh, from, to, t0, dur, target: { kind, rec, holder }, weapon }
   const poofs = [];   // { mesh, t0 }
   let lastShotAt = 0;
   function nearestEnemy() {
@@ -915,6 +916,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const G = config.gevecht;
     poofAt(t.rec.x, groundOf(t.rec.x, t.rec.z), t.rec.z);
     game.audio.play('pop');
+    poefs++;
     if (t.kind === 'wolf') { const i = wolves.findIndex((v) => v.w === t.rec); if (i >= 0) { scene.remove(wolves[i].holder); wolves.splice(i, 1); } }
     else if (t.kind === 'spook') { const i = ghosts.findIndex((gh) => gh.g === t.rec); if (i >= 0) { scene.remove(ghosts[i].holder); ghosts.splice(i, 1); } }
     else if (t.kind === 'piraat') { scarePiraat(t.rec, { x: player.x, z: player.z }); piraatWeg(false); }
@@ -1425,6 +1427,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     // V9.2: the fight for the tests: the enemies' lives and shots in flight
     get levens() { return { wolven: wolves.map((v) => v.w.hp), spoken: ghosts.map((g) => g.g.hp), beren: bears.map((b) => b.b.hp), piraten: pirates.map((p) => p.p.hp) }; },
     get schoten() { return shots.length; },
+    get poefs() { return poefs; },   // enemies beaten this visit (tests: a poof, not a wolf that ran off and was removed)
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
     setDown(v) { down = !!v; },
     get down() { return down; },
