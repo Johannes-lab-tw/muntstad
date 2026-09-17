@@ -8,7 +8,7 @@ export function perks(e, config) {
   const t = (e && e.tools) || {};
   const N = config.nacht, E = config.eiland;
   return {
-    bagMax: t.rugzak ? E.bagMaxBig : E.bagMax,
+    bagMax: (t.rugzak ? E.bagMaxBig : E.bagMax) + ((e && (e.kamp || 0) >= 4) ? (config.werkbank ? config.werkbank.opslagExtra : 20) : 0),   // V9.3: the storage chest of camp level 4
     speedMul: t.schoenen ? E.shoesSpeed : 1,
     fishPer: t.hengel ? 2 : 1,
     bearScares: t.trommel ? 1 : N.bearScares,

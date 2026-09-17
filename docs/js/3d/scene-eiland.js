@@ -27,6 +27,7 @@ import { weerVoorDag, burnMul as weerBurnMul, seedOf, WEER } from '../weer.js';
 import { KAARTSTUKKEN, X_PLEKKEN, kaartStukken, kaartCompleet, schatPlek, weekKey } from '../schat.js';
 import { piratenNacht, stepPiraat, scarePiraat, buit } from '../piraten.js';
 import { wapenVoor, levens, tref, roedel, nachtPlan } from '../gevecht.js';
+import { KISTEN, kistenVandaag, kistOpen, dagKey } from '../werkbank.js';
 import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
@@ -73,6 +74,86 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     return { group: g, obstacles };
   }
   const ruine = createRuine();
+  // V9.3: the ten chests (three filled a day) and the camp's levels
+  function kistModel() {
+    const g = new T.Group();
+    const b = new Builder({ r: 0.04 });
+    b.box(-0.45, -0.3, 0, 0.9, 0.6, 0.5, '#8a5a35', { r: 0.06 });
+    b.box(-0.47, -0.32, 0.18, 0.94, 0.64, 0.08, '#ffc21c', { r: 0.02 });
+    g.add(b.build());
+    const lb = new Builder({ r: 0.04 });
+    lb.box(-0.45, 0, 0, 0.9, 0.6, 0.16, '#a06a35', { r: 0.06 });
+    const lid = lb.build();
+    lid.position.set(0, 0.5, -0.3);
+    g.add(lid);
+    const glow = new T.Mesh(new T.SphereGeometry(0.14, 8, 6), new T.MeshBasicMaterial({ color: 0xffe28a, transparent: true, opacity: 0.85 }));
+    glow.position.set(0, 0.95, 0);
+    g.add(glow);
+    return { group: g, lid, glow };
+  }
+  const kisten = KISTEN.map((k, i) => {
+    let x = k.x, z = k.z;
+    for (let r = 1; r < 8 && !map.walkable(x, z); r++) for (let a = 0; a < 8 && !map.walkable(x, z); a++) { x = k.x + Math.cos(a) * r; z = k.z + Math.sin(a) * r; }
+    const m = kistModel();
+    m.group.position.set(x, map.heightAt(x, z), z);
+    m.group.visible = false;
+    scene.add(m.group);
+    return { i, x, z, zone: k.zone, ...m, open: false };
+  });
+  let lastKistSync = 0;
+  function syncKisten(now) {
+    if (!state || now - lastKistSync < 1000) return;
+    lastKistSync = now;
+    const day = dagKey(game.now());
+    const filled = kistenVandaag(day, seedOf(state));
+    const today = state.eiland.kistenDag === day ? state.eiland : { kistenOpen: 0 };
+    for (const k of kisten) {
+      k.group.visible = filled.includes(k.i);
+      k.open = kistOpen(today, k.i);
+      k.lid.rotation.x = k.open ? -1.3 : 0;
+      k.glow.visible = !k.open;
+    }
+  }
+  const kampGear = { level: 0, toren: null, torenLight: null, opslag: null, vlag: null };
+  function syncKamp() {
+    const lvl = (state && state.eiland.kamp) || 0;
+    if (lvl === kampGear.level) return;
+    kampGear.level = lvl;
+    const tx = CAMP.x + 7.5, tz = CAMP.z + 7.5, ty = map.heightAt(tx, tz);
+    if (lvl >= 2 && !kampGear.toren) {
+      const b = new Builder({ r: 0.04 });
+      for (const [dx, dz] of [[-0.9, -0.9], [0.9, -0.9], [-0.9, 0.9], [0.9, 0.9]]) b.cyl(dx, dz, 0, 0.1, 4.2, '#8a5a35', 8);
+      b.box(-1.2, -1.2, 4.1, 2.4, 2.4, 0.16, '#a06a35', { r: 0.03 });
+      for (const [dx, dz, w, d] of [[-1.2, -1.2, 2.4, 0.1], [-1.2, 1.1, 2.4, 0.1], [-1.2, -1.2, 0.1, 2.4], [1.1, -1.2, 0.1, 2.4]]) b.box(dx, dz, 4.26, w, d, 0.7, '#8a5a35', { r: 0.02 });
+      b.cyl(0, 0, 4.26, 0.06, 1.2, '#dcd7cb', 6);
+      b.sphere(0, 0, 5.5, 0.22, '#ffe28a', 8);
+      const m = b.build();
+      m.position.set(tx, ty, tz);
+      scene.add(m);
+      kampGear.toren = m;
+      kampGear.torenLight = new T.PointLight(0xffd080, 0, 16, 1.6);
+      kampGear.torenLight.position.set(tx, ty + 5.5, tz);
+      scene.add(kampGear.torenLight);
+    }
+    if (lvl >= 3 && gear.tent) gear.tent.scale.setScalar(1.3);
+    if (lvl >= 4 && !kampGear.opslag) {
+      const b = new Builder({ r: 0.05 });
+      b.box(-0.8, -0.5, 0, 1.6, 1.0, 0.9, '#8a5a35', { r: 0.08 });
+      b.box(-0.82, -0.52, 0.4, 1.64, 1.04, 0.1, '#ffc21c', { r: 0.02 });
+      const m = b.build();
+      m.position.set(CAMP.x - 3.4, map.heightAt(CAMP.x - 3.4, CAMP.z + 3.2), CAMP.z + 3.2);
+      scene.add(m);
+      kampGear.opslag = m;
+    }
+    if (lvl >= 5 && !kampGear.vlag) {
+      const pole = new T.Mesh(new T.CylinderGeometry(0.04, 0.04, 2.2, 6), new T.MeshStandardMaterial({ color: col('#dcd7cb') }));
+      pole.position.set(tx + 0.9, ty + 5.3, tz + 0.9);
+      const cloth = new T.Mesh(new T.PlaneGeometry(1.1, 0.7).translate(0.55, 0, 0), new T.MeshStandardMaterial({ color: col('#ff3b3b'), side: T.DoubleSide }));
+      cloth.position.set(tx + 0.9, ty + 6.1, tz + 0.9);
+      scene.add(pole, cloth);
+      kampGear.vlag = cloth;
+    }
+  }
   const tiles = createTiles(map, { statics: [...camp.obstacles, ...vuurtoren.obstacles, ...ruine.obstacles], isLite: () => engine.tier >= 2, tierOf: () => engine.tier });
   // V8.3: the mounds of earth: one per map piece (gone once dug) and the X of the week (a red cross on top)
   function moundModel(withX) {
@@ -473,7 +554,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   }
   function syncGear() {
     const tools = state.eiland.tools;
-    if (tools.tent && !gear.tent) {
+    if ((tools.tent || (state.eiland.kamp || 0) >= 3) && !gear.tent) {
       gear.tent = tentModel();
       gear.tent.position.set(TENT_AT.x, map.heightAt(TENT_AT.x, TENT_AT.z), TENT_AT.z);
       gear.tent.rotation.y = 0.6;
@@ -490,13 +571,14 @@ export function createEilandScene(game, engine, controls, cb = {}) {
         gear.torches.push({ ...t, x, z });
       }
     }
+    syncKamp();   // V9.3
     if (tools.afdak && !gear.afdak) {   // V8.2: a roof over the fire
       gear.afdak = afdakModel();
       gear.afdak.position.set(CAMP.x, map.heightAt(CAMP.x, CAMP.z), CAMP.z);
       scene.add(gear.afdak);
     }
     const pk = perks(state.eiland, config);
-    if ((tools.hek || tools.hoog_hek) && gear.fenceR !== pk.fenceRadius) {
+    if ((tools.hek || tools.hoog_hek || (state.eiland.kamp || 0) >= 1) && gear.fenceR !== pk.fenceRadius) {
       if (gear.fence) scene.remove(gear.fence);
       gear.fence = fenceModel(CAMP.x, CAMP.z, pk.fenceRadius, map.heightAt);
       gear.fenceR = pk.fenceRadius;
@@ -658,7 +740,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (!wolves.length) return;
     const W = config.wolven;
     const pk = perks(state.eiland, config);
-    const fenceR = state.eiland.tools.hoog_hek ? pk.fenceRadius : state.eiland.tools.hek ? N.fenceRadius : 0;
+    const fenceR = hasWall() ? pk.fenceRadius : 0;   // V9.3: the camp's wall counts like the fence
     const safe = isLit(player.x, player.z, lit) || (fenceR && Math.hypot(player.x - CAMP.x, player.z - CAMP.z) < fenceR) || dark < 0.5;
     wolfLunge += dt * 1000;
     if (wolfLunge > W.lungeEveryMs) {
@@ -724,7 +806,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (!deer) return;
     const D = config.deer, d = deer.d;
     const pk = perks(state.eiland, config);
-    const fenceR = state.eiland.tools.hoog_hek ? pk.fenceRadius : state.eiland.tools.hek ? N.fenceRadius : 0;
+    const fenceR = hasWall() ? pk.fenceRadius : 0;   // V9.3: the camp's wall counts like the fence
     const playerSafe = isLit(player.x, player.z, lit) || (fenceR && Math.hypot(player.x - CAMP.x, player.z - CAMP.z) < fenceR);
     const dist = Math.hypot(player.x - d.x, player.z - d.z);
     if (d.state === 'flee') {
@@ -828,7 +910,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     }
     const lit = lightsNow();
     const pk = perks(state.eiland, config);
-    const fence = state.eiland.tools.hek || state.eiland.tools.hoog_hek ? { x: CAMP.x, z: CAMP.z, r: pk.fenceRadius } : null;
+    const fence = hasWall() ? { x: CAMP.x, z: CAMP.z, r: pk.fenceRadius } : null;
     updateDeer(now, dt, lit, dark);
     updateWolves(now, dt, lit, dark);
     updateOntdek(dt);
@@ -859,6 +941,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     for (let i = pirates.length - 1; i >= 0; i--) {
       const pr = pirates[i];
       if (pr.p.state === 'come' && pet && Math.hypot(dog.x - pr.p.x, dog.z - pr.p.z) < config.piraten.hondAfstand) { scarePiraat(pr.p, { x: dog.x, z: dog.z }); cb.onSay && cb.onSay('lines.hondJaagt'); piraatWeg(false); }
+      if (pr.p.state === 'come' && !pr.p.muurWacht && hasWall() && Math.hypot(pr.p.x - CAMP.x, pr.p.z - CAMP.z) < perks(state.eiland, config).fenceRadius + 0.6) { pr.p.muurWacht = true; pr.p.pause = 20; }   // V9.3: the wall holds them twenty seconds
       const res = stepPiraat(pr.p, { target: { x: CAMP.x, z: CAMP.z }, dt }, config.piraten);
       if (res === 'plunder' && piratenInfo && !piratenInfo.geplunderd) {
         piratenInfo.geplunderd = true;
@@ -879,6 +962,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   let action = null;        // { type, label, target }
   let lastActionKey = '';
   let hakUntil = 0;
+  // V9.3: rocks give stones (three taps, then a minute's rest), tracked per rock
+  const rocks = new Map();
+  const rockKey = (o) => `${o.tile}:${o.kind}:${o.index}`;
+  function hasWall() { return !!(state && (state.eiland.tools.hek || state.eiland.tools.hoog_hek || (state.eiland.kamp || 0) >= 1)); }
   let fishing = null;       // { until, biteUntil }
   let forceGoldFish = false;   // tests: the next catch is the golden fish
   // ---------- V9.2: defending yourself: the nearest enemy, the weapon that works on it, shots in flight ----------
@@ -1012,6 +1099,18 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       const d = Math.hypot(px - o.x, pz - o.z) - o.r;
       if (d < REACH.tree && d < bestD) { best = { type: 'hak', label: 'HAK', target: o }; bestD = d; }
     }
+    for (const o of tiles.near(px, pz)) {   // V9.3: rocks give stones
+      if (!o.kind || !o.kind.startsWith('rock')) continue;
+      const rs = rocks.get(rockKey(o));
+      if (rs && rs.restUntil > now) continue;
+      const d = Math.hypot(px - o.x, pz - o.z) - o.r;
+      if (d < REACH.tree + 0.3 && d < bestD) { best = { type: 'steen', label: 'HAK', target: o }; bestD = d; }
+    }
+    for (const k of kisten) {   // V9.3: a filled chest that is still closed
+      if (!k.group.visible || k.open) continue;
+      const d = Math.hypot(px - k.x, pz - k.z);
+      if (d < 1.9 && d < bestD) { best = { type: 'gadgetkist', label: 'OPEN', target: k.i }; bestD = d; }
+    }
     if (best) return best;
     const dl = Math.hypot(px - LAKE.x, pz - LAKE.z);
     if (dl > LAKE.r * 0.9 && dl < LAKE.r + REACH.lake) return { type: 'vis', label: 'VIS', target: null };
@@ -1030,6 +1129,23 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     switch (action.type) {
       case 'kamp': cb.onKamp && cb.onKamp(); return;
       case 'schiet': shoot(action, now); return;   // V9.2
+      case 'gadgetkist': cb.onGadgetKist && cb.onGadgetKist(action.target); lastKistSync = 0; return;   // V9.3
+      case 'steen': {   // V9.3: three taps on a rock give a stone; the rock rests a minute
+        const k = rockKey(action.target);
+        const rs = rocks.get(k) || { taps: 0, restUntil: 0 };
+        rocks.set(k, rs);
+        hakUntil = now + 380;
+        player.heading = Math.atan2(action.target.x - player.x, action.target.z - player.z);
+        game.audio.play('thud');
+        rs.taps++;
+        if (rs.taps >= config.werkbank.steenTaps) {
+          rs.taps = 0;
+          rs.restUntil = now + config.werkbank.steenRestMs;
+          burstChips(action.target.x, player.ground, action.target.z);
+          cb.onCollect && cb.onCollect('steen', 1);
+        }
+        return;
+      }
       case 'graaf': {   // V8.3: dig at a mound (needs the schep); the answer comes from avontuur.js after the swing
         if (!state.eiland.tools.schep) { cb.onSay && cb.onSay('lines.schepNodig'); return; }
         hakUntil = now + 420;
@@ -1367,6 +1483,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     daynight.setGloom((WEER[weerNu()] || WEER.zon).gloom);   // V8.2
     syncSchat(now);   // V8.3
     budgetLights(now);   // V9.1
+    syncKisten(now);   // V9.3
+    if (kampGear.torenLight) kampGear.torenLight.intensity = daynight.darkness * 7;
+    if (kampGear.vlag) kampGear.vlag.rotation.y = Math.sin(now / 300) * 0.35;
     updateRain(dt, focus, weerNu(), lite);
     camp.update(now, daynight.darkness, lite, camera);
     vuurtoren.update(now, daynight.darkness);
@@ -1434,6 +1553,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     /** Tests: fire at the nearest enemy in range right now (the label), or null; the CI runner renders a frame every few
      * seconds, so waiting for the button to show the weapon and tapping it in time is a lottery there. */
     schiet() { const a = shootAction(); if (!a) return null; action = a; shoot(a, performance.now()); return a.label; },
+    // V9.3: the chests of today and the camp for the tests
+    get kisten() { return kisten.filter((k) => k.group.visible).map((k) => ({ i: k.i, x: k.x, z: k.z, zone: k.zone, open: k.open })); },
+    get kampLevel() { return kampGear.level; },
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
     setDown(v) { down = !!v; },
     get down() { return down; },
@@ -1445,9 +1567,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get tilesLoaded() { return tiles.loaded; },
     /** Nearest untaken shell / berry bush / tree, for the tests to walk to. */
     nearest(kind) {
-      const list = kind === 'schelp' ? tiles.allShells().filter((s) => !s.taken) : kind === 'bes' ? tiles.allBushes() : tiles.allObstacles().filter((o) => o.kind && o.kind.startsWith('tree'));
+      const list = kind === 'schelp' ? tiles.allShells().filter((s) => !s.taken) : kind === 'bes' ? tiles.allBushes() : kind === 'steen' ? tiles.allObstacles().filter((o) => o.kind && o.kind.startsWith('rock')) : tiles.allObstacles().filter((o) => o.kind && o.kind.startsWith('tree'));
       let best = null, bd = Infinity;
-      const clear = (it) => (kind === 'schelp' || kind === 'bes') || !tiles.nearShells(it.x, it.z + 1).some((s) => !s.taken && Math.hypot(s.x - it.x, s.z - it.z - 1) < REACH.shell + 0.6);   // a tree with a shell at its foot would offer PAK
+      const clear = (it) => (kind === 'schelp' || kind === 'bes') || (kind === 'steen' ? (!tiles.near(it.x, it.z + 1.4).some((o) => o.kind && (o.kind.startsWith('tree') || o.kind.startsWith('rock')) && o !== it && Math.hypot(o.x - it.x, o.z - it.z - 1.4) < REACH.tree + o.r + 0.8) && !tiles.nearShells(it.x, it.z + 1.4).some((sh) => !sh.taken && Math.hypot(sh.x - it.x, sh.z - it.z - 1.4) < REACH.shell + 0.8) && !tiles.nearBushes(it.x, it.z + 1.4).some((b) => Math.hypot(b.x - it.x, b.z - it.z - 1.4) - b.r < REACH.bush + 0.8)) : !tiles.nearShells(it.x, it.z + 1).some((s) => !s.taken && Math.hypot(s.x - it.x, s.z - it.z - 1) < REACH.shell + 0.6));   // V9.3: a rock with a tree in front would offer the tree's HAK   // a tree with a shell at its foot would offer PAK
       for (const it of list) { const d = Math.hypot(it.x - player.x, it.z - player.z); if (d < bd && map.walkable(it.x, it.z + 1) && clear(it)) { bd = d; best = it; } }
       return best ? { x: best.x, z: best.z } : null;
     },

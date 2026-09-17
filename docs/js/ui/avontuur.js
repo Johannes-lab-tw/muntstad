@@ -18,6 +18,8 @@ import { currentKeten, ketenEvent, PLEKKEN } from '../ketens.js';
 import { burnFire, stokeFire, canStoke, ghostSteal, dawnReward, fireLevel, levelSpan } from '../nacht.js';
 import { vindKaartstuk, graafSchat, weekKey } from '../schat.js';
 import { plunder } from '../piraten.js';
+import { openKist, dagKey, GADGET_INFO } from '../werkbank.js';
+import { seedOf } from '../weer.js';
 import { perks, drainHunger, eat, canEat, faint, deerBump, coolDown, freeze, cook } from '../uitdaging.js';
 import { CYCLE } from '../3d/daycycle.js';
 
@@ -44,7 +46,7 @@ export function createAvontuur(game) {
     if (what === 'close') controls.setEnabled(visible);
     if (what === 'sold') keten({ soort: 'verkoop', item: info.item, n: info.n });
     if (what === 'bought') keten({ soort: 'koop', tool: info.tool });
-    if (what === 'sell' || what === 'tool') renderHud(game.state);
+    if (what === 'sell' || what === 'tool' || what === 'kamp') { hudKey = ''; renderHud(game.state); }
   });
 
   const spring = document.getElementById('av-spring');
@@ -566,6 +568,24 @@ export function createAvontuur(game) {
         game.save();
         game.audio.play('thud');
         game.mentor.say('lines.piratenPlunder', {}, { kind: 'reaction' });
+        hudKey = '';
+        renderHud(game.state);
+      },
+      onGadgetKist(i) {   // V9.3: a chest on the island: items into the bag, gadgets, or coins
+        const cfg = game.config.eiland;
+        const r = openKist(game.state, game.config, i, dagKey(game.now()), seedOf(game.state), perks(game.state.eiland, game.config).bagMax);
+        game.update(() => r.state);
+        if (!r.ok) { game.mentor.say('lines.chestEmpty', {}, { kind: 'reaction' }); return; }
+        game.save();
+        game.audio.play('fanfare');
+        const inh = r.inhoud;
+        const wat = [
+          ...Object.entries(inh.items || {}).map(([k, n]) => `${n} ${cfg.items[k].icon}`),
+          ...Object.entries(inh.gadgets || {}).map(([k, n]) => `${n} ${GADGET_INFO[k].icon} ${GADGET_INFO[k].naam.toLowerCase()}`),
+          ...(inh.coins ? [`${formatCoins(inh.coins)} munten`] : []),
+        ].join(', ');
+        game.mentor.say('lines.kistInhoud', { wat }, { kind: 'reaction' });
+        if (inh.coins) { const p = game.walletPoint(); game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(inh.coins)}`, '#2a9d3a'); game.bumpWallet(); }
         hudKey = '';
         renderHud(game.state);
       },

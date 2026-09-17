@@ -6,6 +6,7 @@ import { normalizeNacht } from './nacht.js';
 import { createBank, dayIndex } from './economy.js';
 import { normalizeCampagne } from './campagne.js';
 const KAART_IDX = ['ruine', 'moeras', 'berg', 'vuurtoren', 'grot'];   // V8.3: map pieces in the Bewaar-code as indices
+const GADGET_IDX = ['net', 'reddingsdrank', 'noodfakkel', 'fluit'];   // V9.3: gadget counts in this order
 
 const CODE_PREFIX = 'MS1';
 
@@ -237,7 +238,7 @@ export function encodeCode(state, config) {
     Math.round(state.playTimeMs / 1000),
     (state.settings.voice ? 1 : 0) | (state.settings.sound ? 2 : 0) | (state.settings.music ? 4 : 0),
     // the island (since PLAN-V4 R3): bag counts in config order, owned tools as indices, quest index + progress, sold, earned
-    [Object.keys(config.eiland.items).map((id) => state.eiland.bag[id] || 0), config.eiland.tools.map((t, i) => (state.eiland.tools[t.id] ? i : -1)).filter((i) => i >= 0), state.eiland.quest, state.eiland.questN, state.eiland.questsDone, state.eiland.sold, state.eiland.earned, Math.round(state.eiland.honger ?? 100), state.eiland.keten || 0, state.eiland.stap || 0, state.eiland.stapN || 0, state.eiland.ketensDone || 0, (state.eiland.kaart || []).reduce((m, id) => m | (1 << Math.max(0, KAART_IDX.indexOf(id))), 0), state.eiland.schatWeek || 0],
+    [Object.keys(config.eiland.items).map((id) => state.eiland.bag[id] || 0), config.eiland.tools.map((t, i) => (state.eiland.tools[t.id] ? i : -1)).filter((i) => i >= 0), state.eiland.quest, state.eiland.questN, state.eiland.questsDone, state.eiland.sold, state.eiland.earned, Math.round(state.eiland.honger ?? 100), state.eiland.keten || 0, state.eiland.stap || 0, state.eiland.stapN || 0, state.eiland.ketensDone || 0, (state.eiland.kaart || []).reduce((m, id) => m | (1 << Math.max(0, KAART_IDX.indexOf(id))), 0), state.eiland.schatWeek || 0, state.eiland.kamp || 0, GADGET_IDX.map((g) => (state.eiland.gadgets && state.eiland.gadgets[g]) || 0), state.eiland.kistenOpen || 0, state.eiland.kistenDag || 0],
     [Math.round(state.nacht.fire), state.nacht.nights, state.nacht.stolen, state.nacht.clockOffsetMs, state.nacht.fainted || 0, state.nacht.bumped || 0],
     [Math.floor(state.bank?.saldo || 0), state.bank?.lastGrowDay || 0, Math.floor(state.bank?.earned || 0)],   // V6.4: the savings bank
     [state.campagne?.hoofdstuk || 0, state.campagne?.munten || 0, state.campagne?.pogingen || 0, state.campagne?.reeks || 0],   // V6.6: the campaign
@@ -296,7 +297,7 @@ export function decodeCode(code, config, now) {
       settings: { voice: !!(bits & 1), sound: !!(bits & 2), music: !!(bits & 4) },
       // a restored code is a returning player: START must say "Verder spelen", not ask for a name again
       flags: { started: true, workIntro: true },
-      eiland: { bag, tools, quest: ei[2], questN: ei[3], questsDone: ei[4], sold: ei[5], earned: ei[6], honger: ei[7], keten: ei[8], stap: ei[9], stapN: ei[10], ketensDone: ei[11], kaart: KAART_IDX.filter((_, i) => (Number(ei[12]) || 0) & (1 << i)), schatWeek: Number(ei[13]) || 0 },
+      eiland: { bag, tools, quest: ei[2], questN: ei[3], questsDone: ei[4], sold: ei[5], earned: ei[6], honger: ei[7], keten: ei[8], stap: ei[9], stapN: ei[10], ketensDone: ei[11], kaart: KAART_IDX.filter((_, i) => (Number(ei[12]) || 0) & (1 << i)), schatWeek: Number(ei[13]) || 0, kamp: Number(ei[14]) || 0, gadgets: Object.fromEntries(GADGET_IDX.map((g, k) => [g, Number(list(ei[15])[k]) || 0])), kistenOpen: Number(ei[16]) || 0, kistenDag: Number(ei[17]) || 0 },
       nacht: { fire: list(p[20])[0], nights: list(p[20])[1], stolen: list(p[20])[2], clockOffsetMs: list(p[20])[3], fainted: list(p[20])[4], bumped: list(p[20])[5] },
       bank: { saldo: list(p[21])[0], lastGrowDay: list(p[21])[1], earned: list(p[21])[2] },
       campagne: { hoofdstuk: list(p[22])[0], munten: list(p[22])[1], pogingen: list(p[22])[2], reeks: list(p[22])[3] },

@@ -44,6 +44,7 @@ export const CONFIG = Object.freeze({
       bes:    { name: 'Bes',    icon: '🫐', price: 1 },
       vis:    { name: 'Vis',    icon: '🐟', price: 8 },
       maal:   { name: 'Maal',   icon: '🍖', price: 16 },   // a fish cooked on a level-3 fire (V6.2)
+      steen:  { name: 'Steen',  icon: '🪨', price: 2 },    // V9.3: from rocks (HAK), for the workbench
     },
     tools: [
       { id: 'bijl',     name: 'Bijl',     icon: '🪓', price: 60,  tekst: 'Elke hak geeft twee stukken hout.' },
@@ -104,6 +105,13 @@ export const CONFIG = Object.freeze({
 
   // The night on the island (PLAN-V4 R4). Balance: a night (3 min) burns ≈ 8 pieces of wood; by hand that is 24 taps,
   // with the axe 4 taps. The reward for a night with the fire still burning grows with every night.
+  // V9.3: the workbench (docs/js/werkbank.js): stones from rocks, the storage chest of camp level 4
+  werkbank: {
+    steenTaps: 3,                     // taps on a rock per stone
+    steenRestMs: 60 * 1000,           // a rock rests this long after a stone
+    opslagExtra: 20,                  // camp level 4: this many more things fit in the bag
+  },
+
   // V9.2: defending yourself (docs/js/gevecht.js): lives per enemy, the coins a beaten enemy drops, the growing pack
   gevecht: {
     levens: { wolf: 2, piraat: 2, beer: 4, spook: 1 },

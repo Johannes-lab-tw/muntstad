@@ -3,6 +3,7 @@
 // Lives as a full-screen layer inside the AVONTUUR screen, so the island stays where you left it.
 import { bagValue, sellAll, buyTool, toolById, bagCount } from '../eiland.js';
 import { formatCoins } from '../economy.js';
+import { RECEPTEN, GADGET_INFO, maak, upgradeKamp, tekort, kanMaken, volgendeKampLevel } from '../werkbank.js';   // V9.3
 
 const PER_PAGE = 4;
 
@@ -10,6 +11,7 @@ export function createKamp(game, onChange) {
   const overlay = document.getElementById('kamp-overlay');
   const tabSell = document.getElementById('kamp-tab-verkopen');
   const tabBuy = document.getElementById('kamp-tab-kopen');
+  const tabMake = document.getElementById('kamp-tab-maken');   // V9.3
   const grid = document.getElementById('kamp-grid');
   const prev = document.getElementById('kamp-prev');
   const next = document.getElementById('kamp-next');
@@ -26,6 +28,11 @@ export function createKamp(game, onChange) {
     const cfg = game.config.eiland;
     const e = game.state.eiland;
     if (tab === 'verkopen') return Object.entries(cfg.items).filter(([id]) => e.bag[id] > 0).map(([id, it]) => ({ id, it }));
+    if (tab === 'maken') {   // V9.3: the next camp level first, then the recipes
+      const next = volgendeKampLevel(e);
+      const kamp = next ? [{ id: 'kamp', it: { ...next, name: next.naam, recept: { kost: next.kost } } }] : [];
+      return [...kamp, ...RECEPTEN.map((r) => { const t = cfg.tools.find((x) => x.id === r.id); const g = GADGET_INFO[r.id]; return { id: r.id, it: { name: t ? t.name : g.naam, icon: t ? t.icon : g.icon, tekst: t ? t.tekst : g.tekst, recept: r } }; })];
+    }
     return cfg.tools.map((t) => ({ id: t.id, it: t }));
   }
   function pageCount() { return Math.max(1, Math.ceil(items().length / PER_PAGE)); }
@@ -86,12 +93,35 @@ export function createKamp(game, onChange) {
     build();
   }
 
+  /** V9.3: make a recipe or the next camp level from what is in the bag. */
+  function doMaak(id) {
+    const cfg = game.config.eiland;
+    const r = id === 'kamp' ? upgradeKamp(game.state) : maak(game.state, id);
+    if (!r.ok) {
+      game.audio.play('thud');
+      if (r.tekort) game.mentor.say('lines.tekort', { wat: Object.entries(r.tekort).map(([k, n]) => `${n} ${cfg.items[k].icon}`).join(', ') }, { kind: 'reaction' });
+      return;
+    }
+    game.audio.play('buy');
+    game.update(() => r.state);
+    game.save();
+    if (id === 'kamp') { const k = volgendeKampLevel({ kamp: r.level - 1 }); game.mentor.say('lines.kampLevel', { n: r.level, naam: k ? k.naam.toLowerCase() : '' }, { kind: 'reaction' }); onChange && onChange('kamp', r.level); }
+    else {
+      const t = cfg.tools.find((x) => x.id === id), g = GADGET_INFO[id];
+      game.mentor.say('lines.gemaakt', { ding: (t ? t.name : g.naam).toLowerCase() }, { kind: 'reaction' });
+      if (t) { onChange && onChange('tool', id); onChange && onChange('bought', { tool: id }); }
+    }
+    onChange && onChange('sell');
+    build();
+  }
+
   function build() {
     const s = game.state;
     const cfg = game.config.eiland;
     const e = s.eiland;
     tabSell.classList.toggle('active', tab === 'verkopen');
     tabBuy.classList.toggle('active', tab === 'kopen');
+    tabMake.classList.toggle('active', tab === 'maken');
     grid.innerHTML = '';
     const list = items();
     const pages = pageCount();
@@ -117,6 +147,25 @@ export function createKamp(game, onChange) {
         btn.textContent = 'VERKOOP';
         btn.className = 'btn btn-success';
         btn.addEventListener('click', () => sellOne(id));
+      } else if (tab === 'maken') {   // V9.3: cost in items, MAAK when the bag has it
+        const kost = it.recept.kost;
+        const ownedTool = id !== 'kamp' && it.recept.soort === 'tool' && !!e.tools[id];
+        const have = id !== 'kamp' && it.recept.soort === 'gadget' ? ((e.gadgets && e.gadgets[id]) || 0) : 0;
+        const can = kanMaken(e, kost);
+        sub.textContent = it.tekst;
+        price.textContent = Object.entries(kost).map(([k, n]) => `${n} ${cfg.items[k].icon}`).join('  ') + (have ? `  · je hebt ${have}` : '');
+        if (ownedTool) {
+          card.classList.add('owned');
+          btn.textContent = '✔';
+          btn.className = 'btn btn-grey';
+          btn.disabled = true;
+        } else {
+          btn.textContent = 'MAAK';
+          btn.className = `btn btn-primary${can ? ' glow' : ' dim'}`;
+          if (can) card.classList.add('can');
+          btn.dataset.maak = id;
+          btn.addEventListener('click', () => doMaak(id));
+        }
       } else {
         const owned = !!e.tools[id];
         const can = s.wallet >= it.price;
@@ -150,6 +199,7 @@ export function createKamp(game, onChange) {
 
   tabSell.addEventListener('click', () => { game.audio.play('tap'); tab = 'verkopen'; page = 0; build(); });
   tabBuy.addEventListener('click', () => { game.audio.play('tap'); tab = 'kopen'; page = 0; build(); });
+  tabMake.addEventListener('click', () => { game.audio.play('tap'); tab = 'maken'; page = 0; build(); });   // V9.3
   prev.addEventListener('click', () => { game.audio.play('tap'); page = (page - 1 + pageCount()) % pageCount(); build(); });
   next.addEventListener('click', () => { game.audio.play('tap'); page = (page + 1) % pageCount(); build(); });
   allBtn.addEventListener('click', sellEverything);

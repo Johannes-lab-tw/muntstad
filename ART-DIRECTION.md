@@ -133,6 +133,12 @@ on every screen in V7.3:
   optional badge bottom-right (the fire level). `.low` turns it red and pulses.
 - `.tile` — a picture with a number badge (the backpack); `.n.full` turns the badge red.
 
+**V9.3: the workbench.** A chest is a brown box with a gold band, a hinged lid (rotation −1.3 rad when open) and a small
+warm glow sphere above it while it is still closed. The camp levels: the wall reuses `fenceModel`; the watchtower is
+four poles, a platform at 4.1 m with a railing and a lantern sphere (point light 7 at night, subject to the light
+budget); the big tent is the tent at scale 1.3; the storage chest is a 1.6 m box with a gold band beside the fire; the
+flag is a red plane on a pole at the tower's corner that sways. Stones are the rock instances' colour; the item icon is 🪨.
+
 **V9.2: the fight.** A shot is a small sphere in the weapon's colour (spear sand, sling purple, water light blue, boomerang
 orange, alien green) flying in an arc of 0.8 m over 180 ms plus 12 ms per metre; a hit scales the enemy to 1.3 for 120 ms
 and pushes it back 1.5 m; a beaten enemy poofs into six white spheres that drift up and fade in 450 ms. The dusk banner

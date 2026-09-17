@@ -57,7 +57,7 @@ werk/winkel/huis p50 17 p95 18-19 tier 0 px 1.50 · stad/dorp p50 17 tier 2 (erf
   iets zwaarder, elke vijfde nacht een baas.
 - Tests: unit voor treffers/levens/herlaad; e2e speer op een wolf, katapult op een piraat.
 
-### V9.3 Maken, kisten en het kamp (avond 3)
+### V9.3 Maken, kisten en het kamp (avond 3) — gebouwd 17 september, zie PROGRESS Run 10
 - **Werkbank** bij het vuur: hout + stenen + schelpen → speer, katapult, netten, muur-stukken, fakkels, verband,
   reddingsdrank. Stenen zijn een nieuwe grondstof (rotsen hakken met een houweel).
 - **Kisten** op het eiland met gadgets (zoals 99 Nights): tien vaste plekken, elke dag drie gevuld (zaad per dag),

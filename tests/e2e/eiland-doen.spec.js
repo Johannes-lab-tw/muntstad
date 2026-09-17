@@ -162,3 +162,50 @@ test('KAMP sells the backpack for coins and the axe is bought with the shared wa
   await expect(page.locator('#screen-avontuur')).toHaveClass(/active/);
   expect(errors()).toEqual([]);
 });
+
+// V9.3: stones, the workbench and the chests. HAK on a rock gives a stone after three taps; at the fire the MAKEN tab
+// builds a spear from wood and a stone and the first camp level (the wall); a filled chest opens once and gives something.
+test('V9.3 stones from rocks, MAAK a spear and the wall at the fire, open a chest of today', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = { bag: { hout: 16, schelp: 6, bes: 0, vis: 0, steen: 4 }, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: {}, sold: 0, earned: 0, honger: 100 }; s.nacht = { fire: 60, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  // a rock: three taps, one stone
+  const rock = await page.evaluate(() => window.__muntstad.avontuur.nearest('steen'));
+  expect(rock, 'a rock exists').not.toBeNull();
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 1.4), rock);
+  await expect.poll(async () => (await hook(page)).action?.type, { timeout: 40000 }).toBe('steen');
+  for (let i = 0; i < 3; i++) { await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 }); await page.waitForTimeout(450); }
+  await expect.poll(async () => (await state(page)).eiland.bag.steen, { timeout: 40000 }).toBe(5);
+  // the workbench: MAAK the spear (4 wood, 1 stone), then the wall (12 wood, 4 stones)
+  const h = await hook(page);
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 2.2), h.camp);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('KAMP');
+  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect(page.locator('#kamp-overlay')).toBeVisible({ timeout: 40000 });
+  await page.locator('#kamp-tab-maken').click();
+  await expect(page.locator('.card[data-id="speer"] button')).toBeVisible({ timeout: 40000 });
+  await page.locator('.card[data-id="speer"] button').click();
+  await expect.poll(async () => (await state(page)).eiland.tools.speer, { timeout: 40000 }).toBe(true);
+  expect((await state(page)).eiland.bag.steen).toBe(4);
+  await page.locator('.card[data-id="kamp"] button').click();
+  await expect.poll(async () => (await state(page)).eiland.kamp, { timeout: 40000 }).toBe(1);
+  expect((await state(page)).eiland.bag.hout).toBe(16 - 4 - 12);
+  await page.locator('#kamp-dicht').click();
+  await expect(page.locator('#kamp-overlay')).toBeHidden({ timeout: 40000 });
+  // a chest of today
+  const kisten = await page.evaluate(() => window.__muntstad.avontuur.kisten);
+  expect(kisten.length).toBe(3);
+  const k = kisten.find((c) => !c.open);
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 1.2), k);
+  await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('OPEN');
+  const before = await state(page);
+  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(async () => (await state(page)).eiland.kistenOpen & (1 << k.i), { timeout: 40000 }).toBeTruthy();
+  const after = await state(page);
+  const changed = Math.floor(after.wallet) > Math.floor(before.wallet) || JSON.stringify(after.eiland.bag) !== JSON.stringify(before.eiland.bag) || JSON.stringify(after.eiland.gadgets) !== JSON.stringify(before.eiland.gadgets);
+  expect(changed).toBe(true);
+  await expect.poll(async () => (await page.evaluate(() => window.__muntstad.avontuur.kisten)).find((c) => c.i === k.i).open, { timeout: 40000 }).toBe(true);
+  expect(errors()).toEqual([]);
+});
