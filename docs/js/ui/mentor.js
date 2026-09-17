@@ -21,6 +21,7 @@ export function createMentor(game) {
   let hideTimer = null;
   let talkTimer = null;
   let lastText = '';
+  let lastSpoken = '';
   let lastShort = '';
   const log = [];   // the last full lines Muntje said (tests read them; a tip may replace the welcome line on a slow device)
   let shownAt = 0;
@@ -64,7 +65,7 @@ export function createMentor(game) {
    * sayText(text, { kind: 'reaction' | 'tip', short, hold }) → true when shown. `short` is the picture-plus-words
    * form for the bubble (the voice always gets `text`); `hold` keeps the bubble up for 10 s.
    */
-  function sayText(text, { kind = 'reaction', short = '', hold = false } = {}) {
+  function sayText(text, { kind = 'reaction', short = '', hold = false, spoken = '' } = {}) {
     if (!text) return false;
     const now = game.now();
     if (kind === 'tip') {
@@ -72,7 +73,8 @@ export function createMentor(game) {
       lastTip = now;
     }
     show(text, short, hold ? HOLD_MS : 0);
-    speak(text);
+    lastSpoken = spoken || text;   // V9.7: a line with a name or a number is spoken as its twin without them (stem.js)
+    speak(lastSpoken);
     return true;
   }
 
@@ -80,7 +82,9 @@ export function createMentor(game) {
     const all = { naam: game.displayName(), ...vars };
     const kortKey = key.startsWith('lines.') ? `kort.${key.slice(6)}` : '';
     const short = kortKey ? game.t(kortKey, all) : '';
-    return sayText(game.t(key, all), { ...opts, short: short && short !== kortKey ? short : '', hold: opts.hold ?? HOLD.has(key) });
+    const stemKey = key.startsWith('lines.') ? `stem.${key.slice(6)}` : '';
+    const twin = stemKey ? game.t(stemKey, all) : '';
+    return sayText(game.t(key, all), { ...opts, short: short && short !== kortKey ? short : '', hold: opts.hold ?? HOLD.has(key), spoken: twin && twin !== stemKey ? twin : '' });
   }
 
   // a tap anywhere else dismisses the bubble once it has been readable for a moment
@@ -92,7 +96,7 @@ export function createMentor(game) {
     game.audio.play('tap');
     if (lastText) {
       show(lastText, lastShort);
-      speak(lastText);
+      speak(lastSpoken || lastText);
     }
   }
   replay.addEventListener('click', again);

@@ -6,6 +6,7 @@ import * as S from './save.js';
 import { T, t } from './i18n.js';
 import { createAudio } from './audio.js';
 import { createSpeech } from './speech.js';
+import { createStemSpeler } from './stem-speler.js';
 import { createEngine } from './3d/engine.js';
 import { createScene } from './3d/scene-stad.js';
 import { createMentor } from './ui/mentor.js';
@@ -51,6 +52,9 @@ const listeners = {};
 
 const audio = createAudio();
 const speech = createSpeech(CONFIG);
+const stem = createStemSpeler(audio);   // V9.7: Muntje's own voice files; the iPad voice stays the fallback
+speech.setBestanden(stem);
+stem.laad();
 
 const game = {
   config: CONFIG,
@@ -271,7 +275,7 @@ function bumpWallet() {
 // ---------- screens ----------
 
 const TOPBAR_SCREENS = new Set(['stad', 'dorp', 'avontuur', 'werk', 'winkel', 'huis']);
-export const GAME_VERSION = 'v9.6';   // V6.8: shown in the MELD code on PAPA; bump with every tag
+export const GAME_VERSION = 'v9.7';   // V6.8: shown in the MELD code on PAPA; bump with every tag
 const recent = [];                    // the last screens, for the MELD code
 const perfLog = {};                   // V8.1: the last measuring window per 3D screen (p50/p95/hitches/tier), for the MELD code
 function noteEvent(what) { recent.push(`${new Date().toTimeString().slice(0, 8)} ${what}`); if (recent.length > 8) recent.shift(); }
@@ -400,7 +404,7 @@ function boot() {
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch((e) => console.info('[muntstad] service worker not registered:', e.message));
   }
-  window.__muntstad = { get state() { return state; }, config: CONFIG, version: 4, gameVersion: GAME_VERSION, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook, dorp: screens.dorp.hook, get mentorLog() { return game.mentor.log; }, get samen() { return game.samen; } };
+  window.__muntstad = { get state() { return state; }, config: CONFIG, stem, speech, version: 4, gameVersion: GAME_VERSION, plotPoint: (id) => game.scene.plotPoint(id), get scene() { return game.scene; }, avontuur: screens.avontuur.hook, dorp: screens.dorp.hook, get mentorLog() { return game.mentor.log; }, get samen() { return game.samen; } };
 }
 
 boot();

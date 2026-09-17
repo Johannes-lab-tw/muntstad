@@ -683,6 +683,7 @@ export function createAvontuur(game) {
       },
       onBaas(def, hp, max) {   // V9.5: the boss is here: the banner stays up with its lives, Muntje warns
         baasBanner(def, hp, max);
+        game.audio.setTheme('baas');   // V9.7
         setTimeout(() => { if (visible) game.mentor.say('lines.baasKomt', { naam: def.naam }, { kind: 'reaction' }); }, 800);
       },
       onBaasHp(def, hp, max) { baasBanner(def, hp, max); },
@@ -705,10 +706,11 @@ export function createAvontuur(game) {
         game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(r.munten)}`, '#2a9d3a');
         game.bumpWallet();
         baasBanner(null);
+        game.audio.setTheme('eiland');
         hudKey = '';
         renderHud(game.state);
       },
-      onBaasWeg(def) { baasBanner(null); game.mentor.say('lines.baasWeg', { naam: def.naam }, { kind: 'reaction' }); },
+      onBaasWeg(def) { baasBanner(null); game.audio.setTheme('eiland'); game.mentor.say('lines.baasWeg', { naam: def.naam }, { kind: 'reaction' }); },
       onWek() {   // V9.4: waking a friend costs a reddingsdrank
         const r = gebruikGadget(game.state, 'reddingsdrank');
         if (!r.ok) { game.mentor.say('lines.wekNodig', {}, { kind: 'reaction' }); return false; }
