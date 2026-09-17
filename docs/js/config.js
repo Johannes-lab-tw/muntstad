@@ -307,18 +307,32 @@ export const CONFIG = Object.freeze({
   // Coin-makers. One of each, level 1..maxLevel. Upgrade price from level n to n+1 = price * 2^n.
   // The next type unlocks when the total coins earned reach its price. Index 0 is always unlocked.
   maxLevel: 10,                     // V6.4: levels 6-10 (neon, stars, a golden roof) with the same multipliers carried on
+  upgradeGroei: 2.5,                // V9.8: an upgrade costs ×2.5 per level up to level 5 (was ×2), ×2 per level after that
+  // V9.8: town works, one-off purchases that open the next part of the town (PLAN-V8 §V8.5 → PLAN-V9 §D)
+  werken: [
+    { id: 'vergunning', name: 'Bouwvergunning', icon: '📜', price: 5000 },
+    { id: 'brug',       name: 'De brug',        icon: '🌉', price: 25000, vereist: { werk: 'vergunning' } },
+    { id: 'kade',       name: 'De kade',        icon: '⚓', price: 100000, vereist: { werk: 'brug' } },
+  ],
+  // V9.8: maintenance. From the second day of play on, each new calendar day has a chance that one maker breaks:
+  // no income until REPAREER, which costs a share of its price. Never two at once; a storm night breaks one too.
+  onderhoud: { kansPerDag: 0.35, reparatie: 0.15 },
+  // V9.8 (PLAN-V9 §D): the town climbs slower and every step opens the next: income grows ×1.45 per level up to 5
+  // (was ×1.5; levels 6-10 keep their old ratios), and `vereist` says what must be there first (a maker at a level,
+  // `aantal` makers at a level, a town work). The first maker is always open; the rest also wait for total earned ≥ price.
+  // The simulator (scripts/simulate.js) keeps the lesson inside one 20-minute session: ×1.35 or level 3 made the
+  // investor lose it (ratio 1.6, overtake at 7 min), ×1.45 with level 2 keeps ratio 3.6 and overtake at 3 min.
   makers: [
-    { id: 'limonade',  name: 'Limonadekraam',    icon: '🍋', price: 20,    income: [12, 18, 27, 41, 61, 90, 130, 205, 300, 455] },
-    { id: 'wasstraat', name: 'Wasstraat',        icon: '🚿', price: 120,   income: [50, 75, 113, 170, 250, 375, 550, 850, 1200, 1900] },
-    { id: 'pizzeria',  name: 'Pizzeria',         icon: '🍕', price: 400,   income: [150, 225, 338, 510, 750, 1100, 1600, 2600, 3800, 5700] },
-    { id: 'ijssalon',  name: 'IJssalon',         icon: '🍦', price: 1000,  income: [300, 450, 675, 1020, 1500, 2200, 3300, 5100, 7500, 11400] },   // V5.5
-    { id: 'fabriek',   name: 'Fabriek',          icon: '🤖', price: 2000,  income: [600, 900, 1350, 2040, 3000, 4500, 6600, 10200, 15000, 22800] },
-    { id: 'flat',      name: 'Flatgebouw',       icon: '🏢', price: 10000, income: [2500, 3750, 5625, 8500, 12500, 18800, 27500, 42500, 62500, 95000] },
-    { id: 'pretpark',  name: 'Pretpark',         icon: '🎡', price: 40000, income: [8000, 12000, 18000, 27200, 40000, 60000, 88000, 136000, 200000, 304000] },   // V5.5: the top of the town
-    // V6.4: the new top of the town (the simulator and the balance test keep the lesson: investing pays)
-    { id: 'hotel',     name: 'Hotel',            icon: '🏨', price: 200000,  income: [40000, 60000, 90000, 136000, 200000, 300000, 440000, 680000, 1000000, 1520000] },
-    { id: 'haven',     name: 'Handelshaven',     icon: '🚢', price: 1000000, income: [150000, 225000, 337500, 510000, 750000, 1125000, 1650000, 2550000, 3750000, 5700000] },
-    { id: 'raketbasis', name: 'Raketbasis',      icon: '🚀', price: 5000000, income: [600000, 900000, 1350000, 2040000, 3000000, 4500000, 6600000, 10200000, 15000000, 22800000] },
+    { id: 'limonade',    name: 'Limonadekraam',  icon: '🍋', price: 20, income: [12, 17, 25, 37, 53, 78, 115, 180, 260, 395] },
+    { id: 'wasstraat',   name: 'Wasstraat',      icon: '🚿', price: 120, income: [50, 72, 105, 150, 220, 330, 485, 750, 1060, 1670], vereist: { maker: 'limonade', level: 2 } },
+    { id: 'pizzeria',    name: 'Pizzeria',       icon: '🍕', price: 400, income: [150, 220, 315, 455, 665, 975, 1420, 2310, 3370, 5050], vereist: { maker: 'wasstraat', level: 2 } },
+    { id: 'ijssalon',    name: 'IJssalon',       icon: '🍦', price: 1000, income: [300, 435, 630, 915, 1330, 1950, 2930, 4520, 6650, 10100], vereist: { maker: 'pizzeria', level: 2 } },   // V5.5
+    { id: 'fabriek',     name: 'Fabriek',        icon: '🤖', price: 2000, income: [600, 870, 1260, 1830, 2650, 3980, 5830, 9010, 13200, 20100], vereist: { aantal: 3, level: 2 } },
+    { id: 'flat',        name: 'Flatgebouw',     icon: '🏢', price: 10000, income: [2500, 3620, 5260, 7620, 11100, 16700, 24400, 37700, 55500, 84400], vereist: { maker: 'fabriek', level: 5, werk: 'vergunning' } },
+    { id: 'pretpark',    name: 'Pretpark',       icon: '🎡', price: 40000, income: [8000, 11600, 16800, 24400, 35400, 53100, 77900, 120000, 177000, 269000], vereist: { maker: 'flat', level: 5 } },   // V5.5: the top of the town
+    { id: 'hotel',       name: 'Hotel',          icon: '🏨', price: 200000, income: [40000, 58000, 84100, 122000, 177000, 266000, 389000, 602000, 885000, 1345000], vereist: { werk: 'brug' } },
+    { id: 'haven',       name: 'Handelshaven',   icon: '🚢', price: 1000000, income: [150000, 218000, 315000, 457000, 663000, 994000, 1459000, 2254000, 3315000, 5039000], vereist: { werk: 'kade' } },
+    { id: 'raketbasis',  name: 'Raketbasis',     icon: '🚀', price: 5000000, income: [600000, 870000, 1262000, 1829000, 2652000, 3978000, 5834000, 9017000, 13260000, 20155000], vereist: { maker: 'haven', level: 2 } },
   ],
 
   // LEUK catalogue: fixed prices, all visible from the start, no randomness.

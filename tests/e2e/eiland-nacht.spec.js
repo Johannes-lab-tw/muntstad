@@ -302,16 +302,12 @@ test('V9.2 weapons: SPEER beats a wolf in two hits, WATER poofs a ghost, the ban
   // label to be SPEER at the moment of a tap is a lottery there. Place the pack again before every shot (it moves).
   const schiet = () => page.evaluate(() => window.__muntstad.avontuur.schiet());
   for (let i = 0; i < 12 && (await poefs()) === 0; i++) {
-  // two hits kill a wolf; on the slow runner the pack moves, lunges or gives up between taps, so place them again and
-  // tap until one poofs (the spear reloads in 0.9 s); a wolf that ran off and was removed is not a poof
-  for (let i = 0; i < 10 && (await poefs()) === 0; i++) {
     await page.evaluate(({ x, z }) => window.__muntstad.avontuur.wolvesAt(x, z + 3), p);
     const label = await schiet();
     expect([null, 'SPEER']).toContain(label);
     await page.waitForTimeout(1200);   // the spear reloads in 0.9 s
   }
   await expect.poll(poefs, { timeout: 40000 }).toBe(1);
-  expect(await poefs()).toBe(1);
   await expect.poll(async () => (await wolves()).length, { timeout: 40000 }).toBeLessThan(n0);
   await expect.poll(earned, { timeout: 40000 }).toBe(earnedBefore + 2);
   // a ghost right here: the water pistol is the action, one hit and it is gone
@@ -326,8 +322,6 @@ test('V9.2 weapons: SPEER beats a wolf in two hits, WATER poofs a ghost, the ban
     await page.waitForTimeout(700);
   }
   await expect.poll(poefs, { timeout: 40000 }).toBe(2);   // the ghost poofed
-  await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(poefs, { timeout: 40000 }).toBe(2);   // the ghost poofed (another one may have drifted in meanwhile)
   await expect.poll(earned, { timeout: 40000 }).toBe(earnedBefore + 3);
   expect(errors()).toEqual([]);
 });

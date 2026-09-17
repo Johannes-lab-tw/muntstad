@@ -1,6 +1,6 @@
 // save.js — versioned localStorage save, migration chain, corruption-safe load, Bewaar-code export/import.
 // Pure helpers take a `storage` object ({ getItem, setItem, removeItem }) so tests can pass a fake.
-import { createState } from './economy.js';
+import { createState, createOnderhoud } from './economy.js';
 import { normalizeEiland } from './eiland.js';
 import { normalizeNacht } from './nacht.js';
 import { createBank, dayIndex } from './economy.js';
@@ -47,6 +47,18 @@ function num(v, fallback = 0) {
 }
 
 /** Fill defaults for missing keys, clamp numbers, drop unknown ids. Returns null when the shape is hopeless. */
+function normalizeWerken(w, config) {
+  const out = {};
+  if (w && typeof w === 'object') for (const x of config.werken || []) if (w[x.id]) out[x.id] = true;
+  return out;
+}
+function normalizeOnderhoud(o, config, now) {
+  const fresh = createOnderhoud(now);
+  if (!o || typeof o !== 'object') return fresh;
+  const kapot = typeof o.kapot === 'string' && config.makers.some((m) => m.id === o.kapot) ? o.kapot : null;
+  return { kapot, dag: Number.isFinite(o.dag) ? o.dag : fresh.dag, gerepareerd: Math.max(0, Math.floor(num(o.gerepareerd))), spentRepairs: Math.max(0, num(o.spentRepairs)) };
+}
+
 export function normalize(data, config, now) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
   if (typeof data.makers !== 'object' || data.makers === null) return null;
@@ -107,6 +119,8 @@ export function normalize(data, config, now) {
     nacht: normalizeNacht(data.nacht, config),
     bank: normalizeBank(data.bank, config, now),
     campagne: normalizeCampagne(data.campagne),
+    werken: normalizeWerken(data.werken, config),                 // V9.8
+    onderhoud: normalizeOnderhoud(data.onderhoud, config, now),   // V9.8
     settings: {
       voice: data.settings && 'voice' in data.settings ? !!data.settings.voice : true,
       sound: data.settings && 'sound' in data.settings ? !!data.settings.sound : true,
@@ -243,6 +257,8 @@ export function encodeCode(state, config) {
     [Math.round(state.nacht.fire), state.nacht.nights, state.nacht.stolen, state.nacht.clockOffsetMs, state.nacht.fainted || 0, state.nacht.bumped || 0],
     [Math.floor(state.bank?.saldo || 0), state.bank?.lastGrowDay || 0, Math.floor(state.bank?.earned || 0)],   // V6.4: the savings bank
     [state.campagne?.hoofdstuk || 0, state.campagne?.munten || 0, state.campagne?.pogingen || 0, state.campagne?.reeks || 0],   // V6.6: the campaign
+    // V9.8: the town works as a bitmask, the broken maker (index + 1, 0 = none), the day checked, repairs and their cost
+    [(config.werken || []).reduce((b, w, i) => b | (state.werken && state.werken[w.id] ? 1 << i : 0), 0), config.makers.findIndex((m) => m.id === (state.onderhoud && state.onderhoud.kapot)) + 1, state.onderhoud?.dag || 0, state.onderhoud?.gerepareerd || 0, Math.floor(state.onderhoud?.spentRepairs || 0)],
   ];
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   return `${CODE_PREFIX}.${bytesToB64(bytes)}.${checksum(bytes)}`;
@@ -302,6 +318,8 @@ export function decodeCode(code, config, now) {
       nacht: { fire: list(p[20])[0], nights: list(p[20])[1], stolen: list(p[20])[2], clockOffsetMs: list(p[20])[3], fainted: list(p[20])[4], bumped: list(p[20])[5] },
       bank: { saldo: list(p[21])[0], lastGrowDay: list(p[21])[1], earned: list(p[21])[2] },
       campagne: { hoofdstuk: list(p[22])[0], munten: list(p[22])[1], pogingen: list(p[22])[2], reeks: list(p[22])[3] },
+      werken: Object.fromEntries((config.werken || []).map((w, i) => [w.id, !!((Number(list(p[23])[0]) || 0) & (1 << i))])),   // V9.8
+      onderhoud: { kapot: (config.makers[(Number(list(p[23])[1]) || 0) - 1] || {}).id || null, dag: Number(list(p[23])[2]) || 0, gerepareerd: Number(list(p[23])[3]) || 0, spentRepairs: Number(list(p[23])[4]) || 0 },
       lastTick: now, createdAt: now,
     }, config, now);
   } catch (e) {

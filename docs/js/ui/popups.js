@@ -1,5 +1,5 @@
 // popups.js — offline earnings (count-up + TOP!), milestone celebrations (fanfare, confetti, sticker), building card.
-import { formatCoins, makerById, makerLevel, makerIncome, upgradePrice, bankGrow, bankDeposit, bankWithdraw } from '../economy.js';
+import { formatCoins, makerById, makerLevel, makerIncome, upgradePrice, bankGrow, bankDeposit, bankWithdraw, reparatiePrijs } from '../economy.js';
 import { makerSprite } from '../3d/thumbs.js';
 
 export function createPopups(game) {
@@ -171,14 +171,26 @@ export function createPopups(game) {
           b.appendChild(coin());
           box.appendChild(b);
         } else {
-          box.appendChild(withCoin(el('p', 'popup-text'), `${game.t('ui.verdienEerst')} ${formatCoins(maker.price)} `));
-          box.appendChild(el('div', 'popup-icon', '🔒'));
+          const o = game.ontbreekt(id);   // V9.8: the rule first, the coins second
+          if (o) box.appendChild(el('p', 'popup-text', `${game.t('ui.eerst').charAt(0).toUpperCase()}${game.t('ui.eerst').slice(1)} ${game.vereistTekst(o)}`));
+          else box.appendChild(withCoin(el('p', 'popup-text'), `${game.t('ui.verdienEerst')} ${formatCoins(maker.price)} `));
+          box.appendChild(el('div', 'popup-icon', o ? (o.soort === 'werk' ? o.werk.icon : o.soort === 'maker' ? o.maker.icon : '🔒') : '🔒'));
         }
       } else {
         box.appendChild(el('div', 'bcard-stars', '⭐'.repeat(level)));
         box.appendChild(el('p', 'bcard-income', `${formatCoins(makerIncome(maker, level))} ${game.t('ui.perMinuut')}`));
-        if (level < game.config.maxLevel) {
-          const price = upgradePrice(maker, level);
+        if (game.kapot() === id) {   // V9.8: broken: REPAREER instead of BETER
+          const price = reparatiePrijs(maker, game.config);
+          box.appendChild(el('p', 'popup-text', `🔧 ${game.t('ui.kapot')}`));
+          const b = button(`${game.t('ui.repareer')} ${formatCoins(price)}`, 'btn-primary btn-xl', () => {
+            const r = game.buy('repareer', id);
+            if (r.ok) close();
+            else { box.classList.add('shake'); setTimeout(() => box.classList.remove('shake'), 500); }
+          });
+          b.appendChild(coin());
+          box.appendChild(b);
+        } else if (level < game.config.maxLevel) {
+          const price = upgradePrice(maker, level, game.config);
           box.appendChild(el('p', 'popup-text', game.t('popups.buildingNext', { n: level + 1, inc: formatCoins(maker.income[level]) })));
           const b = button(`${game.t('ui.upgrade')} ${formatCoins(price)}`, 'btn-success btn-xl', () => {
             const r = game.buy('upgrade', id);

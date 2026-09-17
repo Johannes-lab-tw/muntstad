@@ -67,6 +67,10 @@ const game = {
   now: () => Date.now(),
   displayName: () => (state.name && state.name.trim()) || T.defaultName,
   isUnlocked: (id) => E.isUnlocked(state, CONFIG, id),
+  ontbreekt: (id) => E.makerOntbreekt(state, CONFIG, id),   // V9.8: what blocks a maker besides coins
+  kapot: () => E.kapotMaker(state),                          // V9.8: the broken maker, or null
+  ontbreektWerk: (id) => { const w = E.werkById(CONFIG, id); return w ? E.ontbreekt(state, CONFIG, w.vereist) : null; },
+  vereistTekst,
   update,
   replaceState,
   save,
@@ -141,26 +145,47 @@ function resetAll() {
 
 // ---------- purchases (shared by WINKEL and the building card) ----------
 
+/** V9.8: the rule behind a lock, in words: "je wasstraat op level 3", "drie geldmakers op level 3", "de brug". */
+function vereistTekst(o) {
+  if (!o) return '';
+  if (o.soort === 'maker') return `je ${o.maker.name.toLowerCase()} op level ${o.level}`;
+  if (o.soort === 'aantal') return `${['nul', 'een', 'twee', 'drie', 'vier', 'vijf'][o.aantal] || o.aantal} geldmakers op level ${o.level}`;
+  const n = o.werk.name.toLowerCase();
+  return n.startsWith('de ') ? n : `de ${n}`;
+}
+
 function buy(kind, id) {
   let r;
   if (kind === 'maker') r = E.buyMaker(state, CONFIG, id);
   else if (kind === 'upgrade') r = E.upgradeMaker(state, CONFIG, id);
+  else if (kind === 'werk') r = E.buyWerk(state, CONFIG, id);       // V9.8: a town work
+  else if (kind === 'repareer') r = E.repareer(state, CONFIG);       // V9.8: the broken maker
   else r = E.buyFun(state, CONFIG, id);
-  const maker = kind !== 'fun' ? E.makerById(CONFIG, id) : null;
+  const maker = kind === 'maker' || kind === 'upgrade' ? E.makerById(CONFIG, id) : kind === 'repareer' ? E.makerById(CONFIG, E.kapotMaker(state)) : null;
+  const werk = kind === 'werk' ? E.werkById(CONFIG, id) : null;
   const item = kind === 'fun' ? E.funById(CONFIG, id) : null;
-  const name = (maker || item || { name: '' }).name.toLowerCase();
+  const name = (maker || werk || item || { name: '' }).name.toLowerCase();
   if (!r.ok) {
     audio.play('thud');
     if (r.reason === 'coins') {
       game.mentor.say(kind === 'fun' ? 'lines.notEnough' : 'lines.notEnoughMaker', { n: E.formatCoins(r.missing), ding: name }, { kind: 'reaction' });
     } else if (r.reason === 'locked') {
-      game.mentor.say('lines.locked', { n: E.formatCoins(maker.price) }, { kind: 'reaction' });
+      const o = kind === 'werk' ? E.ontbreekt(state, CONFIG, werk.vereist) : E.makerOntbreekt(state, CONFIG, id);
+      if (o) game.mentor.say('lines.vereist', { tekst: vereistTekst(o) }, { kind: 'reaction' });
+      else game.mentor.say('lines.locked', { n: E.formatCoins(maker.price) }, { kind: 'reaction' });
     }
     return r;
   }
   const before = state;
   state = r.state;
-  if (kind === 'maker') {
+  if (kind === 'werk') {
+    audio.play('buy');
+    game.mentor.say('lines.werkGebouwd', { ding: werk.name }, { kind: 'reaction' });
+  } else if (kind === 'repareer') {
+    audio.play('upgrade');
+    if (maker) game.scene.burst(maker.id);
+    game.mentor.say('lines.gerepareerd', { ding: name }, { kind: 'reaction' });
+  } else if (kind === 'maker') {
     audio.play('buy');
     game.scene.burst(id);
     if (E.ownedMakerCount(before, CONFIG) >= 1) game.mentor.say('lines.newMaker', {}, { kind: 'reaction' });
@@ -199,6 +224,7 @@ function tick() {
   const bg = E.bankGrow(state, CONFIG, now);   // V6.4: midnight passed while playing
   if (bg.growth > 0) { state = bg.state; if (TOPBAR_SCREENS.has(screen)) game.mentor.say('lines.bankGrew', {}, { kind: 'reaction' }); }
   const r = E.advance(state, CONFIG, now);
+  if (r.kapot) { const kd = E.makerById(CONFIG, r.kapot); setTimeout(() => game.mentor.say('lines.kapot', { ding: kd.name.toLowerCase() }, { kind: 'reaction' }), 1500); }   // V9.8
   state = r.state;
   if (r.offline) {
     // the popup shows what the coin-makers made; without any coin-maker it explains once what one would do
@@ -275,7 +301,7 @@ function bumpWallet() {
 // ---------- screens ----------
 
 const TOPBAR_SCREENS = new Set(['stad', 'dorp', 'avontuur', 'werk', 'winkel', 'huis']);
-export const GAME_VERSION = 'v9.7';   // V6.8: shown in the MELD code on PAPA; bump with every tag
+export const GAME_VERSION = 'v9.8';   // V6.8: shown in the MELD code on PAPA; bump with every tag
 const recent = [];                    // the last screens, for the MELD code
 const perfLog = {};                   // V8.1: the last measuring window per 3D screen (p50/p95/hitches/tier), for the MELD code
 function noteEvent(what) { recent.push(`${new Date().toTimeString().slice(0, 8)} ${what}`); if (recent.length > 8) recent.shift(); }

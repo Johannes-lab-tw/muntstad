@@ -33,23 +33,28 @@ test('income per tick: Limonadekraam level 1 makes 12 coins in one minute, 1 coi
 
 test('income adds up across makers and levels', () => {
   let s = E.createState(CONFIG, 0);
-  s = withMaker(s, 'limonade', 2); // 18
-  s = withMaker(s, 'wasstraat', 1); // 50
-  assert.equal(E.passivePerMinute(s, CONFIG), 68);
+  s = withMaker(s, 'limonade', 2);
+  s = withMaker(s, 'wasstraat', 1);
+  const want = E.makerIncome(E.makerById(CONFIG, 'limonade'), 2) + E.makerIncome(E.makerById(CONFIG, 'wasstraat'), 1);   // 17 + 50 since V9.8
+  assert.equal(E.passivePerMinute(s, CONFIG), want);
   const r = E.advance(s, CONFIG, 30 * 1000);
-  assert.equal(r.state.wallet, 34);
+  assert.equal(r.state.wallet, want / 2);
 });
 
-test('upgrade prices double per level: 40, 80, 160, 320 for the Limonadekraam', () => {
+test('upgrade prices climb ×2.5 per level up to 5, then ×2 (V9.8): 50, 125, 315, 780, 1 955, 3 905 for the Limonadekraam', () => {
   const m = E.makerById(CONFIG, 'limonade');
-  assert.deepEqual([1, 2, 3, 4].map((l) => E.upgradePrice(m, l)), [40, 80, 160, 320]);
+  assert.deepEqual([1, 2, 3, 4, 5, 6].map((l) => E.upgradePrice(m, l, CONFIG)), [50, 125, 315, 780, 1955, 3905]);
+  assert.deepEqual([1, 2, 3, 4].map((l) => E.upgradePrice(m, l)), [40, 80, 160, 320], 'without a config: the old ×2 (older callers)');
 });
 
-test('per-level income tables follow base × 1 / 1.5 / 2.25 / 3.4 / 5 (rounded)', () => {
+test('per-level income tables follow base × 1.45 per level up to 5 (V9.8, rounded to round numbers), then keep climbing', () => {
   for (const m of CONFIG.makers) {
     const base = m.income[0];
-    const expected = [1, 1.5, 2.25, 3.4, 5].map((f) => Math.round(base * f));
-    for (let i = 1; i < 5; i++) assert.ok(Math.abs(m.income[i] - expected[i]) <= 1, `${m.id} level ${i + 1}`);
+    for (let i = 1; i < 5; i++) {
+      const want = base * Math.pow(1.45, i);
+      assert.ok(Math.abs(m.income[i] - want) <= Math.max(1, want * 0.06), `${m.id} level ${i + 1}: ${m.income[i]} vs ${want}`);
+    }
+    for (let i = 1; i < m.income.length; i++) assert.ok(m.income[i] > m.income[i - 1], `${m.id} climbs at level ${i + 1}`);
   }
 });
 
@@ -70,14 +75,16 @@ test('buying a maker needs coins and unlock; upgrading needs ownership and coins
   const locked = E.buyMaker({ ...r.state, wallet: 500 }, CONFIG, 'wasstraat');
   assert.equal(locked.ok, false);
   assert.equal(locked.reason, 'locked');
-  const unlockedState = { ...r.state, wallet: 500, earnedWork: 120 };
+  const unlockedState = { ...r.state, wallet: 500, earnedWork: 120, makers: { ...r.state.makers, limonade: 2 } };   // V9.8: and the limonade at level 2
+  assert.equal(E.buyMaker({ ...unlockedState, makers: r.state.makers }, CONFIG, 'wasstraat').reason, 'locked');
   assert.equal(E.buyMaker(unlockedState, CONFIG, 'wasstraat').ok, true);
   // upgrades
   assert.equal(E.upgradeMaker(s, CONFIG, 'limonade').reason, 'not-owned');
-  const up = E.upgradeMaker({ ...r.state, wallet: 39 }, CONFIG, 'limonade');
+  const p1 = E.upgradePrice(E.makerById(CONFIG, 'limonade'), 1, CONFIG);   // 50 since V9.8 (was 40)
+  const up = E.upgradeMaker({ ...r.state, wallet: p1 - 1 }, CONFIG, 'limonade');
   assert.equal(up.ok, false);
   assert.equal(up.missing, 1);
-  const up2 = E.upgradeMaker({ ...r.state, wallet: 40 }, CONFIG, 'limonade');
+  const up2 = E.upgradeMaker({ ...r.state, wallet: p1 }, CONFIG, 'limonade');
   assert.equal(up2.ok, true);
   assert.equal(up2.state.makers.limonade, 2);
   assert.equal(up2.state.wallet, 0);
@@ -90,8 +97,10 @@ test('unlock: next maker opens when total earned (work + passive) reaches its pr
   s = { ...s, earnedWork: 100, earnedPassive: 19 };
   assert.equal(E.isUnlocked(s, CONFIG, 'wasstraat'), false);
   s = { ...s, earnedPassive: 20 };
-  assert.equal(E.isUnlocked(s, CONFIG, 'wasstraat'), true);
-  assert.equal(E.isUnlocked(s, CONFIG, 'pizzeria'), false);
+  assert.equal(E.isUnlocked(s, CONFIG, 'wasstraat'), false, 'V9.8: the coins are there, but the Limonadekraam must be level 2 first');
+  assert.equal(E.makerOntbreekt(s, CONFIG, 'wasstraat').soort, 'maker');
+  assert.equal(E.isUnlocked(withMaker(s, 'limonade', 2), CONFIG, 'wasstraat'), true);
+  assert.equal(E.isUnlocked(withMaker(s, 'limonade', 2), CONFIG, 'pizzeria'), false);
   assert.equal(E.nextMakerTarget(s, CONFIG).maker.id, 'limonade');
   assert.equal(E.nextMakerTarget(s, CONFIG).missing, 20);
 });

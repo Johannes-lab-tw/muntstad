@@ -100,3 +100,75 @@ test('V9.7 Muntjes eigen stem: catalogus geladen, een zin met bestand speelt, ee
   await expect.poll(() => page.evaluate(() => window.__muntstad.stem.gespeeld), { timeout: 20000 }).toBe(1);
   expect(errors()).toEqual([]);
 });
+
+// V9.8: every step opens the next. A locked maker card says what must be there first (not only the coins); the town
+// works (vergunning, brug, kade) are cards on the GELDMAKERS tab; buying the vergunning opens the Flat.
+test('V9.8 voorwaarden: de kaart zegt "eerst level 2", de vergunning is een kaart en opent de Flat', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => {
+    s.wallet = 6000; s.earnedWork = 60000; s.earnedPassive = 60000;
+    s.makers = { ...s.makers, limonade: 1, wasstraat: 0, pizzeria: 0, ijssalon: 5, fabriek: 5 };
+    return s;
+  });
+  await startGame(page);
+  await closePopups(page);
+  await page.locator('#nav-winkel').click();
+  await expect(page.locator('#tab-makers')).toHaveClass(/active/);
+  // page 1: the Wasstraat waits for the Limonadekraam at level 2 (the coins are there)
+  const was = page.locator('.card[data-id="wasstraat"]');
+  await expect(was).toHaveClass(/locked/);
+  await expect(was.locator('.card-price')).toContainText('eerst level 2');
+  // page 2: the Flat waits for the vergunning although the Fabriek is at 5 (a milestone popup may sit on top: close it)
+  await closePopups(page);
+  await page.locator('#shop-next').click();
+  const flat = page.locator('.card[data-id="flat"]');
+  await expect(flat).toHaveClass(/locked/);
+  await expect(flat.locator('.card-price')).toContainText('eerst de bouwvergunning');
+  // page 3: the works; the brug waits for the vergunning, the vergunning can be built
+  await closePopups(page);
+  await page.locator('#shop-next').click();
+  await expect(page.locator('.card[data-id="brug"]')).toHaveClass(/locked/);
+  const verg = page.locator('.card[data-id="vergunning"]');
+  await expect(verg).toHaveClass(/can/);
+  await expect(verg.locator('button')).toHaveText('BOUW');
+  await closePopups(page);
+  await verg.locator('button').click();
+  await expect(verg.locator('.card-check')).toBeVisible();
+  await expect.poll(async () => (await state(page)).werken.vergunning, { timeout: 10000 }).toBe(true);
+  expect((await state(page)).spentMakers).toBe(5000);   // the wallet keeps growing (two makers at level 5), the investment is exact
+  await expect(page.locator('.card[data-id="brug"]')).not.toHaveClass(/locked/);
+  // back to page 2: the Flat is open now (only the coins are missing)
+  await closePopups(page);
+  await page.locator('#shop-prev').click();
+  await expect(flat).not.toHaveClass(/locked/);
+  await expect(flat.locator('.card-price')).toContainText('nog');
+  expect(errors()).toEqual([]);
+});
+
+// V9.8: maintenance. A broken maker earns nothing and shows KAPOT with a REPAREER button (15 % of its price); after the
+// repair the stars are back and the income too. PAPA counts the repair.
+test('V9.8 onderhoud: KAPOT op de kaart, REPAREER kost 15 %, daarna draait de geldmaker weer', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => {
+    s.wallet = 100; s.earnedWork = 500;
+    s.makers = { ...s.makers, limonade: 2 };
+    s.onderhoud = { kapot: 'limonade', dag: Math.floor(Date.now() / 86400000), gerepareerd: 0, spentRepairs: 0 };
+    return s;
+  });
+  await startGame(page);
+  await closePopups(page);
+  expect((await state(page)).onderhoud.kapot).toBe('limonade');
+  await page.locator('#nav-winkel').click();
+  const card = page.locator('.card[data-id="limonade"]');
+  await expect(card.locator('.card-sub')).toContainText('KAPOT');
+  await expect(card.locator('button')).toHaveText('REPAREER');
+  await card.locator('button').click();
+  await expect.poll(async () => (await state(page)).onderhoud.kapot, { timeout: 10000 }).toBe(null);
+  const s = await state(page);
+  expect(Math.floor(s.wallet)).toBe(97);   // 15 % of 20, rounded up
+  expect(s.onderhoud.gerepareerd).toBe(1);
+  expect(s.onderhoud.spentRepairs).toBe(3);
+  await expect(card.locator('.card-sub')).toContainText('⭐⭐');
+  await expect(card.locator('button')).toContainText('BETER');
+  expect(errors()).toEqual([]);
+});

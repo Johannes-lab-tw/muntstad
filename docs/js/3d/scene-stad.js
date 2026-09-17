@@ -107,6 +107,12 @@ export function createScene(container, game, engine) {
         }
         e.affordable = affordable;
       }
+      const kapot = !!(game.kapot && game.kapot() === m.id);   // V9.8: a grey board with KAPOT next to a broken maker
+      if (kapot !== e.kapot) {
+        if (e.kapotSign) { scene.remove(e.kapotSign); e.kapotSign = null; }
+        if (kapot) { e.kapotSign = signModel(m, false, game.t('ui.kapot')); e.kapotSign.position.set(px + 2.1, 0.06, py + 1.3); scene.add(e.kapotSign); }
+        e.kapot = kapot;
+      }
     }
     const paint = state.equipped.paint || 'none';
     if (paint !== house.paint) {

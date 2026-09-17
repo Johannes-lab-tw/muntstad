@@ -1,6 +1,6 @@
 // sw.js — cache-first app shell. Bump CACHE_VERSION on every deploy.
 // Every file in docs/ is precached so the game loads offline and as a home-screen app.
-const CACHE_VERSION = 'muntstad-v55';
+const CACHE_VERSION = 'muntstad-v56';
 const PRECACHE = [
   './',
   './index.html',
@@ -106,6 +106,7 @@ const PRECACHE = [
   './stem/2aefbb90.mp3',
   './stem/2bb3fae2.mp3',
   './stem/2d73ed10.mp3',
+  './stem/2eee0ab9.mp3',
   './stem/305a0bdf.mp3',
   './stem/353dd383.mp3',
   './stem/3562deb9.mp3',
@@ -132,6 +133,7 @@ const PRECACHE = [
   './stem/4da6d132.mp3',
   './stem/4db3dc23.mp3',
   './stem/4e966978.mp3',
+  './stem/4f7e60a7.mp3',
   './stem/4ff03a70.mp3',
   './stem/50aa2f81.mp3',
   './stem/50fb70a0.mp3',
@@ -191,6 +193,7 @@ const PRECACHE = [
   './stem/9036dd44.mp3',
   './stem/9060c124.mp3',
   './stem/9103cf6a.mp3',
+  './stem/9123b25d.mp3',
   './stem/954293a5.mp3',
   './stem/968e5f2a.mp3',
   './stem/96bc0aca.mp3',
@@ -213,6 +216,7 @@ const PRECACHE = [
   './stem/af4af04e.mp3',
   './stem/b1be0c41.mp3',
   './stem/b27954cf.mp3',
+  './stem/b40201bd.mp3',
   './stem/b73a3cd5.mp3',
   './stem/b74d5f56.mp3',
   './stem/b9b881fb.mp3',

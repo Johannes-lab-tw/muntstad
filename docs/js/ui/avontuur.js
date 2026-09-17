@@ -9,7 +9,7 @@ import { createEilandScene } from '../3d/scene-eiland.js';
 import { createKamp } from './kamp.js';
 import { createMinimap } from './minimap.js';
 import { fireRadius } from '../nacht.js';
-import { setFlag, formatCoins } from '../economy.js';
+import { setFlag, formatCoins, maakKapot, makerById } from '../economy.js';
 import { collect, bagCount, openChest, chestOpenedToday, todayKey } from '../eiland.js';
 import { KETENS } from '../../content/ketens.js';
 import { CAMPAGNE } from '../../content/campagne.js';
@@ -519,6 +519,12 @@ export function createAvontuur(game) {
     game.audio.setAmbient('day');
     const r = dawnReward(game.state.nacht, game.config, fireBurned);
     game.update((s) => ({ ...s, nacht: r.nacht, wallet: s.wallet + r.reward, earnedWork: s.earnedWork + r.reward }));
+    const wk = scene3 ? scene3.hook.weer.kind : 'zon';   // V9.8: a storm night breaks the biggest maker in town
+    if (wk === 'storm') {
+      let kid = null;
+      game.update((s) => { const k = maakKapot(s, game.config); kid = k.id; return k.state; });
+      if (kid) setTimeout(() => { if (visible) game.mentor.say('lines.kapot', { ding: makerById(game.config, kid).name.toLowerCase() }, { kind: 'reaction' }); }, 7000);
+    }
     game.save();
     keten({ soort: 'nacht', vuur: !!fireBurned });
     campagne({ soort: 'nacht', vuur: !!fireBurned });

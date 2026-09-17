@@ -41,6 +41,8 @@ export function createState(config, now) {
     nacht: createNacht(),
     bank: createBank(now),
     campagne: createCampagne(),
+    werken: {},                        // V9.8: town works owned (vergunning, brug, kade)
+    onderhoud: createOnderhoud(now),   // V9.8: which maker is broken, the last day checked, repairs and their cost
   };
 }
 
@@ -105,27 +107,113 @@ export function makerIncome(maker, level) {
   return maker.income[Math.min(level, maker.income.length) - 1];
 }
 
-/** Total passive income per minute of all owned makers. */
+/** Total passive income per minute of all owned makers (a broken one earns nothing, V9.8). */
 export function passivePerMinute(state, config) {
   let sum = 0;
-  for (const m of config.makers) sum += makerIncome(m, makerLevel(state, m.id));
+  const kapot = kapotMaker(state);
+  for (const m of config.makers) if (m.id !== kapot) sum += makerIncome(m, makerLevel(state, m.id));
   return sum;
 }
 
-/** Price to go from `level` to `level + 1` (level ≥ 1): base × 2^level → 40, 80, 160, 320 for a base of 20. */
-export function upgradePrice(maker, level) {
-  return maker.price * Math.pow(2, level);
+/**
+ * Price to go from `level` to `level + 1` (level ≥ 1). V9.8: base × groei^level up to level 5 (groei 2.5 → 50, 125,
+ * 315, 780, 1 955 for a base of 20), then ×2 per level; rounded to fives above 100. Without a config: the old ×2.
+ */
+export function upgradePrice(maker, level, config = null) {
+  const g = config && config.upgradeGroei ? config.upgradeGroei : 2;
+  const p = level <= 5 ? maker.price * Math.pow(g, level) : maker.price * Math.pow(g, 5) * Math.pow(2, level - 5);
+  return p < 100 ? Math.round(p) : Math.round(p / 5) * 5;
 }
 
 export function totalEarned(state) {
   return state.earnedWork + state.earnedPassive;
 }
 
-/** Makers unlock in order: the first is always open, the others when total earned reaches their price. */
+/** Makers unlock in order: the first is always open, the others when total earned reaches their price and (V9.8) what
+ * `vereist` names is there: a maker at a level, `aantal` makers at a level, a town work. */
 export function isUnlocked(state, config, id) {
   const idx = config.makers.findIndex((m) => m.id === id);
   if (idx <= 0) return idx === 0;
-  return totalEarned(state) >= config.makers[idx].price;
+  return totalEarned(state) >= config.makers[idx].price && !ontbreekt(state, config, config.makers[idx].vereist);
+}
+
+// ---------- V9.8: town works, prerequisites, maintenance (PLAN-V9 §D) ----------
+
+export function createOnderhoud(now = 0) {
+  return { kapot: null, dag: dayIndex(now), gerepareerd: 0, spentRepairs: 0 };
+}
+export function werkById(config, id) { return (config.werken || []).find((w) => w.id === id) || null; }
+export function heeftWerk(state, id) { return !!(state.werken && state.werken[id]); }
+
+/** What still blocks besides coins: null when nothing, else { soort: 'werk' | 'maker' | 'aantal', ... }. */
+export function ontbreekt(state, config, vereist) {
+  const v = vereist;
+  if (!v) return null;
+  if (v.werk && !heeftWerk(state, v.werk)) return { soort: 'werk', werk: werkById(config, v.werk) };
+  if (v.maker && makerLevel(state, v.maker) < v.level) return { soort: 'maker', maker: makerById(config, v.maker), level: v.level };
+  if (v.aantal && config.makers.filter((m) => makerLevel(state, m.id) >= v.level).length < v.aantal) return { soort: 'aantal', aantal: v.aantal, level: v.level };
+  return null;
+}
+export function makerOntbreekt(state, config, id) {
+  const m = makerById(config, id);
+  return m ? ontbreekt(state, config, m.vereist) : null;
+}
+
+/** Buy a town work (vergunning, brug, kade): one-off, counts as an investment. */
+export function buyWerk(state, config, id) {
+  const w = werkById(config, id);
+  if (!w) return { ok: false, state, reason: 'unknown' };
+  if (heeftWerk(state, id)) return { ok: false, state, reason: 'owned' };
+  if (ontbreekt(state, config, w.vereist)) return { ok: false, state, reason: 'locked' };
+  if (state.wallet < w.price) return { ok: false, state, reason: 'coins', missing: missing(state, w.price) };
+  return { ok: true, state: { ...state, wallet: state.wallet - w.price, spentMakers: state.spentMakers + w.price, werken: { ...(state.werken || {}), [id]: true } } };
+}
+
+export function kapotMaker(state) { return state.onderhoud ? state.onderhoud.kapot || null : null; }
+export function reparatiePrijs(maker, config) { return Math.ceil(maker.price * config.onderhoud.reparatie); }
+
+/** REPAREER: the broken maker runs again for a share of its price. */
+export function repareer(state, config) {
+  const id = kapotMaker(state);
+  if (!id) return { ok: false, state, reason: 'heel' };
+  const maker = makerById(config, id);
+  const price = reparatiePrijs(maker, config);
+  if (state.wallet < price) return { ok: false, state, reason: 'coins', missing: missing(state, price) };
+  const o = state.onderhoud;
+  return { ok: true, price, maker, state: { ...state, wallet: state.wallet - price, onderhoud: { ...o, kapot: null, gerepareerd: (o.gerepareerd || 0) + 1, spentRepairs: (o.spentRepairs || 0) + price } } };
+}
+
+/** Break a maker on purpose (a storm night): `id`, else the owned one with the highest level; nothing when one is broken. */
+export function maakKapot(state, config, id = null) {
+  const o = state.onderhoud || createOnderhoud(state.lastTick);
+  if (o.kapot) return { state, id: null };
+  const owned = config.makers.filter((m) => makerLevel(state, m.id) > 0);
+  if (!owned.length) return { state, id: null };
+  const pick = id && owned.some((m) => m.id === id) ? id : owned.reduce((a, b) => (makerLevel(state, b.id) > makerLevel(state, a.id) ? b : a)).id;
+  return { state: { ...state, onderhoud: { ...o, kapot: pick } }, id: pick };
+}
+
+function hashDag(day, seed) {
+  let h = (Math.imul(day, 2654435761) + Math.imul(Math.floor((seed || 0) / 1000), 40503)) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h ^= h >>> 13;
+  return h >>> 0;
+}
+
+/** Once per new calendar day, never on the first day of play and never while one is broken: a deterministic chance
+ * (config.onderhoud.kansPerDag) that one owned maker breaks. Returns { state, kapot } with the id that just broke. */
+export function onderhoudCheck(state, config, now) {
+  const o = state.onderhoud || createOnderhoud(state.createdAt);
+  const today = dayIndex(now);
+  if (today <= (o.dag ?? today)) return { state: o === state.onderhoud ? state : { ...state, onderhoud: o }, kapot: null };
+  let next = { ...state, onderhoud: { ...o, dag: today } };
+  if (o.kapot || today <= dayIndex(state.createdAt)) return { state: next, kapot: null };
+  const owned = config.makers.filter((m) => makerLevel(state, m.id) > 0);
+  if (!owned.length) return { state: next, kapot: null };
+  const r = hashDag(today, state.createdAt);
+  if (r % 1000 >= Math.round(config.onderhoud.kansPerDag * 1000)) return { state: next, kapot: null };
+  const pick = owned[Math.floor(r / 1000) % owned.length].id;
+  next = { ...next, onderhoud: { ...next.onderhoud, kapot: pick } };
+  return { state: next, kapot: pick };
 }
 
 /** The next coin-maker to save for (cheapest not-yet-owned), with how many coins are still missing. */
@@ -155,6 +243,8 @@ export function ownedFunIds(state, config) {
  * Pet food is paid automatically when possible; the wallet never goes negative.
  */
 export function advance(state, config, now) {
+  const oc = onderhoudCheck(state, config, now);   // V9.8: a new day may break a maker before it earns
+  state = oc.state;
   const rawElapsedMs = Math.max(0, now - state.lastTick);
   const elapsedMs = Math.min(rawElapsedMs, config.offlineCapMs);
   const offline = rawElapsedMs >= config.offlinePopupMinMs;
@@ -204,7 +294,7 @@ export function advance(state, config, now) {
     lastTick: now,
     playTimeMs: state.playTimeMs + (offline ? 0 : rawElapsedMs),
   };
-  return { state: next, elapsedMs, rawElapsedMs, earned, foodPaid, offline };
+  return { state: next, elapsedMs, rawElapsedMs, earned, foodPaid, offline, kapot: oc.kapot };
 }
 
 // ---------- WERK ----------
@@ -275,7 +365,7 @@ export function upgradeMaker(state, config, id) {
   const level = makerLevel(state, id);
   if (level === 0) return { ok: false, state, reason: 'not-owned' };
   if (level >= config.maxLevel) return { ok: false, state, reason: 'max' };
-  const price = upgradePrice(maker, level);
+  const price = upgradePrice(maker, level, config);
   if (state.wallet < price) return { ok: false, state, reason: 'coins', missing: missing(state, price) };
   return {
     ok: true,
@@ -423,5 +513,9 @@ export function stats(state, config) {
     honger: state.eiland ? Math.round(state.eiland.honger ?? 100) : 100,
     funOwned: ownedFunIds(state, config).length,
     milestones: state.milestones.length,
+    spentRepairs: Math.floor(state.onderhoud ? state.onderhoud.spentRepairs || 0 : 0),   // V9.8
+    gerepareerd: state.onderhoud ? state.onderhoud.gerepareerd || 0 : 0,
+    kapot: kapotMaker(state),
+    werken: Object.keys(state.werken || {}).filter((k) => state.werken[k]).length,
   };
 }
