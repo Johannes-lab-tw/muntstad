@@ -75,7 +75,7 @@ werk/winkel/huis p50 17 p95 18-19 tier 0 px 1.50 · stad/dorp p50 17 tier 2 (erf
   hond of de ander).
 - Samen: twee rollen (stoken en bouwen / schieten) staan in de uitleg; de piraten en beren verdelen zich over de spelers.
 
-### V9.5 Baasnachten en buit (avond 5)
+### V9.5 Baasnachten en buit (avond 5) — gebouwd 17 september, zie PROGRESS Run 10 (trucs van kapitein en monster nog niet)
 - Nacht 5 Nachtbeerkoning, nacht 10 Spookkapitein (piratenboot met spook), nacht 15 Moerasmonster, daarna herhalend
   en sterker. Elke baas heeft één truc (de koning stormt, de kapitein roept spoken, het monster gooit slijm).
 - Buit: zeldzame wapens en hoeden alleen van bazen; een buitlijst op PAPA.

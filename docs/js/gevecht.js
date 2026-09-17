@@ -55,5 +55,6 @@ export function nachtPlan(ctx, config) {
   if (beren) parts.push('🐻'.repeat(beren));
   if (piraten) parts.push('🏴‍☠️'.repeat(piraten));
   if (spoken) parts.push('👻');
+  if (ctx.baas) parts.push(`${ctx.baas} BAAS`);
   return { n, wolven, beren, piraten, spoken, tekst: `Nacht ${n}: ${parts.join(' ')}` };
 }

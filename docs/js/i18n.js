@@ -244,6 +244,12 @@ export const T = {
     gadgetFluit: 'Je fluit! Je hond komt eraan.',
     fluitVriend: 'Je vriend fluit! Ga erheen.',
     gadgetDrank: 'Je drinkt de reddingsdrank. Maag en warmte zijn weer goed.',
+    // V9.5: the boss nights
+    baasKomt: 'Een baas! De {naam} komt eraan. Pak je wapen en blijf bij het vuur!',
+    baasEet: 'De {naam} vreet aan het vuur! Schiet hem weg en stook bij.',
+    baasVerslagen: 'De {naam} is verslagen! {n} munten, en een {ding} die niemand kan kopen!',
+    baasVerslagenMunten: 'De {naam} is verslagen! {n} munten!',
+    baasWeg: 'De {naam} druipt af bij het ochtendlicht. Volgende keer pak je hem.',
   },
   // V7.7 (PLAN-V7 §C.2 rule 6): the bubble form of each line for a child who does not read yet: one picture and at most
   // three words; the voice says the full line. Drafted by Ollama from the lines above, shortened and checked by hand.
@@ -388,6 +394,11 @@ export const T = {
     gadgetFluit: '🎺 Hond komt',
     fluitVriend: '🎺 Ga naar vriend',
     gadgetDrank: '🧪 Weer goed',
+    baasKomt: '👑 Baas komt!',
+    baasEet: '👑 Schiet en stook',
+    baasVerslagen: '🏆 Baas verslagen!',
+    baasVerslagenMunten: '🏆 Baas verslagen!',
+    baasWeg: '🌅 Baas druipt af',
   },
 
   milestones: {
@@ -431,6 +442,7 @@ export const T = {
       hoofdstuk: 'Campagne: hoofdstuk',
       munten: 'Gouden munten van Muntje gevonden',
       berenVerloren: 'Berennachten verloren',
+      bazen: 'Bazen verslagen',
       bankSaldo: 'In de Spaarbank',
       bankEarned: 'Rente verdiend (5 % per dag)',
       bumped: 'Omvergeduwd door het Nachthert',

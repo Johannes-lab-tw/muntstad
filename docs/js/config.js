@@ -105,6 +105,14 @@ export const CONFIG = Object.freeze({
 
   // The night on the island (PLAN-V4 R4). Balance: a night (3 min) burns ≈ 8 pieces of wood; by hand that is 24 taps,
   // with the axe 4 taps. The reward for a night with the fire still burning grows with every night.
+  // V9.5: the boss nights (docs/js/bazen.js)
+  bazen: {
+    vanafNacht: 5,                    // the first boss night
+    elke: 5,                          // and then every fifth night: koning, kapitein, monster, koning again...
+    hpPerRonde: 4,                    // more lives every time the three have come round
+    naDonkerMs: 25 * 1000,            // the boss shows up this long after dark
+  },
+
   // V9.4: losing and being saved: how long you lie down with friends around, and what the gadgets do
   redden: {
     wachtMs: 90 * 1000,               // down with friends: this long for a WEK with a reddingsdrank, then the adventure starts over
@@ -365,6 +373,10 @@ export const CONFIG = Object.freeze({
     { id: 'standbeeld', name: 'Gouden standbeeld', icon: '🗿', price: 250000, kind: 'pronk' },
     { id: 'gouden-hoed', name: 'Gouden hoed',   icon: '👑', price: 500000,  kind: 'hat' },
     { id: 'piratenhoed', name: 'Piratenhoed',   icon: '🏴‍☠️', price: 60, kind: 'hat', schat: true },   // V8.3: only from the treasure at the X, never in the shop
+    // V9.5: boss loot, never in the shop
+    { id: 'berenkroon',    name: 'Berenkroon',    icon: '🐻', price: 60, kind: 'hat', schat: true },
+    { id: 'kapiteinshoed', name: 'Kapiteinshoed', icon: '🎩', price: 60, kind: 'hat', schat: true },
+    { id: 'moerasmuts',    name: 'Moerasmuts',    icon: '🟢', price: 60, kind: 'hat', schat: true },
     { id: 'jacht',      name: 'Jacht',          icon: '🛥️', price: 1000000, kind: 'pronk' },
     { id: 'straatnaam', name: 'Eigen straat',   icon: '🪧', price: 2000000, kind: 'pronk' },
     { id: 'auto',       name: 'Auto',           icon: '🚗', price: 500, kind: 'vehicle' },

@@ -319,3 +319,37 @@ test('V9.2 weapons: SPEER beats a wolf in two hits, WATER poofs a ghost, the ban
   await expect.poll(earned, { timeout: 40000 }).toBe(earnedBefore + 3);
   expect(errors()).toEqual([]);
 });
+
+// V9.5: the boss. Forced Nachtbeerkoning next to the player; the alien pistol (2 per hit, 0.3 s reload) brings its ten
+// lives down; beaten = 100 coins, the bear crown once, the banner shows its lives meanwhile.
+test('V9.5 boss: the Nachtbeerkoning shows its lives, ALIEN shots beat it, the loot is coins and the bear crown', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.fun = {}; s.eiland = island({ tools: { alien: true } }); s.nacht = { fire: 200, nights: 4, stolen: 0, clockOffsetMs: 0 }; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  await page.evaluate(() => window.__muntstad.avontuur.setWeer('zon'));
+  await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 40000 }).toBe(1);
+  await expect(page.locator('#av-banner')).toContainText('BAAS', { timeout: 40000 });
+  const h = await hook(page);
+  await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 30), h.camp);
+  await page.evaluate(() => window.__muntstad.avontuur.baasNu('koning'));
+  const baas = () => page.evaluate(() => window.__muntstad.avontuur.baas);
+  await expect.poll(async () => (await baas())?.hp, { timeout: 40000 }).toBe(10);
+  await expect(page.locator('#av-banner')).toContainText('Nachtbeerkoning', { timeout: 40000 });
+  const walletBefore = Math.floor((await state(page)).wallet);
+  for (let i = 0; i < 14 && (await baas()); i++) {
+    const p = (await hook(page)).player;
+    await page.evaluate(({ x, z }) => window.__muntstad.avontuur.baasAt(x, z + 4), p);
+    try { await expect.poll(async () => (await hook(page)).action?.label, { timeout: 8000 }).toBe('ALIEN'); } catch (e) { continue; }
+    await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+    await page.waitForTimeout(500);
+  }
+  await expect.poll(async () => await baas(), { timeout: 40000 }).toBeNull();
+  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 40000 }).toBe(walletBefore + 100);
+  expect((await state(page)).fun.berenkroon).toBe(true);
+  expect((await state(page)).eiland.bazen.koning).toBe(1);
+  await expect.poll(() => mentorHas(page, 'verslagen'), { timeout: 40000 }).toBe(true);
+  expect(errors()).toEqual([]);
+});

@@ -101,6 +101,7 @@ export function createPapa(game) {
       [L.hoofdstuk, s.hoofdstuk >= 7 ? '7 / 7 · Muntstad gered' : `${s.hoofdstuk + 1} / 7`],
       [L.munten, `${s.munten} / 7`],
       [L.berenVerloren, `${s.berenVerloren}×`],
+      [L.bazen, `${s.bazen}×`],
       [L.bankSaldo, `${formatCoins(s.bankSaldo)} 🪙`],
       [L.bankEarned, `${formatCoins(s.bankEarned)} 🪙`],
       [L.bumped, `${s.bumped}×`],

@@ -68,6 +68,30 @@ function hat(b, id, top) {
       b.cyl(0, 0, top + 0.14 * s, 0.36 * s, 0.12 * s, '#ff5f5f', 16);
       b.sphere(0.22 * s, 0.24 * s, top + 0.6 * s, 0.06 * s, '#ffffff', 6);
       break;
+    case 'berenkroon':   // V9.5: a brown bear headband with two round ears and a small gold crown
+      b.cyl(0, 0, top, 0.42 * s, 0.14 * s, '#5b3a21', 14);
+      b.sphere(-0.3 * s, 0, top + 0.28 * s, 0.16 * s, '#5b3a21', 10);
+      b.sphere(0.3 * s, 0, top + 0.28 * s, 0.16 * s, '#5b3a21', 10);
+      b.sphere(-0.3 * s, 0.06 * s, top + 0.28 * s, 0.09 * s, '#c9a47a', 8);
+      b.sphere(0.3 * s, 0.06 * s, top + 0.28 * s, 0.09 * s, '#c9a47a', 8);
+      b.cyl(0, 0, top + 0.14 * s, 0.22 * s, 0.16 * s, '#ffc21c', 10);
+      for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2; b.sphere(Math.cos(a) * 0.2 * s, Math.sin(a) * 0.2 * s, top + 0.34 * s, 0.05 * s, '#ff5f5f', 6); }
+      break;
+    case 'kapiteinshoed':   // V9.5: a tall black captain's hat with a gold rim and a white feather
+      b.cyl(0, 0, top, 0.62 * s, 0.06 * s, '#1b1f3b', 20);
+      b.cyl(0, 0, top + 0.06 * s, 0.4 * s, 0.7 * s, '#252a48', 16);
+      b.cyl(0, 0, top + 0.06 * s, 0.42 * s, 0.1 * s, '#ffc21c', 16);
+      b.sphere(0, 0.4 * s, top + 0.4 * s, 0.09 * s, '#ffffff', 8);
+      b.box(0.28 * s, -0.08 * s, top + 0.5 * s, 0.1 * s, 0.16 * s, 0.7 * s, '#ffffff', { r: 0.03 });
+      break;
+    case 'moerasmuts':   // V9.5: a green slime cap with drips and two little eyes
+      b.sphere(0, 0, top + 0.12 * s, 0.5 * s, '#5fd35f', 14);
+      for (const [dx, dy] of [[-0.35, 0.1], [0.3, -0.2], [0.05, 0.4]]) b.sphere(dx * s, dy * s, top - 0.05 * s, 0.1 * s, '#4cc24c', 8);
+      b.sphere(-0.15 * s, 0.42 * s, top + 0.28 * s, 0.07 * s, '#ffffff', 8);
+      b.sphere(0.15 * s, 0.42 * s, top + 0.28 * s, 0.07 * s, '#ffffff', 8);
+      b.sphere(-0.15 * s, 0.48 * s, top + 0.28 * s, 0.035 * s, '#1b1f3b', 6);
+      b.sphere(0.15 * s, 0.48 * s, top + 0.28 * s, 0.035 * s, '#1b1f3b', 6);
+      break;
     case 'piratenhoed':   // V8.3: a black tricorn with a gold band and a skull on the front
       b.cyl(0, 0, top, 0.64 * s, 0.07 * s, '#1b1f3b', 20);
       b.box(-0.6 * s, 0.3 * s, top + 0.05 * s, 1.2 * s, 0.14 * s, 0.32 * s, '#1b1f3b', { r: 0.03 });
