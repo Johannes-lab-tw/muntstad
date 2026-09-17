@@ -48,6 +48,12 @@ stap van V9 is daarom weer tempo:
    getal uitgesproken (de ballon toont ze wel). Ontbreekt een bestand, dan neemt de iPad-stem het over. Bij een baas
    klinkt een sneller, lager wijsje. Kosten: ongeveer 45 credits. Muziekstukken en echte geluiden blijven van de
    synthesizer; het intro-filmpje staat nog open.
+8. **v9.8, het geld moet ergens aan opgaan.** Elke geldmaker wacht nu op de vorige (op level 2), de Fabriek op drie
+   geldmakers, en verderop staan echte bouwwerken in de weg: een bouwvergunning (5 000) voor de Flat, de brug (25 000)
+   voor het Hotel, de kade (100 000) voor de Handelshaven. Upgrades kosten ×2,5 per level en het inkomen groeit iets
+   langzamer, dus sparen duurt langer en elke stap voelt verdiend. Vanaf de tweede dag gaat af en toe één geldmaker
+   kapot: hij verdient niets tot REPAREER (15 % van zijn prijs), ook na een stormnacht op het eiland. PAPA laat de
+   reparaties en de bouwwerken zien. De les blijft meetbaar (simulator: investeerder 3,6× de spender).
 
 ## 0-vorig. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
 

@@ -24,7 +24,7 @@ export function bestInvestment(state, config, policy = 'best') {
       if (!E.isUnlocked(state, config, m.id)) continue;
       cand = { type: 'buy', id: m.id, price: m.price, payback: m.price / m.income[0] };
     } else if (level < config.maxLevel) {
-      const price = E.upgradePrice(m, level);
+      const price = E.upgradePrice(m, level, config);
       const gain = m.income[level] - m.income[level - 1];
       cand = { type: 'upgrade', id: m.id, price, payback: price / gain };
     }

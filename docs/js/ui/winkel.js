@@ -1,7 +1,7 @@
 // winkel.js — the shop: GELDMAKERS and LEUK tabs always visible, paged cards with big arrows.
 // Every card shows the item as blocky 3D art (canvas sprite). Unaffordable cards stay visible (dimmed,
 // "nog 12" + progress bar); affordable cards glow; owned items show ✓ and AAN/UIT.
-import { formatCoins, makerLevel, makerIncome, upgradePrice, isFunActive, nextMakerTarget } from '../economy.js';
+import { formatCoins, makerLevel, makerIncome, upgradePrice, isFunActive, nextMakerTarget, reparatiePrijs, heeftWerk } from '../economy.js';
 import { itemSprite, makerSprite } from '../3d/thumbs.js';
 
 const PER_PAGE = 8;
@@ -44,7 +44,16 @@ export function createWinkel(game) {
   }
 
   function items() {
-    return tab === 'makers' ? game.config.makers : game.config.fun.filter((f) => !f.schat);   // V8.3: the pirate hat comes from the treasure
+    // V9.8: the town works (vergunning, brug, kade) sit behind the makers on the GELDMAKERS tab
+    return tab === 'makers' ? [...game.config.makers, ...(game.config.werken || []).map((w) => ({ ...w, werk: true }))] : game.config.fun.filter((f) => !f.schat);   // V8.3: the pirate hat comes from the treasure
+  }
+
+  /** V9.8: the short rule on a locked card: "🍕 eerst level 3", "3× level 3", "📜 eerst de bouwvergunning". */
+  function regel(o) {
+    if (!o) return '';
+    if (o.soort === 'maker') return `${o.maker.icon} ${game.t('ui.eerst')} ${game.t('ui.level').toLowerCase()} ${o.level}`;
+    if (o.soort === 'aantal') return `${o.aantal}× ${game.t('ui.level').toLowerCase()} ${o.level}`;
+    return `${o.werk.icon} ${game.t('ui.eerst')} ${game.vereistTekst(o)}`;
   }
 
   function perPage() {
@@ -102,12 +111,12 @@ export function createWinkel(game) {
     for (const item of list) {
       const card = el('div', 'card');
       card.dataset.id = item.id;
-      card.dataset.kind = tab === 'makers' ? 'maker' : item.kind;
+      card.dataset.kind = tab === 'makers' ? (item.werk ? 'werk' : 'maker') : item.kind;
       const check = el('div', 'card-check', '✓');
-      const icon = el('img', 'card-icon');
+      const icon = item.werk ? el('div', 'card-icon card-emoji', item.icon) : el('img', 'card-icon');   // V9.8: a work shows its emoji
       icon.alt = '';
       icon.draggable = false;
-      icon.src = tab === 'makers' ? makerSprite(item.id, 160, 1) : itemSprite(item, { color: avatarColor() });
+      if (!item.werk) icon.src = tab === 'makers' ? makerSprite(item.id, 160, 1) : itemSprite(item, { color: avatarColor() });
       const name = el('div', 'card-name', item.name);
       const sub = el('div', 'card-sub', '');
       const price = el('div', 'card-price', '');
@@ -127,7 +136,9 @@ export function createWinkel(game) {
         if (card.classList.contains('locked')) {
           game.audio.play('thud');
           shake(card);
-          game.mentor.say('lines.locked', { n: formatCoins(item.price) }, { kind: 'reaction' });
+          const o = item.werk ? game.ontbreektWerk(item.id) : game.ontbreekt(item.id);   // V9.8: the rule, not only the coins
+          if (o) game.mentor.say('lines.vereist', { tekst: game.vereistTekst(o) }, { kind: 'reaction' });
+          else game.mentor.say('lines.locked', { n: formatCoins(item.price) }, { kind: 'reaction' });
         }
       });
       cards.push(c);
@@ -167,8 +178,9 @@ export function createWinkel(game) {
       c.price.classList.remove('wrap');
       c.sub.textContent = `${formatCoins(m.income[0])} ${game.t('ui.perMinuut')}`;
       if (!unlocked) {
-        c.price.textContent = `🔒 ${formatCoins(m.price)} `;
-        c.price.appendChild(coin());
+        const o = game.ontbreekt(m.id);   // V9.8: say what must be there first
+        c.price.textContent = o ? regel(o) : `🔒 ${formatCoins(m.price)} `;
+        if (!o) c.price.appendChild(coin());
         c.progress.hidden = true;
         c.btn.hidden = true;
         c.card.classList.remove('dim', 'can');
@@ -191,6 +203,20 @@ export function createWinkel(game) {
       return;
     }
     c.card.classList.remove('locked');
+    if (game.kapot() === m.id) {   // V9.8: broken: no income until REPAREER
+      c.sub.textContent = `🔧 ${game.t('ui.kapot')}`;
+      c.price.classList.add('wrap');
+      const rp = reparatiePrijs(m, game.config);
+      const rm = Math.max(0, rp - wallet);
+      setPrice(c.price, rm > 0 ? `${game.t('ui.nog')} ${formatCoins(rm)} ` : `${formatCoins(rp)} `);
+      c.progress.hidden = true;
+      c.btn.hidden = false;
+      c.card.classList.toggle('dim', rm > 0);
+      c.card.classList.toggle('can', rm === 0);
+      setBtn(c, game.t('ui.repareer'), 'btn-primary' + (rm > 0 ? ' dim' : ''), rm === 0);
+      c.action = () => { const r = game.buy('repareer', m.id); if (r.ok) bump(c.card); else shake(c.card); };
+      return;
+    }
     c.sub.textContent = '⭐'.repeat(level);
     c.price.classList.add('wrap');
     if (level >= game.config.maxLevel) {
@@ -201,7 +227,7 @@ export function createWinkel(game) {
       c.action = null;
       return;
     }
-    const price = upgradePrice(m, level);
+    const price = upgradePrice(m, level, game.config);
     const missing = Math.max(0, price - wallet);
     c.btn.hidden = false;
     c.card.classList.toggle('dim', missing > 0);
@@ -274,10 +300,42 @@ export function createWinkel(game) {
     };
   }
 
+  /** V9.8: a town work card: locked with its rule, "nog n" while saving, BOUW when affordable, ✓ when built. */
+  function renderWerk(c, state) {
+    const w = c.item;
+    const wallet = Math.floor(state.wallet);
+    const owned = heeftWerk(state, w.id);
+    c.check.hidden = !owned;
+    c.card.classList.toggle('owned', owned);
+    c.progress.hidden = true;
+    c.price.classList.remove('wrap');
+    if (owned) {
+      c.card.classList.remove('locked', 'dim', 'can');
+      c.sub.textContent = game.t('ui.klaarVink');
+      c.price.textContent = '';
+      c.btn.hidden = true;
+      c.action = null;
+      return;
+    }
+    c.sub.textContent = '';
+    const o = game.ontbreektWerk(w.id);
+    c.card.classList.toggle('locked', !!o);
+    if (o) { c.price.textContent = regel(o); c.btn.hidden = true; c.card.classList.remove('dim', 'can'); c.action = null; return; }
+    const missing = Math.max(0, w.price - wallet);
+    c.card.classList.toggle('dim', missing > 0);
+    c.card.classList.toggle('can', missing === 0);
+    setPrice(c.price, missing > 0 ? `${game.t('ui.nog')} ${formatCoins(missing)} ` : `${formatCoins(w.price)} `);
+    c.progress.hidden = missing === 0;
+    c.bar.style.width = `${Math.min(100, (wallet / w.price) * 100)}%`;
+    c.btn.hidden = false;
+    setBtn(c, game.t('ui.bouw'), 'btn-primary' + (missing > 0 ? ' dim' : ''), missing === 0);
+    c.action = () => { const r = game.buy('werk', w.id); if (r.ok) bump(c.card); else shake(c.card); };
+  }
+
   function render(state) {
     if (built !== `${tab}:${page}`) return;
     for (const c of cards) {
-      if (tab === 'makers') renderMaker(c, state);
+      if (tab === 'makers') (c.item.werk ? renderWerk(c, state) : renderMaker(c, state));
       else renderFun(c, state);
     }
     const target = nextMakerTarget(state, game.config);

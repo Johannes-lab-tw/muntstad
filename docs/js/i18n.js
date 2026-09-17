@@ -29,6 +29,11 @@ export const T = {
     wis: 'WIS',
     ok: 'OK',
     hoed: 'hoed',
+    eerst: 'eerst',        // V9.8: the rule on a locked card: "🍕 eerst level 3", "📜 eerst de bouwvergunning"
+    kapot: 'KAPOT',
+    repareer: 'REPAREER',
+    bouw: 'BOUW',
+    klaarVink: 'klaar ✓',
   },
 
   fun: {
@@ -193,6 +198,10 @@ export const T = {
     notEnough: 'Nog {n} munten. Bijna!',
     notEnoughMaker: 'Nog {n} munten. Je {ding} is er bijna!',
     locked: 'Verdien eerst {n} munten. Dan kun je die kopen.',
+    vereist: 'Eerst {tekst}. Dan kun je die kopen.',                              // V9.8
+    kapot: 'Oei! Je {ding} is kapot. Tik erop en repareer hem.',
+    gerepareerd: 'Gerepareerd! Je {ding} draait weer.',
+    werkGebouwd: '{ding} is klaar! Kijk wat er nu open is.',
     foodPaid: 'Je {ding} betaalt het eten van je {dier}. Handig!',
     petSleeping: 'Je {dier} slaapt even. Met munten wordt hij weer wakker.',
     walletZero: 'Op is op! Ga je werken, of wacht je op je geldmakers?',
@@ -349,6 +358,10 @@ export const T = {
     notEnough: '🪙 Nog {n} munten',
     notEnoughMaker: '🪙 Nog {n} munten',
     locked: '🔒 Eerst {n} munten',
+    vereist: '🔒 Eerst {tekst}',
+    kapot: '🔧 {ding} kapot',
+    gerepareerd: '🔧 Gerepareerd',
+    werkGebouwd: '🏗️ {ding} klaar',
     foodPaid: '🍖 Eten betaald',
     petSleeping: '😴 {dier} slaapt',
     walletZero: '🪙 Op is op',
@@ -446,6 +459,10 @@ export const T = {
     baasVerslagen: 'De baas is verslagen! Munten, en een hoed die niemand kan kopen!',
     baasVerslagenMunten: 'De baas is verslagen! Munten!',
     baasWeg: 'De baas druipt af bij het ochtendlicht. Volgende keer pak je hem.',
+    vereist: 'Eerst iets anders bouwen. Dan kun je die kopen.',
+    kapot: 'Oei! Een geldmaker is kapot. Tik erop en repareer hem.',
+    gerepareerd: 'Gerepareerd! Hij draait weer.',
+    werkGebouwd: 'Het is klaar! Kijk wat er nu open is.',
   },
   milestones: {
     'eerste-geldmaker': 'Kijk! Je kraam maakt munten. Ook als jij niks doet!',
@@ -493,6 +510,9 @@ export const T = {
       bankEarned: 'Rente verdiend (5 % per dag)',
       bumped: 'Omvergeduwd door het Nachthert',
       honger: 'Maag nu (100 = vol)',
+      spentRepairs: 'Betaald aan reparaties',        // V9.8
+      gerepareerd: 'Geldmakers gerepareerd',
+      werken: 'Bouwwerken (vergunning, brug, kade)',
     },
     busy: 'Waar was {naam} mee bezig',
     busyTown: 'in het dorp: {makers} geldmakers, {cars} auto’s gewassen',

@@ -20,7 +20,7 @@ Vanilla HTML/CSS/JS (ES modules), no framework, no bundler, no images or web fon
 
 ```
 docs/               the deployed site (open with any static server)
-  js/config.js      every tunable number (prices, incomes, caps, timings, shop order)
+  js/config.js      every tunable number (prices, incomes, caps, timings, shop order, V9.8: vereist, werken, onderhoud)
   js/economy.js     pure, deterministic economy shared by the game, the tests and the simulator
   js/save.js        versioned localStorage save, migration, Bewaar-code
   vendor/           Three.js (module + core, minified), GLTFLoader, SkeletonUtils, BufferGeometryUtils

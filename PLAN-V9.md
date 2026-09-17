@@ -97,7 +97,7 @@ werk/winkel/huis p50 17 p95 18-19 tier 0 px 1.50 · stad/dorp p50 17 tier 2 (erf
   iPad-stem als reserve. Drie muziekstukken (dag, nacht, baas) en een set echte geluiden (treffer, poef, kist, donder).
 - Intro-filmpje op START (Higgsfield video, 15 s, mp4 ≤ 4 MB).
 
-## D. Economie en afwerking (V9.8)
+## D. Economie en afwerking (V9.8) — gebouwd 17 september, zie PROGRESS Run 10: voorwaarden met vergunning/brug/kade, langzamer omhoog (×1,45 en level 2 in plaats van ×1,35 en level 3: de simulator), onderhoud en reparatie, uitgaven op PAPA; spaardoel en weektabel niet
 
 De V8.5/V8.6-punten schuiven hierheen en passen bij bouwen: onderhoud en reparatie, uitgaven op PAPA, spaardoel,
 voorwaarden per geldmaker (brug, kade, vergunning), langzamer omhoog. RAPPORT §0 negende ronde, README, galerij,

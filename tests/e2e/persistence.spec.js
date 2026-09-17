@@ -46,7 +46,7 @@ test('a seeded save with makers and items is restored', async ({ page }) => {
   const s = await state(page);
   expect(s.makers.wasstraat).toBe(1);
   expect(s.equipped.hat).toBe('kroon');
-  await expect(page.locator('#income-amount')).toHaveText('+68');
+  await expect(page.locator('#income-amount')).toHaveText('+67');   // limonade level 2 (17 since V9.8, was 18) + wasstraat level 1 (50)
   await page.locator('#nav-huis').click();
   await expect(page.locator('#huis-scene .avatar[data-hat="kroon"]')).toBeVisible();
   await expect(page.locator('#huis-scene .pet[data-item="hond"]')).toBeVisible();

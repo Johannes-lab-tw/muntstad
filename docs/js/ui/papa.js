@@ -86,6 +86,8 @@ export function createPapa(game) {
       [L.spentFun, `${formatCoins(s.spentFun)} 🪙`],
       [L.spentMakers, `${formatCoins(s.spentMakers)} 🪙`],
       [L.spentFood, `${formatCoins(s.spentFood)} 🪙`],
+      [L.spentRepairs, `${formatCoins(s.spentRepairs)} 🪙`],   // V9.8
+      [L.werken, `${s.werken} / 3`],
       [L.perMinute, `${formatCoins(s.perMinute)} 🪙`],
       [L.bestWorkRate, `${formatCoins(s.bestWorkRate)} 🪙`],
       [L.playTime, fmtTime(s.playTimeMs)],
