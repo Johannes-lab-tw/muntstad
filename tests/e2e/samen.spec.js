@@ -111,6 +111,7 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
 // with its own spear (the host counts the hit, the coins land at the guest), sees the host's boss in its banner and
 // gets the boss loot (coins and the bear crown) when the host beats it.
 test('V10.1 samen vechten: de gast ziet de wolven van de host, schiet er een neer met zijn speer en deelt in de baas', async ({ browser }) => {
+  test.setTimeout(12 * 60000);   // two islands on one slow runner: the gen7 job needed more than the usual eight minutes
   const ctxA = await browser.newContext({ ...test.info().project.use });
   const ctxB = await browser.newContext({ ...test.info().project.use });
   const a = await ctxA.newPage(), b = await ctxB.newPage();
@@ -156,7 +157,7 @@ test('V10.1 samen vechten: de gast ziet de wolven van de host, schiet er een nee
   await a.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x - 30, z), ha.camp);
   await expect.poll(async () => { const r = (await hook(a)).remotes[0]; const pb = (await hook(b)).player; return Math.hypot(r.x - pb.x, r.z - pb.z); }, { timeout: 45000 }).toBeLessThan(3);
   await a.evaluate(() => window.__muntstad.avontuur.spawnWolves());
-  const gastBijHost = async () => (await hook(a)).remotes[0];
+  const gastBijHost = () => a.evaluate(() => window.__muntstad.avontuur.remotes[0]);   // light: one field, not the whole hook
   const poefs = () => a.evaluate(() => window.__muntstad.avontuur.poefs);
   const earnedB = async () => Math.floor((await state(b)).earnedWork);
   const earnedBefore = await earnedB();
@@ -183,11 +184,8 @@ test('V10.1 samen vechten: de gast ziet de wolven van de host, schiet er een nee
   const earnedBaas = await earnedB();
   const baas = () => a.evaluate(() => window.__muntstad.avontuur.baas);
   for (let i = 0; i < 16 && (await baas()); i++) {
-    const p = (await hook(a)).player;
-    await a.evaluate(({ x, z }) => window.__muntstad.avontuur.baasAt(x, z + 4), p);
-    await a.waitForTimeout(300);
-    await a.evaluate(() => window.__muntstad.avontuur.schiet());
-    await a.waitForTimeout(500);
+    await a.evaluate(() => { const h = window.__muntstad.avontuur; const p = h.player; h.baasAt(p.x, p.z + 4); h.schiet(); });   // place and fire in one go (the alien pistol reloads in 0.3 s)
+    await a.waitForTimeout(450);
   }
   await expect.poll(async () => await baas(), { timeout: 45000 }).toBeNull();
   await expect.poll(async () => (await state(b)).fun.berenkroon, { timeout: 45000 }).toBe(true);
