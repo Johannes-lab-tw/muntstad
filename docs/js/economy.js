@@ -416,6 +416,7 @@ export function stats(state, config) {
     hoofdstuk: state.campagne ? state.campagne.hoofdstuk || 0 : 0,
     munten: state.campagne ? state.campagne.munten || 0 : 0,
     berenVerloren: state.campagne ? state.campagne.pogingen || 0 : 0,
+    bazen: state.eiland && state.eiland.bazen ? Object.values(state.eiland.bazen).reduce((a, b) => a + (b || 0), 0) : 0,   // V9.5
     bankSaldo: state.bank ? Math.floor(state.bank.saldo || 0) : 0,
     bankEarned: state.bank ? Math.floor(state.bank.earned || 0) : 0,
     bumped: state.nacht ? state.nacht.bumped || 0 : 0,

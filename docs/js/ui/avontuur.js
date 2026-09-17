@@ -20,6 +20,7 @@ import { vindKaartstuk, graafSchat, weekKey } from '../schat.js';
 import { plunder } from '../piraten.js';
 import { openKist, dagKey, GADGET_INFO, GADGETS, gebruikGadget } from '../werkbank.js';
 import { opnieuwAvontuur } from '../economy.js';
+import { baasBuit } from '../bazen.js';
 import { seedOf } from '../weer.js';
 import { perks, drainHunger, eat, canEat, faint, deerBump, coolDown, freeze, cook } from '../uitdaging.js';
 import { CYCLE } from '../3d/daycycle.js';
@@ -77,6 +78,14 @@ export function createAvontuur(game) {
   const vignetteEl = document.getElementById('av-vignette');
   const bannerEl = document.getElementById('av-banner');   // V9.2
   let bannerTimer = 0;
+  /** V9.5: while a boss is on the island the banner shows its name and lives (and does not fade). */
+  function baasBanner(def, hp = 0, max = 0) {
+    clearTimeout(bannerTimer);
+    if (!def) { bannerEl.classList.add('hidden'); bannerEl.classList.remove('baas'); return; }
+    bannerEl.textContent = `${def.icon} ${def.naam} ${'❤️'.repeat(Math.max(0, hp))}${'🖤'.repeat(Math.max(0, max - hp))}`;
+    bannerEl.classList.remove('hidden');
+    bannerEl.classList.add('baas');
+  }
   let minimap = null;   // V6.2e: drawn the first time the island shows
   game.on('samenpad', (open) => { if (visible) controls.setEnabled(!open); });   // the SAMEN pad covers the stick
   eetBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); onEat(); });
@@ -672,6 +681,34 @@ export function createAvontuur(game) {
         hudKey = '';
         renderHud(game.state);
       },
+      onBaas(def, hp, max) {   // V9.5: the boss is here: the banner stays up with its lives, Muntje warns
+        baasBanner(def, hp, max);
+        setTimeout(() => { if (visible) game.mentor.say('lines.baasKomt', { naam: def.naam }, { kind: 'reaction' }); }, 800);
+      },
+      onBaasHp(def, hp, max) { baasBanner(def, hp, max); },
+      onBaasEet(def) {
+        game.update((s) => ({ ...s, nacht: { ...s.nacht, fire: Math.max(0, s.nacht.fire - def.eet) } }));
+        game.audio.play('munch');
+        game.mentor.say('lines.baasEet', { naam: def.naam }, { kind: 'reaction' });
+        hudKey = '';
+        renderHud(game.state);
+      },
+      onBaasVerslagen(def) {
+        const r = baasBuit(game.state, game.config, def);
+        game.update(() => r.state);
+        game.save();
+        game.audio.play('fanfare');
+        game.fx.confetti();
+        const ding = game.config.fun.find((f) => f.id === r.ding);
+        game.mentor.say(r.nieuw && ding ? 'lines.baasVerslagen' : 'lines.baasVerslagenMunten', { naam: def.naam, n: formatCoins(r.munten), ding: ding ? ding.name.toLowerCase() : '' }, { kind: 'reaction' });
+        const p = game.walletPoint();
+        game.fx.floatText(p.x + 40, p.y + 30, `+${formatCoins(r.munten)}`, '#2a9d3a');
+        game.bumpWallet();
+        baasBanner(null);
+        hudKey = '';
+        renderHud(game.state);
+      },
+      onBaasWeg(def) { baasBanner(null); game.mentor.say('lines.baasWeg', { naam: def.naam }, { kind: 'reaction' }); },
       onWek() {   // V9.4: waking a friend costs a reddingsdrank
         const r = gebruikGadget(game.state, 'reddingsdrank');
         if (!r.ok) { game.mentor.say('lines.wekNodig', {}, { kind: 'reaction' }); return false; }
@@ -689,6 +726,7 @@ export function createAvontuur(game) {
         game.audio.play('coin');
       },
       onNachtPlan(plan, armed) {   // V9.2: the dusk banner, five seconds, and Muntje's nudge
+        if (bannerEl.classList.contains('baas')) return;
         bannerEl.textContent = plan.tekst;
         bannerEl.classList.remove('hidden');
         clearTimeout(bannerTimer);

@@ -34,6 +34,11 @@ stap van V9 is daarom weer tempo:
    campagnemunten blijven. Gadgets zitten achter één knop naast de smiley: een net houdt een vijand vast, een
    noodfakkel geeft twintig tellen fel licht, een fluit roept je hond en je vriend, een reddingsdrank vult maag en
    warmte. De SAMEN-uitleg noemt de rollen: één stookt en bouwt, één schiet.
+5. **v9.5, baasnachten.** Elke vijfde nacht komt een baas: de Nachtbeerkoning (nacht 5), de Spookkapitein (nacht 10,
+   alleen water en het alienpistool doen hem iets) en het Moerasmonster (nacht 15), daarna opnieuw en sterker. De
+   banner bij schemer zegt BAAS, de baas heeft tien of twaalf levens die onderin in beeld staan, hij vreet aan het
+   vuur en komt terug tot je hem verslaat of de zon opkomt. Verslagen geeft 100, 200 of 300 munten en de eerste keer
+   een hoed die nergens te koop is (berenkroon, kapiteinshoed, moerasmuts). PAPA telt de verslagen bazen.
 
 ## 0-vorig. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
 

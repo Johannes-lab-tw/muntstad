@@ -28,6 +28,7 @@ import { KAARTSTUKKEN, X_PLEKKEN, kaartStukken, kaartCompleet, schatPlek, weekKe
 import { piratenNacht, stepPiraat, scarePiraat, buit } from '../piraten.js';
 import { wapenVoor, levens, tref, roedel, nachtPlan } from '../gevecht.js';
 import { KISTEN, kistenVandaag, kistOpen, dagKey } from '../werkbank.js';
+import { baasVoorNacht, baasById, maakBaas, stepBaas } from '../bazen.js';
 import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
@@ -882,7 +883,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       strikeAt = weerNu() === 'storm' && !guest ? now + config.weer.bliksemNaMs : 0;   // V8.2: a storm night has one lightning strike
       if (!guest && piratenNacht(n.nights, config.piraten)) startPiratenNacht(now);   // V8.4
       // V9.2: the banner says what tonight brings
-      const plan = nachtPlan({ nights: n.nights, wolves: rules.wolves && !guest, bear: (bearNight || finale) && !guest, beren: finale ? config.campagne.beren : 1, pirates: !guest && piratenNacht(n.nights, config.piraten), ghosts: true }, config);
+      const baasDef = !guest && !finale ? baasVoorNacht(n.nights, config.bazen) : null;   // V9.5: the boss of the night (not in the campaign's last night)
+      if (baasDef) setTimeout(() => { if (wasDark && !baas) spawnBaas(baasDef); }, config.bazen.naDonkerMs);
+      const plan = nachtPlan({ nights: n.nights, wolves: rules.wolves && !guest, bear: (bearNight || finale) && !guest, beren: finale ? config.campagne.beren : 1, pirates: !guest && piratenNacht(n.nights, config.piraten), ghosts: true, baas: baasDef ? baasDef.icon : null }, config);
       cb.onNachtPlan && cb.onNachtPlan(plan, !!wapenVoor(state.eiland.tools, 'wolf'));
     }
     if (strikeAt && isDark && now >= strikeAt) { strikeAt = 0; strike(now); }
@@ -898,6 +901,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       cb.onDawn && cb.onDawn(fireWasBurning && n.fire > 0);
       if (bliksem.burning) { setBurning(false); strikeAt = 0; cb.onBliksemHout && cb.onBliksemHout(config.weer.bliksemHout); }   // V8.2
       clearPirates();   // V8.4: dawn sends the boat away
+      if (baas) { const def = baas.def; clearBaas(); cb.onBaasWeg && cb.onBaasWeg(def); }   // V9.5: dawn sends the boss away
       clearNight();
       clearDeer();
       clearWolves();
@@ -956,6 +960,12 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       pr.model.update(now, { walking: pr.p.pause <= 0 });
     }
     if (boot.visible) { boot.position.y = -0.1 + Math.sin(now / 900) * 0.12; boot.rotation.z = Math.sin(now / 1300) * 0.03; }
+    if (baas) {   // V9.5: the boss walks to the fire, eats, backs off, comes again
+      const res = stepBaas(baas.b, { target: { x: CAMP.x, z: CAMP.z }, dt }, baas.def);
+      if (res === 'eat') { cb.onBaasEet && cb.onBaasEet(baas.def); const items = cb.onWolfBump ? cb.onWolfBump() : []; scatterDrops(items || []); }
+      if (res === 'gone') clearBaas();
+      else { baas.holder.position.set(baas.b.x, groundOf(baas.b.x, baas.b.z), baas.b.z); baas.holder.rotation.y = baas.b.heading; baas.model.update(now); }
+    }
     broadcastWorld(now);
   }
 
@@ -982,6 +992,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     for (const b of bears) if (b.b.state === 'come') consider('beer', b.b, b.holder, b.b.x, b.b.z);
     for (const pr of pirates) if (pr.p.state === 'come') consider('piraat', pr.p, pr.holder, pr.p.x, pr.p.z);
     for (const gh of ghosts) if (gh.g.state !== 'gone') consider('spook', gh.g, gh.holder, gh.g.x, gh.g.z);
+    if (baas && baas.b.state !== 'flee') { consider(baas.def.geest ? 'spook' : 'beer', baas.b, baas.holder, baas.b.x, baas.b.z); if (best && best.rec === baas.b) best.baas = true; }   // V9.5
     return best;
   }
   /** The shoot action when an enemy is in range of a weapon you own (the host only; a guest keeps BOE). */
@@ -1006,6 +1017,13 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     poofAt(t.rec.x, groundOf(t.rec.x, t.rec.z), t.rec.z);
     game.audio.play('pop');
     poefs++;
+    if (t.baas && baas) {   // V9.5: the boss goes down: a bigger poof and the loot
+      poofAt(t.rec.x + 0.8, groundOf(t.rec.x, t.rec.z) + 0.8, t.rec.z); poofAt(t.rec.x - 0.8, groundOf(t.rec.x, t.rec.z) + 1.4, t.rec.z);
+      const def = baas.def;
+      clearBaas();
+      cb.onBaasVerslagen && cb.onBaasVerslagen(def);
+      return;
+    }
     if (t.kind === 'wolf') { const i = wolves.findIndex((v) => v.w === t.rec); if (i >= 0) { scene.remove(wolves[i].holder); wolves.splice(i, 1); } }
     else if (t.kind === 'spook') { const i = ghosts.findIndex((gh) => gh.g === t.rec); if (i >= 0) { scene.remove(ghosts[i].holder); ghosts.splice(i, 1); } }
     else if (t.kind === 'piraat') { scarePiraat(t.rec, { x: player.x, z: player.z }); piraatWeg(false); }
@@ -1025,6 +1043,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     t.holder.scale.setScalar(1.3);
     setTimeout(() => t.holder.scale.setScalar(1), 120);
     game.audio.play(res === 'poef' ? 'pop' : 'thud');
+    if (t.baas && baas && res !== 'poef') { baas.b.pause = Math.max(baas.b.pause || 0, 0.4); cb.onBaasHp && cb.onBaasHp(baas.def, baas.b.hp, baas.b.hpMax); }   // V9.5
     if (res === 'poef') enemyBeaten(t);
   }
   function shoot(action, now) {
@@ -1058,6 +1077,61 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       p.mesh.material.opacity = 0.95 * (1 - f);
     }
   }
+  // ---------- V9.5: the boss of the night ----------
+  let baas = null;   // { def, b, model, holder }
+  function baasModel(def) {
+    const g = new T.Group();
+    let update = () => {};
+    if (def.id === 'koning') {
+      const bear = bearModel();
+      bear.group.scale.setScalar(1.8);
+      g.add(bear.group);
+      const c = new Builder({ r: 0.03 });
+      c.cyl(0, 0, 0, 0.45, 0.3, '#ffc21c', 10);
+      for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; c.box(Math.cos(a) * 0.38 - 0.08, Math.sin(a) * 0.38 - 0.08, 0.28, 0.16, 0.16, 0.3, '#ffe58a', { r: 0.02 }); }
+      const crown = c.build();
+      crown.position.set(0, 1.25 * 1.8 + 0.7, 0.75 * 1.8);
+      g.add(crown);
+      update = (t) => bear.update(t, { walking: true });
+    } else if (def.id === 'kapitein') {
+      const gh = ghostModel();
+      gh.group.scale.setScalar(1.7);
+      g.add(gh.group);
+      const h = new Builder({ r: 0.03 });
+      h.cyl(0, 0, 0, 0.7, 0.08, '#1b1f3b', 16);
+      h.cyl(0, 0, 0.08, 0.45, 0.8, '#252a48', 14);
+      h.sphere(0, 0.45, 0.45, 0.1, '#ffffff', 8);
+      const hat = h.build();
+      hat.position.set(0, 1.55 * 1.7, 0);
+      g.add(hat);
+      update = (t) => gh.update(t, { fade: 1 });
+    } else {
+      const m = new Builder({ r: 0.06 });
+      m.puff(0, 0, 0.9, 1.2, '#5fd35f', 1);
+      m.puff(0.7, 0.3, 0.6, 0.7, '#4cc24c', 1);
+      m.puff(-0.7, -0.2, 0.6, 0.75, '#4cc24c', 1);
+      m.puff(0.2, -0.6, 1.5, 0.6, '#6fe06f', 1);
+      m.sphere(-0.3, 1.05, 1.3, 0.16, '#ffffff', 8); m.sphere(0.3, 1.05, 1.3, 0.16, '#ffffff', 8);
+      m.sphere(-0.3, 1.18, 1.3, 0.08, '#1b1f3b', 6); m.sphere(0.3, 1.18, 1.3, 0.08, '#1b1f3b', 6);
+      const blob = m.build();
+      g.add(blob);
+      update = (t) => { blob.scale.set(1 + Math.sin(t / 240) * 0.08, 1 - Math.sin(t / 240) * 0.08, 1 + Math.sin(t / 240) * 0.08); };
+    }
+    return { group: g, update };
+  }
+  function spawnBaas(def, at = null) {
+    if (baas) return;
+    const p = at || landSpot(34);
+    const model = baasModel(def);
+    const holder = new T.Group();
+    holder.add(model.group);
+    holder.position.set(p.x, groundOf(p.x, p.z), p.z);
+    scene.add(holder);
+    baas = { def, b: maakBaas(def, p.x, p.z), model, holder };
+    cb.onSound && cb.onSound('thunder');
+    cb.onBaas && cb.onBaas(def, baas.b.hp, baas.b.hpMax);
+  }
+  function clearBaas() { if (baas) { scene.remove(baas.holder); baas = null; } }
   // ---------- V9.4: the gadgets and the restart ----------
   let noodfakkelUntil = 0;
   function gebruikNet() {
@@ -1085,7 +1159,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     gear.fenceR = 0;
     for (const k of ['toren', 'torenLight', 'opslag', 'vlag']) if (kampGear[k]) { scene.remove(kampGear[k]); kampGear[k] = null; }
     kampGear.level = 0;
-    clearNight(); clearDeer(); clearWolves(); clearDrops(); clearBears(); clearPirates();
+    clearNight(); clearDeer(); clearWolves(); clearDrops(); clearBears(); clearPirates(); clearBaas();
     rocks.clear();
     lastSchatSync = 0; lastKistSync = 0;
     reset();
@@ -1594,6 +1668,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     // V9.4: the gadgets and the restart
     gebruikNet, noodfakkel: () => noodfakkel(performance.now()), roepHond, herstart,
     get noodfakkel_actief() { return performance.now() < noodfakkelUntil; },
+    // V9.5: the boss for the tests
+    baasNu(id) { const def = baasById(id); if (def && !baas) spawnBaas({ ...def, ronde: 0 }); },
+    baasAt(x, z) { if (baas) { baas.b.x = x; baas.b.z = z; baas.b.pause = 0; baas.b.state = 'come'; } },
+    get baas() { return baas ? { id: baas.def.id, hp: baas.b.hp, hpMax: baas.b.hpMax, x: baas.b.x, z: baas.b.z, state: baas.b.state } : null; },
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
     setDown(v) { down = !!v; },
     get down() { return down; },
