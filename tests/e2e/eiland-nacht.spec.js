@@ -253,6 +253,9 @@ test('V9.2 weapons: SPEER beats a wolf in two hits, WATER poofs a ghost, the ban
   // the pack next to the player, away from the fire; the spear is the action
   const h = await hook(page);
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 30), h.camp);
+  // no ghosts drifting in: on the slow runner one arrives during the test, is the nearest enemy, and the action becomes
+  // WATER instead of SPEER (the weapon follows the nearest enemy); the ghost below is placed by hand
+  await page.evaluate(() => window.__muntstad.avontuur.setSpoken(false));
   await page.evaluate(() => window.__muntstad.avontuur.spawnWolves());
   const p = (await hook(page)).player;
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.wolvesAt(x, z + 3), p);
