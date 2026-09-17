@@ -96,8 +96,12 @@ test('V9.7 Muntjes eigen stem: catalogus geladen, een zin met bestand speelt, ee
   expect(await page.evaluate((z) => window.__muntstad.stem.heeft(z), zin)).toBe(true);
   expect(await page.evaluate(() => window.__muntstad.stem.heeft('Deze zin bestaat niet, 12345.'))).toBe(false);
   expect(await page.evaluate(() => window.__muntstad.stem.heeft('Hoi! Ik ben Muntje. Kom, we gaan munten maken!'))).toBe(true);
+  // Muntje may already have spoken a welcome line or a tip from a file (on a slow runner the catalogue is in before he
+  // starts talking), so count from here
+  const gespeeld = () => page.evaluate(() => window.__muntstad.stem.gespeeld);
+  const before = await gespeeld();
   expect(await page.evaluate((z) => window.__muntstad.speech.speak(z), zin)).toBe(true);
-  await expect.poll(() => page.evaluate(() => window.__muntstad.stem.gespeeld), { timeout: 20000 }).toBe(1);
+  await expect.poll(gespeeld, { timeout: 20000 }).toBeGreaterThan(before);
   expect(errors()).toEqual([]);
 });
 
