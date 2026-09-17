@@ -57,9 +57,9 @@ test('the chain card shows the first chain; walking onto the beach finishes an o
   expect(errors()).toEqual([]);
 });
 
-test('night 5: the shadow wolves come; one bites in the dark and your things lie on the ground; BOE sends the pack off; in the fire light they never bite', async ({ page }) => {
+test('night 6: the shadow wolves come; one bites in the dark and your things lie on the ground; BOE sends the pack off; in the fire light they never bite', async ({ page }) => {
   const errors = watchErrors(page);
-  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ bag: { hout: 6, schelp: 4, bes: 2, vis: 0 } }); s.nacht = { fire: 95, nights: 4, stolen: 0, clockOffsetMs: 0, warm: 100 }; return s; });
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ bag: { hout: 6, schelp: 4, bes: 2, vis: 0 } }); s.nacht = { fire: 95, nights: 5, stolen: 0, clockOffsetMs: 0, warm: 100 }; return s; });
   await startGame(page, { url: '/?lowres=1&phase=0.3' });
   await closePopups(page);
   await openAvontuur(page);
