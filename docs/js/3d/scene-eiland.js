@@ -1330,10 +1330,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       const d = Math.hypot(px - o.x, pz - o.z) - o.r;
       if (d < REACH.tree + 0.3 && d < bestD) { best = { type: 'steen', label: 'HAK', target: o }; bestD = d; }
     }
-    for (const k of kisten) {   // V9.3: a filled chest that is still closed; within reach it beats a rock or tree next to it (a metre of head start)
+    for (const k of kisten) {   // V9.3: a filled chest that is still closed; within reach it always beats a rock or tree next to it
       if (!k.group.visible || k.open) continue;
       const d = Math.hypot(px - k.x, pz - k.z);
-      if (d < 1.9 && d - 1.0 < bestD) { best = { type: 'gadgetkist', label: 'OPEN', target: k.i }; bestD = d - 1.0; }
+      if (d < 1.9 && d - 3 < bestD) { best = { type: 'gadgetkist', label: 'OPEN', target: k.i }; bestD = d - 3; }
     }
     if (best) return best;
     const dl = Math.hypot(px - LAKE.x, pz - LAKE.z);
