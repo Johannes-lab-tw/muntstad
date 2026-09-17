@@ -1431,6 +1431,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get poefs() { return poefs; },   // enemies beaten this visit (tests: a poof, not a wolf that ran off and was removed)
     /** Tests: no ghosts drifting in (on the slow runner one arrives mid-test and takes the weapon slot from the wolf). */
     setSpoken(on) { ghostsOff = !on; if (!on) { for (const gh of ghosts) scene.remove(gh.holder); ghosts.length = 0; } },
+    /** Tests: fire at the nearest enemy in range right now (the label), or null; the CI runner renders a frame every few
+     * seconds, so waiting for the button to show the weapon and tapping it in time is a lottery there. */
+    schiet() { const a = shootAction(); if (!a) return null; action = a; shoot(a, performance.now()); return a.label; },
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
     setDown(v) { down = !!v; },
     get down() { return down; },
