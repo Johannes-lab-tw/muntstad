@@ -29,6 +29,7 @@ import { piratenNacht, stepPiraat, scarePiraat, buit } from '../piraten.js';
 import { wapenVoor, levens, tref, roedel, nachtPlan } from '../gevecht.js';
 import { KISTEN, kistenVandaag, kistOpen, dagKey } from '../werkbank.js';
 import { baasVoorNacht, baasById, maakBaas, stepBaas } from '../bazen.js';
+import * as modellen from './modellen.js';
 import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
@@ -241,6 +242,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   let yaw = START.heading, pitch = CAM.pitch, firstFrame = true;
 
   tiles.warm(START.x, START.z);
+  modellen.preload();   // V9.6: the GLB models (Higgsfield pipeline) load in the background; until then the builder models stand in
   const player = createPlayer(START.x, START.z, START.heading);
   player.ground = map.groundAt(player.x, player.z);
   const dog = createFollower(START.x + 0.9, START.z - 0.9, START.heading);   // beside you, not between you and the camera
@@ -434,11 +436,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (typeof d.ph === 'number') daynight.setOverride(Math.max(0, Math.min(0.9999, d.ph)));
     if (typeof d.f === 'number' && cb.onFireSync) cb.onFireSync(Math.max(0, Math.min(N.fireMax, d.f)));   // V7.1: was capped at 100, a bonfire (200+) showed as level 4 to a guest
     const gs = Array.isArray(d.g) ? d.g.slice(0, N.ghostsMax) : [];
-    while (remoteGhosts.length < gs.length) { const m = ghostModel(); const holder = new T.Group(); holder.add(m.group); scene.add(holder); remoteGhosts.push({ m, holder }); }
+    while (remoteGhosts.length < gs.length) { const m = modellen.instantie('spook') || ghostModel(); const holder = new T.Group(); holder.add(m.group); scene.add(holder); remoteGhosts.push({ m, holder }); }
     while (remoteGhosts.length > gs.length) { const g = remoteGhosts.pop(); scene.remove(g.holder); }
     gs.forEach((g, i) => { const rg = remoteGhosts[i]; rg.tx = g.x; rg.tz = g.z; if (rg.tx0 == null) { rg.holder.position.set(g.x, groundOf(g.x, g.z), g.z); rg.tx0 = 1; } });
     if (d.b && typeof d.b.x === 'number') {
-      if (!remoteBear) { const m = bearModel(); const holder = new T.Group(); holder.add(m.group); scene.add(holder); remoteBear = { m, holder, tx: d.b.x, tz: d.b.z }; holder.position.set(d.b.x, groundOf(d.b.x, d.b.z), d.b.z); }
+      if (!remoteBear) { const m = modellen.instantie('beer') || bearModel(); const holder = new T.Group(); holder.add(m.group); scene.add(holder); remoteBear = { m, holder, tx: d.b.x, tz: d.b.z }; holder.position.set(d.b.x, groundOf(d.b.x, d.b.z), d.b.z); }
       remoteBear.tx = d.b.x; remoteBear.tz = d.b.z; remoteBear.state = d.b.s;
     } else if (remoteBear) { scene.remove(remoteBear.holder); remoteBear = null; }
   }
@@ -609,7 +611,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   }
   function spawnGhost() {
     const p = landSpot(22);
-    const model = ghostModel();
+    const model = modellen.instantie('spook') || ghostModel();   // V9.6
     const holder = new T.Group();
     holder.add(model.group);
     holder.position.set(p.x, map.heightAt(p.x, p.z), p.z);
@@ -618,7 +620,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   }
   function spawnBear(dist = 30) {
     const p = landSpot(dist);
-    const model = bearModel();
+    const model = modellen.instantie('beer') || bearModel();   // V9.6
     const holder = new T.Group();
     holder.add(model.group);
     holder.position.set(p.x, map.heightAt(p.x, p.z), p.z);
@@ -664,7 +666,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   const pirates = [];   // { p: { x, z, heading, state, pause, life }, model, holder }
   let piratenInfo = null;   // { weg, geplunderd } during a pirate night
   const BOOT_AT = { x: PIER.x + 20, z: PIER.z + 8 };
-  const boot = bootModel();
+  const boot = new T.Group();   // V9.6: the builder boat until the GLB is in, then the Meshy one takes its place
+  boot.add(bootModel());
+  modellen.laad('boot').then((ok) => { const g = ok && modellen.instantie('boot'); if (!g) return; boot.clear(); boot.add(g.group); boot.userData.glb = true; });
   boot.position.set(BOOT_AT.x, -0.1, BOOT_AT.z);
   boot.rotation.y = Math.PI * 0.5;
   boot.visible = false;
@@ -673,7 +677,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const P = config.piraten;
     for (let i = 0; i < P.aantal; i++) {
       const x = PIER.x + 8 + i * 3, z = PIER.z - 14;
-      const model = piraatModel();
+      const model = modellen.instantie('piraat') || piraatModel();   // V9.6: the Meshy pirate with its walk clip, else the builder one
       const holder = new T.Group();
       holder.add(model.group);
       holder.position.set(x, map.heightAt(x, z), z);
@@ -719,7 +723,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const pack = Math.max(1, roedel(state ? state.nacht.nights : 0, config));   // V9.2: the pack grows with the nights
     for (let i = 0; i < pack; i++) {
       const p = landSpot(30 + i * 3);
-      const model = wolfModel();
+      const model = modellen.instantie('wolf') || wolfModel();   // V9.6
       const holder = new T.Group();
       holder.add(model.group);
       holder.position.set(p.x, groundOf(p.x, p.z), p.z);
@@ -957,7 +961,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       if (res === 'gone') { scene.remove(pr.holder); pirates.splice(i, 1); continue; }
       pr.holder.position.set(pr.p.x, groundOf(pr.p.x, pr.p.z), pr.p.z);
       pr.holder.rotation.y = pr.p.heading;
-      pr.model.update(now, { walking: pr.p.pause <= 0 });
+      pr.model.update(now, { walking: pr.p.pause <= 0, speed: pr.p.state === 'flee' ? 1.8 : 1 });
     }
     if (boot.visible) { boot.position.y = -0.1 + Math.sin(now / 900) * 0.12; boot.rotation.z = Math.sin(now / 1300) * 0.03; }
     if (baas) {   // V9.5: the boss walks to the fire, eats, backs off, comes again
@@ -1625,6 +1629,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get phase() { return daynight.phase; },
     get darkness() { return daynight.darkness; },
     get action() { return action ? { type: action.type, label: action.label } : null; },
+    /** V9.6: per GLB model 'glb' | 'laden' | 'fout' | 'bouw', and per pirate whether it is the GLB. */
+    get modellen() { return { ...modellen.statusAlles(), piraten: pirates.map((pr) => !!pr.model.glb), wolven: wolves.map((v) => !!v.model.glb), beren: bears.map((b) => !!b.model.glb), spoken: ghosts.map((g) => !!g.model.glb), bootGlb: !!boot.userData.glb }; },
     /** V7.4: where the fire's flames are on the screen (px), for "+3 🪵" to pop out of the fire itself. */
     firePoint() {
       const v = camp.firePos.clone(); v.y += 1.8; v.project(camera);

@@ -177,3 +177,33 @@ display); Muntje's bubble is narrow and lets touches through on the island. `tes
   everywhere (waves, gulls, boats, smoke, flags, coins, brushes), overshoot easing on UI.
 - Don't: voxel cubes, textures, dark or muddy colours, floating objects without shadows, clutter that hides the
   buttons, anything that pushes the frame time above 16 ms on an iPad gen 7.
+
+## 12. Models from the Higgsfield pipeline (`docs/modellen/`, V9.6)
+
+The enemies and the boat are GLB models; everything else is still built from rounded primitives. The pipeline, per model,
+about ten minutes and 31-39 of Johannes' Higgsfield credits:
+
+1. **Concept picture** with `generate_image` (gpt_image_2, 1:1, 1 credit). One prompt skeleton for every model so they
+   match: "3D rendered toy figure in a soft rounded plastic cartoon style, smooth matte surface, bright clean colours.
+   <the character>. Full body, centered, exact front view, evenly lit, plain white background, no shadow, no ground,
+   no text." Characters that must walk: a strict T-pose (arms straight out) for Meshy's auto-rig. Animals and things:
+   a three-quarter view gives better geometry. Look at the picture before spending on the mesh.
+2. **Mesh** with `generate_3d` (`image_to_3d`, the picture's job id as `image` media, `should_texture`,
+   `target_polycount` 4000-8000). Walking characters: `enable_rigging`, `enable_animation`, `animation_action_id` 30
+   (Casual Walk; other clips via `animation_actions`). Meshy lands a little over the polycount. The rig fails on
+   non-human shapes (the bear, twice): then a static model in a walking pose with a `wiebel`.
+3. **Shrink** with `python scripts/glb-verklein.py in.glb docs/modellen/<id>.glb --px 512`: Meshy ships a 2048 px PNG
+   (6 MB); 512 px JPEG is plenty for a figure forty pixels tall on the iPad. 0.2-0.7 MB per model.
+4. **Catalogue** in `docs/js/modellen.js` (`MODELLEN`): `hoogte` (or `lengte` for the boat), `clip` (regex on the clip
+   name) or `wiebel` ('loop' sways, 'ren' bobs fast, 'zweef' floats), `draai` if the front is not +Z, `gloed` (how much of
+   its own colours it emits in the dark, default 0.22 — Meshy's emissiveFactor 1 with the colour texture would be a white
+   blob at night), `fade` for see-through ghosts, `maxDriehoeken`. Add the file to PRECACHE in `docs/sw.js`; the unit test
+   (`tests/unit/modellen.test.js`) checks size, triangles, skeleton, texture size and the cache list.
+5. **Scene**: `modellen.instantie(id) || builderModel()` — same `{ group, update(now, opts) }` contract as spoken.js, so
+   the swap is one line and the builder model stays the fallback until the file is in (and forever offline on an old
+   cache). Materials become Lambert with the texture (V9.1 light budget); skinned meshes are never frustum-culled.
+
+Rules that stay: our own pictures, no brands (rule 5); everything vendored and precached, no CDN (rule 4); a model
+under 9 000 triangles and 1 MB; check it in the scene by day and by night with `node scripts/shot-modellen.mjs 0.3` and
+`... 0.82` (OUT=dir for the pictures) before it ships.
+

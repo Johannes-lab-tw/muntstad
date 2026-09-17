@@ -16,14 +16,16 @@ A small iPad web game (PWA) for a 6-year-old that teaches one thing through play
 
 ## Stack
 
-Vanilla HTML/CSS/JS (ES modules), no framework, no bundler, no images or web fonts. The one vendored library is Three.js (`docs/vendor/`, r185): the town, the yard and the wash bay are real 3D scenes with a shadow-casting sun, built at runtime from rounded plastic primitives (`docs/js/3d/build.js`), and the same models render the shop cards, popups and HUD icons as thumbnails. One WebGL renderer serves every screen and steps its quality down on slow iPads. DOM for the UI, Web Audio for every sound, `speechSynthesis` with a Dutch voice for the mentor. The only dev dependency is `@playwright/test`.
+Vanilla HTML/CSS/JS (ES modules), no framework, no bundler, no images or web fonts. The one vendored library is Three.js (`docs/vendor/`, r185, plus its GLTFLoader and SkeletonUtils since V9.6): the town, the yard and the wash bay are real 3D scenes with a shadow-casting sun, built at runtime from rounded plastic primitives (`docs/js/3d/build.js`), and the same models render the shop cards, popups and HUD icons as thumbnails. One WebGL renderer serves every screen and steps its quality down on slow iPads. DOM for the UI, Web Audio for every sound, `speechSynthesis` with a Dutch voice for the mentor. The only dev dependency is `@playwright/test`.
 
 ```
 docs/               the deployed site (open with any static server)
   js/config.js      every tunable number (prices, incomes, caps, timings, shop order)
   js/economy.js     pure, deterministic economy shared by the game, the tests and the simulator
   js/save.js        versioned localStorage save, migration, Bewaar-code
-  vendor/           Three.js (module + core, minified)
+  vendor/           Three.js (module + core, minified), GLTFLoader, SkeletonUtils, BufferGeometryUtils
+  modellen/         GLB models from the Higgsfield pipeline (ART-DIRECTION §12): piraat, beer, wolf, spook, boot
+  js/modellen.js    the model catalogue and a tiny GLB reader (pure); js/3d/modellen.js loads, normalises and clones them
   js/3d/engine.js   the shared WebGL renderer, lights, fitted camera, adaptive quality
   js/3d/build.js    rounded-plastic geometry builder (one merged mesh per object), text planes, materials
   js/3d/world.js    the island: cushion ground, sea, road, park, scenery, clouds, boats, gulls
