@@ -22,6 +22,11 @@ stap van V9 is daarom weer tempo:
    dan wordt de grote knop het wapen: tik en je gooit of schiet. Wolven en piraten hebben twee levens, een beer vier,
    een spook één; raak is terugdeinzen en een flits, op nul is poef en een paar munten. De roedel groeit met de
    nachten. Bij schemer zegt een banner wat er komt: "Nacht 8: 🐺🐺🐺 🐻 👻". Geen bloed, niets blijft liggen.
+3. **v9.3, maken, kisten en het kamp.** Rotsen geven stenen (HAK, drie tikken). Bij het vuur zit nu een derde tab,
+   MAKEN: van hout, stenen, schelpen, bessen en vis maak je de wapens, fakkels, het afdak en gadgets (een net, een
+   reddingsdrank, een noodfakkel), en je bouwt het kamp op: muur, wachttoren met lantaarn, grote tent, opslagkist (meer
+   in je rugzak) en je vlag. Over het eiland staan tien kisten waarvan er elke dag drie gevuld zijn, met per plek iets
+   anders erin (in de ruïne munten, bij het moeras een reddingsdrank, op de berg stenen). Niets hiervan kost munten.
 
 ## 0-vorig. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
 

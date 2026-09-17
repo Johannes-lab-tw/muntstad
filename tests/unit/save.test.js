@@ -113,7 +113,7 @@ test('Bewaar-code round-trips progress and rejects typos', () => {
   s = { ...s, milestones: ['eerste-geldmaker', 'geld-werkt'], settings: { voice: false, sound: true, music: false } };
   const code = S.encodeCode(s, CONFIG);
   assert.match(code, /^MS1\.[A-Za-z0-9_-]+\.[0-9a-z]{2}$/);
-  assert.ok(code.length < 400, `code length ${code.length}`);
+  assert.ok(code.length < 460, `code length ${code.length}`);   // 400 until V9.3; the camp level, gadgets and chests added a few characters
   const back = S.decodeCode(code, CONFIG, 5000);
   assert.ok(back);
   assert.equal(back.wallet, Math.floor(s.wallet));

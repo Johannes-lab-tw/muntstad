@@ -227,6 +227,12 @@ export const T = {
     nachtWapen: 'Pak je wapen! Tik op een wolf of piraat als hij dichtbij is.',
     geenWapen: 'Bij het vuur koop je een speer. Dan kun je terugvechten.',
     buit: 'Poef! {n} munten.',
+    // V9.3: the workbench and the chests
+    steen: 'Een steen! Daar maak je dingen van bij het vuur.',
+    gemaakt: 'Gemaakt: {ding}!',
+    kampLevel: 'Het kamp is level {n}: {naam}!',
+    tekort: 'Nog nodig: {wat}.',
+    kistInhoud: 'Een kist! {wat}.',
   },
   // V7.7 (PLAN-V7 §C.2 rule 6): the bubble form of each line for a child who does not read yet: one picture and at most
   // three words; the voice says the full line. Drafted by Ollama from the lines above, shortened and checked by hand.
@@ -356,6 +362,11 @@ export const T = {
     nachtWapen: '⚔️ Pak je wapen',
     geenWapen: '🔱 Koop een speer',
     buit: '💥 {n} munten!',
+    steen: '🪨 Een steen!',
+    gemaakt: '🔨 {ding}!',
+    kampLevel: '🏕️ Level {n}!',
+    tekort: '🧺 {wat}',
+    kistInhoud: '📦 {wat}',
   },
 
   milestones: {

@@ -6,7 +6,7 @@ import { perks } from './uitdaging.js';
 export function createEiland(config) {
   const bag = {};
   for (const id of Object.keys(config.eiland.items)) bag[id] = 0;
-  return { bag, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: { ...bag }, sold: 0, earned: 0, chestDay: '', hutDay: '', honger: 100, keten: 0, stap: 0, stapN: 0, ketensDone: 0, kaart: [], schatWeek: 0, schatten: 0 };   // V8.3: kaart = found map pieces, schatWeek = week of the last treasure
+  return { bag, tools: {}, quest: 0, questN: 0, questsDone: 0, collected: { ...bag }, sold: 0, earned: 0, chestDay: '', hutDay: '', honger: 100, keten: 0, stap: 0, stapN: 0, ketensDone: 0, kaart: [], schatWeek: 0, schatten: 0, kamp: 0, gadgets: {}, kistenDag: 0, kistenOpen: 0 };   // V8.3: kaart, schatWeek; V9.3: kamp level, gadgets, the chests of today
 }
 
 export function bagCount(e) {
@@ -113,6 +113,7 @@ export function todayKey(now = Date.now()) {
 }
 
 /** Keep a loaded/decoded slice sane. */
+const GADGET_KEYS = ['net', 'reddingsdrank', 'noodfakkel', 'fluit'];   // V9.3 (the order of docs/js/werkbank.js GADGETS)
 export function normalizeEiland(data, config) {
   const fresh = createEiland(config);
   if (!data || typeof data !== 'object') return fresh;
@@ -130,7 +131,8 @@ export function normalizeEiland(data, config) {
   const honger = data.honger == null ? 100 : Math.min(100, Math.max(0, Number(data.honger) || 0));
   const out = { bag, tools, quest, questN: Math.min(q ? q.n : 0, num(data.questN)), questsDone: num(data.questsDone), collected, sold: num(data.sold), earned: num(data.earned), chestDay, honger,
     keten: num(data.keten, 999), stap: num(data.stap, 9), stapN: num(data.stapN, 999), ketensDone: num(data.ketensDone), hutDay,   // V6.2: the quest chains; V6.5: the hut's chest
-    kaart: Array.isArray(data.kaart) ? data.kaart.filter((x) => typeof x === 'string').slice(0, 5) : [], schatWeek: num(data.schatWeek, 99999), schatten: num(data.schatten) };   // V8.3
+    kaart: Array.isArray(data.kaart) ? data.kaart.filter((x) => typeof x === 'string').slice(0, 5) : [], schatWeek: num(data.schatWeek, 99999), schatten: num(data.schatten),   // V8.3
+    kamp: num(data.kamp, 5), gadgets: Object.fromEntries(GADGET_KEYS.map((g) => [g, num(data.gadgets && data.gadgets[g], 99)])), kistenDag: num(data.kistenDag, 99999), kistenOpen: num(data.kistenOpen, 1023) };   // V9.3
   // never more than fits, also with the big backpack gone
   let tot = Object.values(out.bag).reduce((n, v) => n + v, 0);
   const max = perks(out, config).bagMax;
