@@ -43,6 +43,11 @@ stap van V9 is daarom weer tempo:
    Higgsfield-pijplijn (conceptplaatje → Meshy 3D → verkleind → in het spel, `docs/modellen/`), de piraat met een echt
    skelet en een loopje. Ze staan in de cache en werken offline; zolang een bestand er niet is staat het oude
    bouwmodel er. De held blijft van bouwblokken (zijn hoeden en kleuren zitten daarin). Kosten: ongeveer 200 credits.
+7. **v9.7, Muntjes eigen stem.** Alle 227 zinnen van Muntje zijn nu één echte stem (ElevenLabs via Higgsfield), als
+   bestanden in het spel, offline en op elke iPad hetzelfde. Een zin met een naam of getal wordt zonder die naam of dat
+   getal uitgesproken (de ballon toont ze wel). Ontbreekt een bestand, dan neemt de iPad-stem het over. Bij een baas
+   klinkt een sneller, lager wijsje. Kosten: ongeveer 45 credits. Muziekstukken en echte geluiden blijven van de
+   synthesizer; het intro-filmpje staat nog open.
 
 ## 0-vorig. Negende ronde: de eerste MELD-code, en PLAN-V8 (16 september 2026)
 

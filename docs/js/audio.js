@@ -9,6 +9,7 @@ export function createAudio() {
   let master = null;
   let sfxGain = null;
   let musicGain = null;
+  let voiceGain = null;   // V9.7: Muntje's voice files, next to the effects (the STEM toggle governs them, not GELUID)
   let soundOn = true;
   let musicOn = true;
   let musicTimer = null;
@@ -29,6 +30,9 @@ export function createAudio() {
         musicGain = ctx.createGain();
         musicGain.gain.value = musicOn ? 0.22 : 0;
         musicGain.connect(master);
+        voiceGain = ctx.createGain();
+        voiceGain.gain.value = 1;
+        voiceGain.connect(master);
       } catch (e) {
         ctx = null;
         return false;
@@ -175,6 +179,8 @@ export function createAudio() {
   const THEMES = {
     dorp: { melody: [...A, ...A, ...B, ...A], bass: [...AB, ...AB, ...AB, ...AB], step: 0.28, lead: 'triangle', drums: true },
     eiland: { melody: [...IA, ...IA, ...IB, ...IA], bass: [...IBASS, ...IBASS, ...IBASS, ...IBASS], step: 0.3, lead: 'square', drums: true },
+    // V9.7: the boss is here: the island tune an octave down, twice as fast, the drums on every beat
+    baas: { melody: [...IB, ...IA, ...IB, ...IB].map((n) => n / 2), bass: [...IBASS, ...IBASS, ...IBASS, ...IBASS].map((n) => n / 2), step: 0.17, lead: 'sawtooth', drums: true, baas: true },
   };
   let theme = THEMES.dorp;
   let STEP = 0.28;
@@ -190,8 +196,8 @@ export function createAudio() {
       const start = Math.max(0, nextNoteTime - ctx.currentTime);
       if (m) tone({ freq: m * octave, type: night ? 'sine' : theme.lead, start, dur: STEP * 0.9, gain: night ? 0.4 : 0.42, attack: 0.02, dest: musicGain });
       if (b) tone({ freq: b * octave, type: 'sine', start, dur: STEP * 1.6, gain: 0.45, attack: 0.03, dest: musicGain });
-      if (theme.drums && !night) {
-        if (i % 4 === 0) tone({ freq: 90, type: 'sine', start, dur: 0.12, gain: 0.35, slideTo: 40, dest: musicGain });   // kick
+      if (theme.drums && (!night || theme.baas)) {
+        if (i % (theme.baas ? 2 : 4) === 0) tone({ freq: 90, type: 'sine', start, dur: 0.12, gain: theme.baas ? 0.5 : 0.35, slideTo: 40, dest: musicGain });   // kick
         if (i % 4 === 2) noise({ start, dur: 0.05, gain: 0.12, filter: 'highpass', freq: 6000, dest: musicGain });       // hat
       }
       if (night && i % 16 === 0) noise({ start, dur: STEP * 14, gain: 0.05, filter: 'lowpass', freq: 500, dest: musicGain });   // wind
@@ -213,7 +219,26 @@ export function createAudio() {
     musicTimer = null;
   }
 
+  let voiceSrc = null;
   return {
+    /** V9.7: decode an mp3 (ArrayBuffer) through the game's context; rejects without a context. */
+    decode(ab) {
+      if (!ensure()) return Promise.reject(new Error('geen audio'));
+      return new Promise((res, rej) => { try { ctx.decodeAudioData(ab, res, rej); } catch (e) { rej(e); } });
+    },
+    /** V9.7: play a decoded sentence on the voice gain (one at a time); returns a stop function or null. */
+    speakBuffer(buf) {
+      if (!ensure() || !buf) return null;
+      if (ctx.state !== 'running') ctx.resume().catch(() => {});
+      if (voiceSrc) { try { voiceSrc.stop(); } catch (e) { /* ignore */ } voiceSrc = null; }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(voiceGain);
+      src.start(0);
+      voiceSrc = src;
+      src.onended = () => { if (voiceSrc === src) voiceSrc = null; };
+      return () => { try { src.stop(); } catch (e) { /* ignore */ } if (voiceSrc === src) voiceSrc = null; };
+    },
     /** Call inside a user-gesture handler once (iOS needs a gesture to start audio). */
     unlock() {
       if (!ensure()) return false;
@@ -261,7 +286,7 @@ export function createAudio() {
       const t = THEMES[name] || THEMES.dorp;
       if (t === theme) return;
       theme = t;
-      STEP = night ? theme.step * 1.5 : theme.step;
+      STEP = night && !theme.baas ? theme.step * 1.5 : theme.step;
       step = 0;
     },
     /** V8.2: rain patter while it rains or storms on the island; null stops it. */

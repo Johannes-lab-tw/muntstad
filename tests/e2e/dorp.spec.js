@@ -81,3 +81,22 @@ test('the boat: VAAR at the end of the pier shows the crossing and lands you on 
   await expect.poll(async () => (await hook(page)).player.z, { timeout: 20000 }).toBeLessThan(0);
   expect(errors()).toEqual([]);
 });
+
+// V9.7: Muntje's own voice. The catalogue is in after boot, a sentence with a file plays through the audio context
+// (gespeeld counts), a sentence without a file is not claimed (the iPad voice takes it), and a line with a name is
+// spoken as its twin without the name.
+test('V9.7 Muntjes eigen stem: catalogus geladen, een zin met bestand speelt, een zin zonder valt terug', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 20; s.earnedWork = 20; return s; });
+  await startGame(page);
+  await closePopups(page);
+  await expect.poll(() => page.evaluate(() => window.__muntstad.stem.klaar), { timeout: 20000 }).toBe(true);
+  expect(await page.evaluate(() => window.__muntstad.stem.aantal)).toBeGreaterThan(200);
+  const zin = 'Hoi! Fijn dat je er weer bent.';
+  expect(await page.evaluate((z) => window.__muntstad.stem.heeft(z), zin)).toBe(true);
+  expect(await page.evaluate(() => window.__muntstad.stem.heeft('Deze zin bestaat niet, 12345.'))).toBe(false);
+  expect(await page.evaluate(() => window.__muntstad.stem.heeft('Hoi! Ik ben Muntje. Kom, we gaan munten maken!'))).toBe(true);
+  expect(await page.evaluate((z) => window.__muntstad.speech.speak(z), zin)).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.__muntstad.stem.gespeeld), { timeout: 20000 }).toBe(1);
+  expect(errors()).toEqual([]);
+});

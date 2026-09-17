@@ -26,6 +26,7 @@ export function createSpeech(config, synth = globalThis.speechSynthesis, Utteran
   let voice = null;
   let unlocked = false;
   let enabled = true;
+  let bestanden = null;   // V9.7: the stem-speler with Muntje's own voice files; null = iPad voice only
 
   function refresh() {
     if (!synth) return;
@@ -35,12 +36,16 @@ export function createSpeech(config, synth = globalThis.speechSynthesis, Utteran
   refresh();
 
   function cancel() {
+    if (bestanden) bestanden.stop();
     if (!synth) return;
     try { synth.cancel(); } catch (e) { /* ignore */ }
   }
 
   return {
-    get available() { return !!(synth && Utterance && voice); },
+    get available() { return !!(bestanden && bestanden.aantal) || !!(synth && Utterance && voice); },
+    /** V9.7: hand over the file player; sentences it has go there, the rest to the iPad voice. */
+    setBestanden(s) { bestanden = s || null; },
+    get bestanden() { return bestanden; },
     get unlocked() { return unlocked; },
     get voiceName() { return voice ? voice.name : ''; },
     setEnabled(v) { enabled = !!v; if (!enabled) cancel(); },
@@ -56,6 +61,18 @@ export function createSpeech(config, synth = globalThis.speechSynthesis, Utteran
       refresh();
     },
     speak(text) {
+      if (!enabled || !text) return false;
+      if (bestanden && bestanden.heeft(text)) {   // V9.7: Muntje's own voice; on a failure the iPad voice takes the line
+        cancel();
+        bestanden.speel(text).then((ok) => { if (!ok) speakSynth(text); });
+        return true;
+      }
+      return speakSynth(text);
+    },
+    cancel,
+  };
+
+  function speakSynth(text) {
       if (!synth || !Utterance || !enabled || !text) return false;
       if (!voice) refresh();
       if (!voice) return false;
@@ -76,7 +93,5 @@ export function createSpeech(config, synth = globalThis.speechSynthesis, Utteran
       } catch (e) {
         return false;
       }
-    },
-    cancel,
-  };
+  }
 }

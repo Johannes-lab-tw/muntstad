@@ -207,3 +207,29 @@ Rules that stay: our own pictures, no brands (rule 5); everything vendored and p
 under 9 000 triangles and 1 MB; check it in the scene by day and by night with `node scripts/shot-modellen.mjs 0.3` and
 `... 0.82` (OUT=dir for the pictures) before it ships.
 
+## 13. Muntje's voice (`docs/stem/`, V9.7)
+
+Every sentence Muntje can say is one mp3, rendered once with one voice, so a child hears the same Muntje on every
+iPad and offline. The iPad's own Dutch voice stays the fallback for anything without a file.
+
+- **Which sentences**: `docs/js/stem.js` `verzamelTeksten` collects them: the mentor lines (`i18n.lines`), the quest
+  chains (`docs/content/ketens.js`: title + first step, the other steps, the reward line), the campaign chapters
+  ("Hoofdstuk n: titel. verhaal" and the finished line), the milestone popups and sticker lines. A line with a
+  variable ("Hoi {naam}!") has a spoken twin without it in `i18n.stem` ("Hoi! Ik ben Muntje."); the bubble still shows
+  the name or the number. The unit test refuses a line with a variable and no twin.
+- **Naming**: the file is `<hash>.mp3`, the hash is FNV-1a over the normalised text (`hashTekst`). Change a sentence
+  and its file is simply "missing" until rendered again; the old file shows up as stray.
+- **Render**: `node scripts/stem-lijst.mjs` writes `docs/stem/lijst.json` (only sentences whose file is in), the
+  PRECACHE block in `docs/sw.js` (STEM-BEGIN … STEM-EINDE) and prints what is missing, twelve per batch. Each batch goes
+  to Higgsfield `generate_audio_batch` with `model: text2speech_v2, variant: elevenlabs, voice_type: preset,
+  voice_id: 0178ef57-ada4-43d9-992b-8d9221045bb4` (the preset "Pixie"; `list_voices` for others), 0.15 credit per
+  sentence, about 10 s per batch; the ElevenLabs backend rate-limits one or two per 48, submit those again.
+  `python scripts/stem-haal.py lijst.txt missing.json` fetches the results by job id (the result url is
+  `hf_<date>_<HHMMSS>_<job>.mp3`; the script tries the seconds around the batch time). Then run `stem-lijst.mjs` again.
+- **Play**: `docs/js/stem-speler.js` fetches the mp3 (precache), decodes it once through the game's AudioContext
+  (`audio.decode`), plays it on its own gain (`audio.speakBuffer`) and keeps the last 24 decoded. `speech.js` asks the
+  player first (`setBestanden`); the STEM toggle on PAPA governs both voices.
+- **Budget**: 227 sentences = 11.6 MB, under the 16 MB the unit test allows; docs/ stays under 25 MB.
+- **Not through Higgsfield**: music and sound effects (the connector only offers speech outside its own game
+  pipeline) stay Web Audio; the boss tune is the island tune an octave down at double tempo.
+

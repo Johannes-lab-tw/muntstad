@@ -92,7 +92,7 @@ werk/winkel/huis p50 17 p95 18-19 tier 0 px 1.50 · stad/dorp p50 17 tier 2 (erf
 - Grens docs/: van 1,75 MB naar **25 MB**; offline blijft werken (precache), de eerste keer laden duurt langer.
 - Sfeer: mist en gloed rond vuur en lantaarns (bloom alleen op tier 0), flits bij een treffer, schudden bij een baas.
 
-### V9.7 Stem, muziek en geluid (avond 7)
+### V9.7 Stem, muziek en geluid (avond 7) — gebouwd 17 september, zie PROGRESS Run 10: 227 stemzinnen en de baasmuziek; muziekstukken, echte geluiden en het intro-filmpje niet (zie daar)
 - Muntje krijgt één vaste Nederlandse stem (Higgsfield text-to-speech) voor alle zinnen als bestanden, met de
   iPad-stem als reserve. Drie muziekstukken (dag, nacht, baas) en een set echte geluiden (treffer, poef, kist, donder).
 - Intro-filmpje op START (Higgsfield video, 15 s, mp4 ≤ 4 MB).
