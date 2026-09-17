@@ -127,12 +127,39 @@ test('V5.3: hunger drains and EET fills it; the Nachthert bumps you and your thi
   await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('PAK');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
   await expect.poll(() => page.evaluate(() => window.__muntstad.avontuur.drops.length), { timeout: 40000 }).toBe(dropsBefore - 1);
-  // an empty stomach in the dark: faint, wake at the fire with half the bag
+  // an empty stomach in the dark, alone and without a potion (V9.4): the adventure starts over on the pier; the coins stay
+  const walletBefore = Math.floor((await state(page)).wallet);
   await page.evaluate(() => { window.__muntstad.state.eiland.honger = 0; });
-  await expect.poll(async () => (await state(page)).nacht.fainted, { timeout: 40000 }).toBe(1);
-  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('wakker bij het vuur'))), { timeout: 40000 }).toBe(true);
-  await expect.poll(async () => { const q = (await hook(page)).player; return Math.hypot(q.x - h.camp.x, q.z - h.camp.z); }, { timeout: 40000 }).toBeLessThan(5);
-  expect((await state(page)).eiland.honger).toBeGreaterThan(40);   // afterFaint (50) minus a second of draining
+  await expect.poll(() => page.evaluate(() => window.__muntstad.mentorLog.some((l) => l.includes('opnieuw'))), { timeout: 40000 }).toBe(true);
+  await expect.poll(async () => (await state(page)).nacht.nights, { timeout: 40000 }).toBe(0);
+  expect((await state(page)).eiland.bag.hout).toBe(0);
+  expect(Math.floor((await state(page)).wallet)).toBe(walletBefore);
+  await expect.poll(() => page.evaluate(() => { const a = window.__muntstad.avontuur; return Math.hypot(a.player.x - a.landmarks.PIER.x, a.player.z - a.landmarks.PIER.z); }), { timeout: 40000 }).toBeLessThan(8);
+  expect(errors()).toEqual([]);
+});
+
+// V9.4: a reddingsdrank of your own saves you the moment you would fall: you keep everything.
+test('V9.4 a potion in the bag saves you alone; the gadget button shows and uses it', async ({ page }) => {
+  const errors = watchErrors(page);
+  await seedSave(page, (s) => { s.wallet = 10; s.earnedWork = 10; s.eiland = island({ bag: { hout: 7, schelp: 2, bes: 0, vis: 0 }, honger: 30, gadgets: { reddingsdrank: 2, net: 1 } }); s.nacht = { fire: 100, nights: 1, stolen: 0, clockOffsetMs: 0 }; return s; });
+  await startGame(page, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(page);
+  await openAvontuur(page);
+  await expect(page.locator('#av-gadget')).toBeVisible({ timeout: 40000 });
+  await expect(page.locator('#av-gadget-n')).toHaveText('3');
+  await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
+  await expect.poll(async () => (await hook(page)).darkness, { timeout: 40000 }).toBe(1);
+  await page.evaluate(() => { window.__muntstad.state.eiland.honger = 0; });
+  await expect.poll(() => mentorHas(page, 'reddingsdrank'), { timeout: 40000 }).toBe(true);
+  await expect.poll(async () => (await state(page)).eiland.gadgets.reddingsdrank, { timeout: 40000 }).toBe(1);
+  expect((await state(page)).eiland.bag.hout).toBe(7);
+  expect((await state(page)).nacht.nights).toBe(1);
+  // the row: tap the net button with nobody near: Muntje says so and the net stays
+  await page.locator('#av-gadget').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect(page.locator('#av-gadget-row button[data-gadget="net"]')).toBeVisible({ timeout: 40000 });
+  await page.locator('#av-gadget-row button[data-gadget="net"]').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  await expect.poll(() => mentorHas(page, 'Niemand in de buurt'), { timeout: 40000 }).toBe(true);
+  expect((await state(page)).eiland.gadgets.net).toBe(1);
   expect(errors()).toEqual([]);
 });
 

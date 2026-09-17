@@ -91,7 +91,7 @@ export const T = {
     full: 'De kamer is vol.',
     error: 'Verbinden lukt niet.',
     tapPictures: 'Tik de vier plaatjes van de kamer.',
-    islandHelp: 'KAMER: jij opent een kamer, je vriend tikt jouw vier plaatjes. Of tik de plaatjes van je vriend.',
+    islandHelp: 'KAMER: jij opent een kamer, je vriend tikt jouw vier plaatjes. Of tik de plaatjes van je vriend. Samen: één stookt en bouwt, één schiet. Valt er iemand, dan redt de ander met een reddingsdrank.',
     islandTitle: 'Samen op het eiland',
     askPapa: 'Vraag papa of mama om de kamer aan te zetten.',
     peers: 'spelers',
@@ -233,6 +233,17 @@ export const T = {
     kampLevel: 'Het kamp is level {n}: {naam}!',
     tekort: 'Nog nodig: {wat}.',
     kistInhoud: 'Een kist! {wat}.',
+    // V9.4: losing and being saved
+    wekNodig: 'Je hebt een reddingsdrank nodig om je vriend wakker te maken. Maak er een bij het vuur, of zoek een kist.',
+    downWacht: 'Je bent gevallen! Je vriend kan je redden met een reddingsdrank.',
+    zelfGered: 'Je drinkt je reddingsdrank en staat weer op!',
+    opnieuw: 'Niemand kon je redden. Het avontuur begint opnieuw. Je munten en je dorp heb je nog!',
+    gadgetNet: 'Het net houdt hem vast!',
+    gadgetNetNiets: 'Niemand in de buurt om te vangen.',
+    gadgetNoodfakkel: 'Fel licht! Twintig tellen blijft alles weg.',
+    gadgetFluit: 'Je fluit! Je hond komt eraan.',
+    fluitVriend: 'Je vriend fluit! Ga erheen.',
+    gadgetDrank: 'Je drinkt de reddingsdrank. Maag en warmte zijn weer goed.',
   },
   // V7.7 (PLAN-V7 §C.2 rule 6): the bubble form of each line for a child who does not read yet: one picture and at most
   // three words; the voice says the full line. Drafted by Ollama from the lines above, shortened and checked by hand.
@@ -367,6 +378,16 @@ export const T = {
     kampLevel: '🏕️ Level {n}!',
     tekort: '🧺 {wat}',
     kistInhoud: '📦 {wat}',
+    wekNodig: '🧪 Reddingsdrank nodig',
+    downWacht: '😵 Vriend met drank',
+    zelfGered: '🧪 Weer op!',
+    opnieuw: '🔁 Avontuur opnieuw',
+    gadgetNet: '🕸️ Vast!',
+    gadgetNetNiets: '🕸️ Niemand dichtbij',
+    gadgetNoodfakkel: '🧨 Fel licht!',
+    gadgetFluit: '🎺 Hond komt',
+    fluitVriend: '🎺 Ga naar vriend',
+    gadgetDrank: '🧪 Weer goed',
   },
 
   milestones: {

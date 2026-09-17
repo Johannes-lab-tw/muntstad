@@ -44,6 +44,12 @@ export function createState(config, now) {
   };
 }
 
+/** V9.4: alone and nobody to save you: the adventure starts over. The island, the camp, the tools, the map pieces and
+ * the nights go; the town, the coins, the makers, the fun things and the campaign coins stay. */
+export function opnieuwAvontuur(state, config) {
+  return { ...state, eiland: createEiland(config), nacht: { ...createNacht(), clockOffsetMs: state.nacht.clockOffsetMs || 0, herstart: (state.nacht.herstart || 0) + 1 } };
+}
+
 /** The savings bank (V6.4): saldo in the pot, the day it last grew, the interest earned so far. */
 export function createBank(now = 0) {
   return { saldo: 0, lastGrowDay: dayIndex(now), earned: 0 };

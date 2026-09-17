@@ -105,6 +105,14 @@ export const CONFIG = Object.freeze({
 
   // The night on the island (PLAN-V4 R4). Balance: a night (3 min) burns ≈ 8 pieces of wood; by hand that is 24 taps,
   // with the axe 4 taps. The reward for a night with the fire still burning grows with every night.
+  // V9.4: losing and being saved: how long you lie down with friends around, and what the gadgets do
+  redden: {
+    wachtMs: 90 * 1000,               // down with friends: this long for a WEK with a reddingsdrank, then the adventure starts over
+    noodfakkelMs: 20 * 1000,          // the emergency flare: bright light round you this long
+    noodfakkelR: 14,                  // ... this far
+    netS: 10,                         // the net holds an enemy this many seconds
+  },
+
   // V9.3: the workbench (docs/js/werkbank.js): stones from rocks, the storage chest of camp level 4
   werkbank: {
     steenTaps: 3,                     // taps on a rock per stone

@@ -595,6 +595,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (state.eiland.tools.lantaarn) ls.push({ x: player.x, z: player.z, r: N.lanternRadius });
     if (gear.torches) for (const t of gear.torches) ls.push({ x: t.x, z: t.z, r: N.torchRadius });
     if (bliksem.burning) ls.push({ x: BLIKSEM_AT.x, z: BLIKSEM_AT.z, r: 6 });   // V8.2: the burning tree keeps ghosts away on that side
+    if (performance.now() < noodfakkelUntil) ls.push({ x: player.x, z: player.z, r: config.redden.noodfakkelR });   // V9.4: the emergency flare
     return ls;
   }
   function landSpot(dist) {
@@ -1057,6 +1058,38 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       p.mesh.material.opacity = 0.95 * (1 - f);
     }
   }
+  // ---------- V9.4: the gadgets and the restart ----------
+  let noodfakkelUntil = 0;
+  function gebruikNet() {
+    const e = nearestEnemy();
+    if (!e || e.d > 10) return false;
+    if (e.kind === 'wolf') { scareWolf(e.rec, config); }
+    else if (e.kind === 'spook') { const i = ghosts.findIndex((gh) => gh.g === e.rec); if (i >= 0) { scene.remove(ghosts[i].holder); ghosts.splice(i, 1); } }
+    else e.rec.pause = Math.max(e.rec.pause || 0, config.redden.netS);
+    e.holder.scale.setScalar(0.85);
+    setTimeout(() => e.holder.scale.setScalar(1), config.redden.netS * 1000);
+    return true;
+  }
+  function noodfakkel(now) {
+    noodfakkelUntil = now + config.redden.noodfakkelMs;
+    for (const b of bears) if (b.b.state === 'come') b.b.pause = Math.max(b.b.pause || 0, config.redden.noodfakkelMs / 1000);
+    for (const pr of pirates) if (pr.p.state === 'come') pr.p.pause = Math.max(pr.p.pause || 0, config.redden.noodfakkelMs / 1000);
+    for (const v of wolves) if (v.w.state !== 'flee') scareWolf(v.w, config);
+    daynight.flash(now, 300);
+  }
+  function roepHond() { if (!pet) return false; dog.x = player.x + 1.2; dog.z = player.z + 0.8; dog.moving = false; return true; }
+  /** The adventure starts over (V9.4): every piece of gear and camp goes, the enemies too; the state was already reset. */
+  function herstart() {
+    for (const k of ['tent', 'afdak', 'fence']) if (gear[k]) { scene.remove(gear[k]); gear[k] = null; }
+    if (gear.torches) { for (const t of gear.torches) scene.remove(t.mesh); gear.torches = null; }
+    gear.fenceR = 0;
+    for (const k of ['toren', 'torenLight', 'opslag', 'vlag']) if (kampGear[k]) { scene.remove(kampGear[k]); kampGear[k] = null; }
+    kampGear.level = 0;
+    clearNight(); clearDeer(); clearWolves(); clearDrops(); clearBears(); clearPirates();
+    rocks.clear();
+    lastSchatSync = 0; lastKistSync = 0;
+    reset();
+  }
   function bearNear() {
     const nb = nearestBear();
     const b = nb ? nb.b : remoteBear && remoteBear.state === 'come' ? remoteBear.holder.position : null;
@@ -1166,6 +1199,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       }
       case 'stook': cb.onStoke && cb.onStoke(); return;
       case 'wek':
+        if (cb.onWek && !cb.onWek(action.target)) return;   // V9.4: waking a friend takes a reddingsdrank
         if (samen && samen.active) samen.send('wake', {}, action.target);
         game.audio.play('unlock');
         cb.onSay && cb.onSay('lines.wekt');
@@ -1485,6 +1519,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     budgetLights(now);   // V9.1
     syncKisten(now);   // V9.3
     if (kampGear.torenLight) kampGear.torenLight.intensity = daynight.darkness * 7;
+    lantern.intensity = Math.max(lantern.intensity, now < noodfakkelUntil ? 40 : 0);   // V9.4: the flare glows from the player's lantern light
     if (kampGear.vlag) kampGear.vlag.rotation.y = Math.sin(now / 300) * 0.35;
     updateRain(dt, focus, weerNu(), lite);
     camp.update(now, daynight.darkness, lite, camera);
@@ -1556,6 +1591,9 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     // V9.3: the chests of today and the camp for the tests
     get kisten() { return kisten.filter((k) => k.group.visible).map((k) => ({ i: k.i, x: k.x, z: k.z, zone: k.zone, open: k.open })); },
     get kampLevel() { return kampGear.level; },
+    // V9.4: the gadgets and the restart
+    gebruikNet, noodfakkel: () => noodfakkel(performance.now()), roepHond, herstart,
+    get noodfakkel_actief() { return performance.now() < noodfakkelUntil; },
     get remotes() { return [...remotes.entries()].map(([id, r]) => ({ id, x: r.x, z: r.z, pose: r.pose, down: !!(r.down || r.pose === 'down'), tag: r.key })); },
     setDown(v) { down = !!v; },
     get down() { return down; },
