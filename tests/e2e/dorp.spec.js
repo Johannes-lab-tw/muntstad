@@ -123,7 +123,7 @@ test('V9.8 voorwaarden: de kaart zegt "eerst level 2", de vergunning is een kaar
   await page.locator('#shop-next').click();
   const flat = page.locator('.card[data-id="flat"]');
   await expect(flat).toHaveClass(/locked/);
-  await expect(flat.locator('.card-price')).toContainText('eerst de bouwvergunning');
+  await expect(flat.locator('.card-price')).toContainText('eerst vergunning');
   // page 3: the works; the brug waits for the vergunning, the vergunning can be built
   await closePopups(page);
   await page.locator('#shop-next').click();

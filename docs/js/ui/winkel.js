@@ -53,7 +53,7 @@ export function createWinkel(game) {
     if (!o) return '';
     if (o.soort === 'maker') return `${o.maker.icon} ${game.t('ui.eerst')} ${game.t('ui.level').toLowerCase()} ${o.level}`;
     if (o.soort === 'aantal') return `${o.aantal}× ${game.t('ui.level').toLowerCase()} ${o.level}`;
-    return `${o.werk.icon} ${game.t('ui.eerst')} ${game.vereistTekst(o)}`;
+    return `${o.werk.icon} ${game.t('ui.eerst')} ${o.werk.kort || o.werk.name.toLowerCase()}`;   // short: the card is narrow
   }
 
   function perPage() {
