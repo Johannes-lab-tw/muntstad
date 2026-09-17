@@ -26,10 +26,11 @@ import { plekAt } from '../ketens.js';
 import { weerVoorDag, burnMul as weerBurnMul, seedOf, WEER } from '../weer.js';
 import { KAARTSTUKKEN, X_PLEKKEN, kaartStukken, kaartCompleet, schatPlek, weekKey } from '../schat.js';
 import { piratenNacht, stepPiraat, scarePiraat, buit } from '../piraten.js';
-import { wapenVoor, levens, tref, roedel, nachtPlan } from '../gevecht.js';
+import { wapenVoor, levens, tref, roedel, nachtPlan, WAPENS } from '../gevecht.js';
 import { KISTEN, kistenVandaag, kistOpen, dagKey } from '../werkbank.js';
 import { baasVoorNacht, baasById, maakBaas, stepBaas } from '../bazen.js';
 import * as modellen from './modellen.js';
+import { pakWereld, leesWereld, keurSchot, wapenMag, dichtstbij, keurPlek } from '../samen-wereld.js';   // V10.1: samen vechten
 import { ANIMALS } from '../net/relay.js';
 
 const CAM = { dist: 6.2, pitch: 0.42, minPitch: 0.15, maxPitch: 1.0, lookUp: 1.1, swipe: 0.0075, follow: 1.4 };
@@ -394,11 +395,49 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     samen.on('emote', (d, from) => { const r = remotes.get(from); if (r && (d?.e === 'wave' || d?.e === 'dance')) { r.emote = d.e; r.emoteUntil = performance.now() + 2500; } });
     samen.on('world', (d) => { if (!samen.isGuest || !d) return; applyWorld(d); });
     samen.on('stoke', (d) => { if (samen.isHost && cb.onRemoteStoke) cb.onRemoteStoke(Math.max(0, Math.min(10, Number(d?.n) || 0))); });
-    samen.on('boe', () => { if (samen.isHost && bears.length) doScare(); });
+    samen.on('boe', (d, from) => { if (!samen.isHost) return; const r = remotes.get(from); doScare(r ? { x: r.x, z: r.z } : keurPlek(d) || player); });   // V10.1: BOE next to the guest
+    samen.on('schiet', (d, from) => {   // V10.1: a guest's shot; the host keeps the books
+      if (!samen.isHost) return;
+      const sch = keurSchot(d);
+      const r = remotes.get(from);
+      if (!sch || !r) return;
+      let t = null;
+      if (sch.kind === 'baas') { if (baas && baas.b.state !== 'flee') t = { kind: baas.def.geest ? 'spook' : 'beer', rec: baas.b, holder: baas.holder, baas: true }; }
+      else {
+        const e = (sch.kind === 'wolf' ? wolves : sch.kind === 'spook' ? ghosts : sch.kind === 'beer' ? bears : pirates)[sch.i];
+        if (e) t = { kind: sch.kind, rec: e.w || e.g || e.b || e.p, holder: e.holder };
+      }
+      if (!t || !wapenMag(sch.wapen, t.kind)) return;
+      const w = WAPENS[sch.wapen];
+      if (Math.hypot(r.x - t.rec.x, r.z - t.rec.z) > w.bereik + 6) return;   // roughly in the shooter's range (positions lag a little)
+      applyHit(t, { id: sch.wapen, ...w }, from);
+    });
+    samen.on('buit', (d) => {   // V10.1: my loot, booked by the host
+      if (!samen.isGuest) return;
+      const n = Math.max(0, Math.min(1000, Math.floor(Number(d?.n) || 0)));
+      if (!n) return;
+      if (d.k === 'piraten') cb.onPiratenGewonnen && cb.onPiratenGewonnen(n);
+      else cb.onBuit && cb.onBuit(String(d.k || ''), n);
+    });
+    samen.on('bump', () => { if (!samen.isGuest) return; game.audio.play('stumble'); const items = cb.onWolfBump ? cb.onWolfBump() : []; scatterDrops(items || []); });   // V10.1: a wolf bit me
+    samen.on('steal', () => { if (!samen.isGuest) return; game.audio.play('thud'); cb.onSteal && cb.onSteal(); });   // V10.1: a ghost got me
+    samen.on('baasklaar', (d) => {   // V10.1: the boss fell: everyone's loot
+      if (!samen.isGuest) return;
+      const def = baasById(String(d?.id || ''));
+      if (!def) return;
+      remoteBaasKlaar = true;
+      if (remoteBaas) { const p = remoteBaas.holder.position; poofAt(p.x, p.y, p.z); poofAt(p.x + 0.8, p.y + 0.8, p.z); scene.remove(remoteBaas.holder); remoteBaas = null; }
+      game.audio.play('pop');
+      cb.onBaasVerslagen && cb.onBaasVerslagen(def);
+    });
+    samen.on('plan', (d) => {   // V10.1: the host's dusk banner
+      if (!samen.isGuest || !d || typeof d.t !== 'string') return;
+      cb.onNachtPlan && cb.onNachtPlan({ tekst: d.t.slice(0, 80), wolven: Number(d.w) || 0, piraten: Number(d.p) || 0, beren: Number(d.b) || 0 }, !!wapenVoor(state.eiland.tools, 'wolf'));
+    });
     samen.on('sleep', () => { if (samen.isHost && cb.onSleep) cb.onSleep(); });
     samen.on('down', (d, from) => { const r = ensureRemote(from); r.down = true; });
     samen.on('up', (d, from) => { const r = remotes.get(from); if (r) r.down = false; });
-    samen.on('change', () => { if (!samen.active) { for (const id of [...remotes.keys()]) dropRemote(id); remoteWorld = null; daynight.setOverride(phaseOverride); } });
+    samen.on('change', () => { if (!samen.active) { for (const id of [...remotes.keys()]) dropRemote(id); remoteWorld = null; clearRemoteWorld(); weerOverride = null; daynight.setOverride(phaseOverride); } });
   }
   let myEmote = null, myEmoteUntil = 0, down = false;   // down: fainted with friends around, waiting for a WEK (V6.2)
   function emote(e) {
@@ -429,47 +468,88 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   const phaseParam = Number(new URLSearchParams(location.search).get('phase'));
   let phaseOverride = Number.isFinite(phaseParam) && location.search.includes('phase=') ? Math.max(0, Math.min(0.9999, phaseParam)) : null;
   if (phaseOverride != null) daynight.setOverride(phaseOverride);
-  const remoteGhosts = [];
-  let remoteBear = null;
-  function applyWorld(d) {
+  // V10.1: a guest mirrors every enemy of the host (the host is the game master); each entry { m, holder, x, z, tx, tz, hp, flee, i }
+  const remoteVijanden = { spook: [], wolf: [], beer: [], piraat: [] };
+  const remoteGhosts = remoteVijanden.spook;   // the old name, for the hook
+  let remoteBaas = null;   // guest: { def, m, holder, x, z, tx, tz, hp, max }
+  let remoteBaasKlaar = false;   // guest: the boss went because it was beaten (then no 'baasWeg' line)
+  const REMOTE_MAKERS = {
+    spook: () => modellen.instantie('spook') || ghostModel(),
+    wolf: () => modellen.instantie('wolf') || wolfModel(),
+    beer: () => modellen.instantie('beer') || bearModel(),
+    piraat: () => modellen.instantie('piraat') || piraatModel(),
+  };
+  function syncRemoteList(kind, list) {
+    const arr = remoteVijanden[kind];
+    while (arr.length < list.length) { const m = REMOTE_MAKERS[kind](); const holder = new T.Group(); holder.add(m.group); scene.add(holder); arr.push({ m, holder, x: 0, z: 0, tx: 0, tz: 0, hp: 1, flee: false, fresh: true, i: arr.length }); }
+    while (arr.length > list.length) { const e = arr.pop(); scene.remove(e.holder); }
+    list.forEach((s, i) => { const e = arr[i]; e.i = i; e.tx = s.x; e.tz = s.z; e.hp = s.hp; e.flee = s.flee; if (e.fresh) { e.holder.position.set(s.x, groundOf(s.x, s.z), s.z); e.x = s.x; e.z = s.z; e.fresh = false; } });
+  }
+  function clearRemoteWorld() {
+    for (const kind of Object.keys(remoteVijanden)) { for (const e of remoteVijanden[kind]) scene.remove(e.holder); remoteVijanden[kind].length = 0; }
+    if (remoteBaas) { scene.remove(remoteBaas.holder); remoteBaas = null; }
+    boot.visible = false;
+  }
+  function applyWorld(raw) {
+    const d = leesWereld(raw);
     remoteWorld = d;
-    if (typeof d.ph === 'number') daynight.setOverride(Math.max(0, Math.min(0.9999, d.ph)));
-    if (typeof d.f === 'number' && cb.onFireSync) cb.onFireSync(Math.max(0, Math.min(N.fireMax, d.f)));   // V7.1: was capped at 100, a bonfire (200+) showed as level 4 to a guest
-    const gs = Array.isArray(d.g) ? d.g.slice(0, N.ghostsMax) : [];
-    while (remoteGhosts.length < gs.length) { const m = modellen.instantie('spook') || ghostModel(); const holder = new T.Group(); holder.add(m.group); scene.add(holder); remoteGhosts.push({ m, holder }); }
-    while (remoteGhosts.length > gs.length) { const g = remoteGhosts.pop(); scene.remove(g.holder); }
-    gs.forEach((g, i) => { const rg = remoteGhosts[i]; rg.tx = g.x; rg.tz = g.z; if (rg.tx0 == null) { rg.holder.position.set(g.x, groundOf(g.x, g.z), g.z); rg.tx0 = 1; } });
-    if (d.b && typeof d.b.x === 'number') {
-      if (!remoteBear) { const m = modellen.instantie('beer') || bearModel(); const holder = new T.Group(); holder.add(m.group); scene.add(holder); remoteBear = { m, holder, tx: d.b.x, tz: d.b.z }; holder.position.set(d.b.x, groundOf(d.b.x, d.b.z), d.b.z); }
-      remoteBear.tx = d.b.x; remoteBear.tz = d.b.z; remoteBear.state = d.b.s;
-    } else if (remoteBear) { scene.remove(remoteBear.holder); remoteBear = null; }
+    daynight.setOverride(d.ph);
+    if (cb.onFireSync) cb.onFireSync(Math.max(0, Math.min(N.fireMax, d.f)));   // V7.1: was capped at 100, a bonfire (200+) showed as level 4 to a guest
+    weerOverride = d.wr;   // V10.1: the host's rain and storm show here too
+    boot.visible = d.bt;
+    syncRemoteList('spook', d.g); syncRemoteList('wolf', d.w); syncRemoteList('beer', d.b); syncRemoteList('piraat', d.p);
+    if (d.bs) {
+      const def = baasById(d.bs.id);
+      if (def && (!remoteBaas || remoteBaas.def !== def)) {
+        if (remoteBaas) scene.remove(remoteBaas.holder);
+        const m = baasModel(def); const holder = new T.Group(); holder.add(m.group);
+        holder.position.set(d.bs.x, groundOf(d.bs.x, d.bs.z), d.bs.z); scene.add(holder);
+        remoteBaas = { def, m, holder, x: d.bs.x, z: d.bs.z, tx: d.bs.x, tz: d.bs.z, hp: d.bs.hp, max: d.bs.max, flee: d.bs.flee };
+        remoteBaasKlaar = false;
+        cb.onSound && cb.onSound('thunder');
+        cb.onBaas && cb.onBaas(def, d.bs.hp, d.bs.max);
+      } else if (remoteBaas) {
+        remoteBaas.tx = d.bs.x; remoteBaas.tz = d.bs.z; remoteBaas.flee = d.bs.flee;
+        if (remoteBaas.hp !== d.bs.hp) { remoteBaas.hp = d.bs.hp; cb.onBaasHp && cb.onBaasHp(remoteBaas.def, d.bs.hp, d.bs.max); }
+      }
+    } else if (remoteBaas) {
+      const def = remoteBaas.def;
+      scene.remove(remoteBaas.holder); remoteBaas = null;
+      if (!remoteBaasKlaar) cb.onBaasWeg && cb.onBaasWeg(def);   // dawn took it; a beaten boss came through 'baasklaar'
+      remoteBaasKlaar = false;
+    }
   }
   function updateRemoteWorld(now, dt) {
     const k = 1 - Math.exp(-8 * dt);
     const lit = lightsNow();
-    for (const rg of remoteGhosts) {
-      const p = rg.holder.position;
-      p.x += (rg.tx - p.x) * k; p.z += (rg.tz - p.z) * k; p.y = groundOf(p.x, p.z);
-      rg.holder.rotation.y = Math.atan2(rg.tx - p.x, rg.tz - p.z);
-      rg.m.update(now, { fade: isLit(p.x, p.z, lit) ? 0.35 : 1 });
+    for (const kind of Object.keys(remoteVijanden)) {
+      for (const e of remoteVijanden[kind]) {
+        const p = e.holder.position;
+        const moving = Math.hypot(e.tx - p.x, e.tz - p.z) > 0.05;
+        p.x += (e.tx - p.x) * k; p.z += (e.tz - p.z) * k; p.y = groundOf(p.x, p.z);
+        e.x = p.x; e.z = p.z;
+        if (moving) e.holder.rotation.y = Math.atan2(e.tx - p.x, e.tz - p.z);
+        if (kind === 'spook') e.m.update(now, { fade: isLit(p.x, p.z, lit) ? 0.35 : 1 });
+        else e.m.update(now, { walking: moving, running: moving });
+      }
     }
-    if (remoteBear) {
-      const p = remoteBear.holder.position;
-      p.x += (remoteBear.tx - p.x) * k; p.z += (remoteBear.tz - p.z) * k; p.y = groundOf(p.x, p.z);
-      remoteBear.holder.rotation.y = Math.atan2(remoteBear.tx - p.x, remoteBear.tz - p.z);
-      remoteBear.m.update(now, { walking: true });
+    if (remoteBaas) {
+      const p = remoteBaas.holder.position;
+      p.x += (remoteBaas.tx - p.x) * k; p.z += (remoteBaas.tz - p.z) * k; p.y = groundOf(p.x, p.z);
+      remoteBaas.x = p.x; remoteBaas.z = p.z;
+      if (Math.hypot(remoteBaas.tx - p.x, remoteBaas.tz - p.z) > 0.05) remoteBaas.holder.rotation.y = Math.atan2(remoteBaas.tx - p.x, remoteBaas.tz - p.z);
+      remoteBaas.m.update(now);
     }
   }
   let lastWorldSent = 0;
   function broadcastWorld(now) {
     if (!samen || !samen.isHost || now - lastWorldSent < config.net.worldMs) return;
     lastWorldSent = now;
-    samen.send('world', {
-      ph: +daynight.phase.toFixed(4),
-      f: +state.nacht.fire.toFixed(1),
-      g: ghosts.map((gh) => ({ x: +gh.g.x.toFixed(1), z: +gh.g.z.toFixed(1) })),
-      b: bears.length ? { x: +bears[0].b.x.toFixed(1), z: +bears[0].b.z.toFixed(1), s: bears[0].b.state } : null,
-    });
+    samen.send('world', pakWereld({
+      phase: daynight.phase, fire: state.nacht.fire, weer: weerNu(), boot: boot.visible,
+      ghosts: ghosts.map((gh) => gh.g), wolves: wolves.map((v) => v.w), bears: bears.map((b) => b.b), pirates: pirates.map((pr) => pr.p),
+      baas: baas ? { id: baas.def.id, b: baas.b } : null,
+    }));
   }
 
   // ---------- the night: camp gear, lights, ghosts, the bear ----------
@@ -642,16 +722,22 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     clearBears();
     berenNacht = null;
   }
-  function nearestBear() {
+  /** V10.1: everyone on the island, the host first (id null), then the guests as the host sees them. */
+  function spelersNu() {
+    const list = [{ id: null, x: player.x, z: player.z }];
+    if (samen && samen.isHost) for (const [id, r] of remotes.entries()) if (!r.down) list.push({ id, x: r.x, z: r.z });
+    return list;
+  }
+  function nearestBear(at = player) {
     let best = null, bd = Infinity;
-    for (const b of bears) { if (b.b.state !== 'come') continue; const d = Math.hypot(player.x - b.b.x, player.z - b.b.z); if (d < bd) { bd = d; best = b; } }
+    for (const b of bears) { if (b.b.state !== 'come') continue; const d = Math.hypot(at.x - b.b.x, at.z - b.b.z); if (d < bd) { bd = d; best = b; } }
     return best;
   }
-  function doScare() {
-    const pr = nearestPirate();   // V8.4: pirates are cowards: one BOE and the nearest runs back to the boat
-    if (pr && Math.hypot(player.x - pr.p.x, player.z - pr.p.z) < REACH.bear) { scarePiraat(pr.p, { x: player.x, z: player.z }); game.audio.play('yarr'); piraatWeg(); return; }
-    const wolvesRan = scareWolves();
-    const b = nearestBear();
+  function doScare(at = player) {   // V10.1: `at` is the guest's spot when a guest roars
+    const pr = nearestPirate(at);   // V8.4: pirates are cowards: one BOE and the nearest runs back to the boat
+    if (pr && Math.hypot(at.x - pr.p.x, at.z - pr.p.z) < REACH.bear) { scarePiraat(pr.p, { x: at.x, z: at.z }); game.audio.play('yarr'); piraatWeg(); return; }
+    const wolvesRan = scareWolves(at);
+    const b = nearestBear(at);
     if (!b) { if (!wolvesRan) cb.onSay && cb.onSay('lines.bearScared'); return; }
     const gone = scareBear(b.b, config, perks(state.eiland, config).bearScares);
     if (gone && berenNacht) { berenNacht.gone++; if (berenNacht.gone >= config.campagne.beren) { berenNacht = null; cb.onBerenGewonnen && cb.onBerenGewonnen(); clearBears(); return; } }
@@ -688,12 +774,12 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     cb.onSay && cb.onSay('lines.piratenKomen');
   }
   function clearPirates() { for (const pr of pirates) scene.remove(pr.holder); pirates.length = 0; boot.visible = false; piratenInfo = null; }
-  function nearestPirate() {
+  function nearestPirate(at = player) {
     let best = null, bd = Infinity;
-    for (const pr of pirates) { if (pr.p.state !== 'come') continue; const d = Math.hypot(player.x - pr.p.x, player.z - pr.p.z); if (d < bd) { bd = d; best = pr; } }
+    for (const pr of pirates) { if (pr.p.state !== 'come') continue; const d = Math.hypot(at.x - pr.p.x, at.z - pr.p.z); if (d < bd) { bd = d; best = pr; } }
     return best;
   }
-  function pirateNear() { const pr = nearestPirate(); return !!pr && Math.hypot(player.x - pr.p.x, player.z - pr.p.z) < REACH.bear; }
+  function pirateNear() { const pr = nearestPirate(); return (!!pr && Math.hypot(player.x - pr.p.x, player.z - pr.p.z) < REACH.bear) || remoteNear('piraat', REACH.bear); }
   /** A pirate ran (BOE or the dog): count it; all of them gone before the plunder = they drop their gold. */
   function piraatWeg(say = true) {
     if (!piratenInfo) return;
@@ -702,6 +788,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (left <= 0 && !piratenInfo.geplunderd) {
       piratenInfo = null;
       cb.onPiratenGewonnen && cb.onPiratenGewonnen(buit(config.piraten));
+      if (samen && samen.isHost) samen.send('buit', { k: 'piraten', n: buit(config.piraten) });   // V10.1: the gold is everyone's
       setTimeout(() => { boot.visible = false; }, 6000);
       return;
     }
@@ -733,10 +820,10 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     game.audio.play('growl');   // V8.2: the howl and Muntje's warning came at dark, 15 s before the pack
   }
   function clearWolves() { for (const v of wolves) scene.remove(v.holder); wolves.length = 0; }
-  function wolfNear() { return wolves.some((v) => v.w.state !== 'flee' && Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 2); }
-  function scareWolves() {
+  function wolfNear() { return wolves.some((v) => v.w.state !== 'flee' && Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 2) || remoteNear('wolf', REACH.bear + 2); }
+  function scareWolves(at = player) {
     // the pack runs together: BOE near any wolf sends them all off
-    const near = wolves.some((v) => Math.hypot(player.x - v.w.x, player.z - v.w.z) < REACH.bear + 6);   // any wolf close by, fleeing or not (a bite a frame ago still counts)
+    const near = wolves.some((v) => Math.hypot(at.x - v.w.x, at.z - v.w.z) < REACH.bear + 6);   // any wolf close by, fleeing or not (a bite a frame ago still counts)
     if (!near) return false;
     for (const v of wolves) if (v.w.state !== 'flee') scareWolf(v.w, config);
     cb.onSay && cb.onSay('lines.wolvesFled');
@@ -748,20 +835,29 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     const pk = perks(state.eiland, config);
     const fenceR = hasWall() ? pk.fenceRadius : 0;   // V9.3: the camp's wall counts like the fence
     const safe = isLit(player.x, player.z, lit) || (fenceR && Math.hypot(player.x - CAMP.x, player.z - CAMP.z) < fenceR) || dark < 0.5;
+    // V10.1: the pack picks the nearest player; whoever stands in the dark can be bitten, host or guest
+    const spelers = spelersNu();
+    const veilig = (p) => isLit(p.x, p.z, lit) || (fenceR && Math.hypot(p.x - CAMP.x, p.z - CAMP.z) < fenceR) || dark < 0.5;
+    const doelVan = (w) => dichtstbij(spelers, w.x, w.z) || player;
     wolfLunge += dt * 1000;
     if (wolfLunge > W.lungeEveryMs) {
       wolfLunge = 0;
-      if (!safe) { const c = wolves.filter((v) => v.w.state === 'circle'); if (c.length) c[Math.floor(Math.random() * c.length)].w.state = 'lunge'; }
+      const c = wolves.filter((v) => v.w.state === 'circle' && !veilig(doelVan(v.w)));
+      if (c.length) c[Math.floor(Math.random() * c.length)].w.state = 'lunge';
     }
     wolfHowl += dt * 1000;
     if (wolfHowl > W.howlEveryMs) { wolfHowl = 0; game.audio.play('growl'); }
     for (let i = wolves.length - 1; i >= 0; i--) {
       const v = wolves[i];
-      const res = stepWolf(v.w, { target: { x: player.x, z: player.z }, safe, dt: Math.min(dt, 0.1) }, config);
+      const tgt = doelVan(v.w);
+      const res = stepWolf(v.w, { target: { x: tgt.x, z: tgt.z }, safe: veilig(tgt), dt: Math.min(dt, 0.1) }, config);
       if (res === 'bite') {
-        game.audio.play('stumble');
-        const items = cb.onWolfBump ? cb.onWolfBump() : [];
-        scatterDrops(items || []);
+        if (tgt.id != null) { if (samen && samen.isHost) samen.send('bump', {}, tgt.id); }   // V10.1: the guest's bag falls at the guest
+        else {
+          game.audio.play('stumble');
+          const items = cb.onWolfBump ? cb.onWolfBump() : [];
+          scatterDrops(items || []);
+        }
       } else if (res === 'gone') { scene.remove(v.holder); wolves.splice(i, 1); continue; }
       v.holder.position.set(v.w.x, groundOf(v.w.x, v.w.z), v.w.z);
       v.holder.rotation.y = v.w.heading;
@@ -891,6 +987,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       if (baasDef) setTimeout(() => { if (wasDark && !baas) spawnBaas(baasDef); }, config.bazen.naDonkerMs);
       const plan = nachtPlan({ nights: n.nights, wolves: rules.wolves && !guest, bear: (bearNight || finale) && !guest, beren: finale ? config.campagne.beren : 1, pirates: !guest && piratenNacht(n.nights, config.piraten), ghosts: true, baas: baasDef ? baasDef.icon : null }, config);
       cb.onNachtPlan && cb.onNachtPlan(plan, !!wapenVoor(state.eiland.tools, 'wolf'));
+      if (samen && samen.isHost) samen.send('plan', { t: plan.tekst, w: plan.wolven, p: plan.piraten, b: plan.beren });   // V10.1
     }
     if (strikeAt && isDark && now >= strikeAt) { strikeAt = 0; strike(now); }
     if (weerNu() === 'storm' && now > nextThunder) {
@@ -923,12 +1020,17 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     updateDeer(now, dt, lit, dark);
     updateWolves(now, dt, lit, dark);
     updateOntdek(dt);
+    const spelersG = spelersNu();   // V10.1: a ghost goes for the nearest player, guest or host
     for (let i = ghosts.length - 1; i >= 0; i--) {
       const gh = ghosts[i];
-      const dp = Math.hypot(player.x - gh.g.x, player.z - gh.g.z);
-      const target = dp < 12 ? { x: player.x, z: player.z } : { x: CAMP.x, z: CAMP.z };
+      const tgtP = dichtstbij(spelersG, gh.g.x, gh.g.z) || player;
+      const dp = Math.hypot(tgtP.x - gh.g.x, tgtP.z - gh.g.z);
+      const target = dp < 12 ? { x: tgtP.x, z: tgtP.z } : { x: CAMP.x, z: CAMP.z };
       const res = stepGhost(gh.g, { target, lights: lit, fence, dt, speedMul: rules.ghostSpeed / N.ghostSpeed }, config);
-      if (res === 'steal') { game.audio.play('thud'); cb.onSteal && cb.onSteal(); }
+      if (res === 'steal') {
+        if (dp < 12 && tgtP.id != null) { if (samen && samen.isHost) samen.send('steal', {}, tgtP.id); }
+        else { game.audio.play('thud'); cb.onSteal && cb.onSteal(); }
+      }
       if (res === 'gone') { scene.remove(gh.holder); ghosts.splice(i, 1); continue; }
       gh.holder.position.set(gh.g.x, groundOf(gh.g.x, gh.g.z), gh.g.z);
       gh.holder.rotation.y = gh.g.heading;
@@ -992,6 +1094,12 @@ export function createEilandScene(game, engine, controls, cb = {}) {
   function nearestEnemy() {
     let best = null, bd = Infinity;
     const consider = (kind, rec, holder, x, z) => { const d = Math.hypot(player.x - x, player.z - z); if (d < bd) { bd = d; best = { kind, rec, holder, x, z, d }; } };
+    if (samen && samen.isGuest) {   // V10.1: the host's enemies as I see them
+      for (const kind of Object.keys(remoteVijanden)) for (const e of remoteVijanden[kind]) if (!e.flee && !e.fresh) consider(kind, e, e.holder, e.x, e.z);
+      if (remoteBaas && !remoteBaas.flee) { consider(remoteBaas.def.geest ? 'spook' : 'beer', remoteBaas, remoteBaas.holder, remoteBaas.x, remoteBaas.z); if (best && best.rec === remoteBaas) best.baas = true; }
+      if (best) best.remote = true;
+      return best;
+    }
     for (const v of wolves) if (v.w.state !== 'flee') consider('wolf', v.w, v.holder, v.w.x, v.w.z);
     for (const b of bears) if (b.b.state === 'come') consider('beer', b.b, b.holder, b.b.x, b.b.z);
     for (const pr of pirates) if (pr.p.state === 'come') consider('piraat', pr.p, pr.holder, pr.p.x, pr.p.z);
@@ -999,9 +1107,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     if (baas && baas.b.state !== 'flee') { consider(baas.def.geest ? 'spook' : 'beer', baas.b, baas.holder, baas.b.x, baas.b.z); if (best && best.rec === baas.b) best.baas = true; }   // V9.5
     return best;
   }
-  /** The shoot action when an enemy is in range of a weapon you own (the host only; a guest keeps BOE). */
+  /** The shoot action when an enemy is in range of a weapon you own (V10.1: guests too, at the host's enemies). */
   function shootAction() {
-    if (samen && samen.isGuest) return null;
     const e = nearestEnemy();
     if (!e) return null;
     const w = wapenVoor(state.eiland.tools, e.kind);
@@ -1026,6 +1133,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       const def = baas.def;
       clearBaas();
       cb.onBaasVerslagen && cb.onBaasVerslagen(def);
+      if (samen && samen.isHost) samen.send('baasklaar', { id: def.id });   // V10.1: everyone's boss, everyone's loot
       return;
     }
     if (t.kind === 'wolf') { const i = wolves.findIndex((v) => v.w === t.rec); if (i >= 0) { scene.remove(wolves[i].holder); wolves.splice(i, 1); } }
@@ -1035,9 +1143,11 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       t.rec.state = 'flee'; t.rec.heading += Math.PI; t.rec.life = 0.4;
       if (berenNacht) { berenNacht.gone++; if (berenNacht.gone >= config.campagne.beren) { berenNacht = null; cb.onBerenGewonnen && cb.onBerenGewonnen(); clearBears(); } }
     }
-    cb.onBuit && cb.onBuit(t.kind, G.buit[t.kind] || 1);
+    if (t.schutter != null && samen && samen.isHost) samen.send('buit', { k: t.kind, n: G.buit[t.kind] || 1 }, t.schutter);   // V10.1: the guest that shot gets the coins
+    else cb.onBuit && cb.onBuit(t.kind, G.buit[t.kind] || 1);
   }
-  function applyHit(t, weapon) {
+  function applyHit(t, weapon, schutter = null) {   // V10.1: schutter = the guest's id when the shot came over the wire
+    t.schutter = schutter;
     const res = tref(t.rec, weapon.schade);
     // the knock-back: away from the player, and a flash of the model
     const dx = t.rec.x - player.x, dz = t.rec.z - player.z, d = Math.hypot(dx, dz) || 1;
@@ -1063,6 +1173,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     mesh.position.copy(from);
     scene.add(mesh);
     shots.push({ mesh, from, to, t0: now, dur: 180 + t.d * 12, target: t, weapon: w });
+    if (t.remote && samen && samen.isGuest) samen.send('schiet', { k: t.baas ? 'baas' : t.kind, i: t.baas ? 0 : t.rec.i, w: w.id });   // V10.1: the host counts the hit
   }
   function updateShots(now) {
     for (let i = shots.length - 1; i >= 0; i--) {
@@ -1070,7 +1181,7 @@ export function createEilandScene(game, engine, controls, cb = {}) {
       const f = Math.min(1, (now - s.t0) / s.dur);
       s.mesh.position.lerpVectors(s.from, s.to, f);
       s.mesh.position.y += Math.sin(f * Math.PI) * 0.8;
-      if (f >= 1) { scene.remove(s.mesh); shots.splice(i, 1); applyHit(s.target, s.weapon); }
+      if (f >= 1) { scene.remove(s.mesh); shots.splice(i, 1); if (s.target.remote) game.audio.play('thud'); else applyHit(s.target, s.weapon); }   // V10.1: a guest's hit is the host's call
     }
     for (let i = poofs.length - 1; i >= 0; i--) {
       const p = poofs[i];
@@ -1168,10 +1279,12 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     lastSchatSync = 0; lastKistSync = 0;
     reset();
   }
+  /** V10.1 (guest): one of the host's enemies of this kind within r metres, as mirrored here. */
+  function remoteNear(kind, r) { return !!(samen && samen.isGuest) && remoteVijanden[kind].some((e) => !e.flee && !e.fresh && Math.hypot(player.x - e.x, player.z - e.z) < r); }
   function bearNear() {
     const nb = nearestBear();
-    const b = nb ? nb.b : remoteBear && remoteBear.state === 'come' ? remoteBear.holder.position : null;
-    return !!b && Math.hypot(player.x - b.x, player.z - b.z) < REACH.bear;
+    if (nb && Math.hypot(player.x - nb.b.x, player.z - nb.b.z) < REACH.bear) return true;
+    return remoteNear('beer', REACH.bear);
   }
   function findAction(now) {
     const px = player.x, pz = player.z;
@@ -1631,6 +1744,8 @@ export function createEilandScene(game, engine, controls, cb = {}) {
     get action() { return action ? { type: action.type, label: action.label } : null; },
     /** V9.6: per GLB model 'glb' | 'laden' | 'fout' | 'bouw', and per pirate whether it is the GLB. */
     get modellen() { return { ...modellen.statusAlles(), piraten: pirates.map((pr) => !!pr.model.glb), wolven: wolves.map((v) => !!v.model.glb), beren: bears.map((b) => !!b.model.glb), spoken: ghosts.map((g) => !!g.model.glb), bootGlb: !!boot.userData.glb }; },
+    /** V10.1 (guest): the host's enemies as mirrored here, and the boss. */
+    get remoteVijanden() { return { spook: remoteVijanden.spook.length, wolf: remoteVijanden.wolf.length, beer: remoteVijanden.beer.length, piraat: remoteVijanden.piraat.length, boot: boot.visible, baas: remoteBaas ? { id: remoteBaas.def.id, hp: remoteBaas.hp, max: remoteBaas.max } : null }; },
     /** V7.4: where the fire's flames are on the screen (px), for "+3 🪵" to pop out of the fire itself. */
     firePoint() {
       const v = camp.firePos.clone(); v.y += 1.8; v.project(camera);

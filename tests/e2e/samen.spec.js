@@ -106,3 +106,96 @@ test('host opens a room on PAPA, guest joins with the four pictures, both see ea
   await ctxA.close();
   await ctxB.close();
 });
+
+// V10.1 samen vechten: the host's night is everyone's night. The guest sees the host's wolves and boat, shoots a wolf
+// with its own spear (the host counts the hit, the coins land at the guest), sees the host's boss in its banner and
+// gets the boss loot (coins and the bear crown) when the host beats it.
+test('V10.1 samen vechten: de gast ziet de wolven van de host, schiet er een neer met zijn speer en deelt in de baas', async ({ browser }) => {
+  const ctxA = await browser.newContext({ ...test.info().project.use });
+  const ctxB = await browser.newContext({ ...test.info().project.use });
+  const a = await ctxA.newPage(), b = await ctxB.newPage();
+  const errA = watchErrors(a), errB = watchErrors(b);
+  const eiland = (tools) => ({ bag: { hout: 5, schelp: 0, bes: 0, vis: 0, steen: 0 }, tools, quest: 0, questN: 0, questsDone: 0, collected: {}, sold: 0, earned: 0, gadgets: {} });
+  await seedSave(a, (s) => { s.wallet = 50; s.earnedWork = 50; s.fun = {}; s.settings.relayUrl = RELAY; s.eiland = eiland({ alien: true }); s.nacht = { fire: 200, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });   // nights 0: no sticker popup in the way of the PAPA gate; wolves, pirates and the boss come through the hooks
+  await seedSave(b, (s) => { s.wallet = 20; s.earnedWork = 20; s.fun = {}; s.color = 'rood'; s.settings.relayUrl = RELAY; s.eiland = eiland({ speer: true }); s.nacht = { fire: 90, nights: 0, stolen: 0, clockOffsetMs: 0 }; return s; });
+
+  await startGame(a, { url: '/?lowres=1&phase=0.3' });
+  await closePopups(a);
+  await openPapa(a);
+  await a.locator('#samen-kamer').click();
+  await expect(a.locator('#samen-status')).toContainText('Verbonden', { timeout: 45000 });
+  const code = await a.evaluate(() => window.__muntstad.samen.code);
+  await a.locator('#papa-stad').click();
+  await b.goto('/?lowres=1&phase=0.3');
+  await expect(b.locator('#btn-start')).toBeVisible();
+  await b.locator('#btn-samen').click();
+  for (const d of code) await b.locator(`#samen-keys [data-pic="${d}"]`).click();
+  await expect.poll(() => b.evaluate(() => window.__muntstad.samen.status), { timeout: 45000 }).toBe('open');
+  await b.locator('#btn-start').click();
+  await expect(b.locator('#screen-stad')).toHaveClass(/active/);
+  await closePopups(b);
+  await openAvontuur(a);
+  await openAvontuur(b);
+  await expect.poll(async () => (await hook(a)).remotes.length, { timeout: 45000 }).toBe(1);
+  await expect.poll(async () => (await hook(b)).remotes.length, { timeout: 45000 }).toBe(1);
+  const ha = await hook(a), hb = await hook(b);
+
+  // night at the host: the guest gets the dusk banner and the darkness; nobody's ghosts drift in (they would take the weapon slot)
+  await a.evaluate(() => window.__muntstad.avontuur.setWeer('zon'));
+  await a.evaluate(() => window.__muntstad.avontuur.setSpoken(false));
+  await a.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
+  await expect.poll(async () => (await hook(b)).darkness, { timeout: 45000 }).toBe(1);
+  await expect(b.locator('#av-banner')).toContainText('Nacht', { timeout: 45000 });
+  // the pirate boat of the host shows at the guest
+  await a.evaluate(() => window.__muntstad.avontuur.piratenNu());
+  await expect.poll(() => b.evaluate(() => window.__muntstad.avontuur.remoteVijanden.piraat), { timeout: 45000 }).toBe(3);
+  await expect.poll(() => b.evaluate(() => window.__muntstad.avontuur.remoteVijanden.boot), { timeout: 45000 }).toBe(true);
+
+  // both away from the fire; the host puts its pack round the guest (as the host sees the guest)
+  await b.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x, z + 30), hb.camp);
+  await a.evaluate(({ x, z }) => window.__muntstad.avontuur.teleport(x - 30, z), ha.camp);
+  await expect.poll(async () => { const r = (await hook(a)).remotes[0]; const pb = (await hook(b)).player; return Math.hypot(r.x - pb.x, r.z - pb.z); }, { timeout: 45000 }).toBeLessThan(3);
+  await a.evaluate(() => window.__muntstad.avontuur.spawnWolves());
+  const gastBijHost = async () => (await hook(a)).remotes[0];
+  const poefs = () => a.evaluate(() => window.__muntstad.avontuur.poefs);
+  const earnedB = async () => Math.floor((await state(b)).earnedWork);
+  const earnedBefore = await earnedB();
+  let g = await gastBijHost();
+  await a.evaluate(({ x, z }) => window.__muntstad.avontuur.wolvesAt(x, z + 3), g);
+  await expect.poll(() => b.evaluate(() => window.__muntstad.avontuur.remoteVijanden.wolf), { timeout: 45000 }).toBeGreaterThan(0);
+  await expect.poll(async () => (await hook(b)).action?.label, { timeout: 45000 }).toBe('SPEER');
+  // the guest fires (its own spear) until the host counts a poof; the pack is put back round the guest before each shot
+  for (let i = 0; i < 14 && (await poefs()) === 0; i++) {
+    g = await gastBijHost();
+    await a.evaluate(({ x, z }) => window.__muntstad.avontuur.wolvesAt(x, z + 3), g);
+    await b.waitForTimeout(400);
+    const label = await b.evaluate(() => window.__muntstad.avontuur.schiet());
+    expect([null, 'SPEER']).toContain(label);
+    await b.waitForTimeout(1200);
+  }
+  await expect.poll(poefs, { timeout: 45000 }).toBeGreaterThanOrEqual(1);
+  await expect.poll(earnedB, { timeout: 45000 }).toBeGreaterThanOrEqual(earnedBefore + 2);   // the coins land at the guest, not the host
+
+  // the host's boss: the guest sees it, its banner shows the lives; the host beats it with the alien pistol and both get the loot
+  await a.evaluate(() => window.__muntstad.avontuur.baasNu('koning'));
+  await expect.poll(() => b.evaluate(() => window.__muntstad.avontuur.remoteVijanden.baas?.id), { timeout: 45000 }).toBe('koning');
+  await expect(b.locator('#av-banner')).toContainText('Nachtbeerkoning', { timeout: 45000 });
+  const earnedBaas = await earnedB();
+  const baas = () => a.evaluate(() => window.__muntstad.avontuur.baas);
+  for (let i = 0; i < 16 && (await baas()); i++) {
+    const p = (await hook(a)).player;
+    await a.evaluate(({ x, z }) => window.__muntstad.avontuur.baasAt(x, z + 4), p);
+    await a.waitForTimeout(300);
+    await a.evaluate(() => window.__muntstad.avontuur.schiet());
+    await a.waitForTimeout(500);
+  }
+  await expect.poll(async () => await baas(), { timeout: 45000 }).toBeNull();
+  await expect.poll(async () => (await state(b)).fun.berenkroon, { timeout: 45000 }).toBe(true);
+  await expect.poll(earnedB, { timeout: 45000 }).toBeGreaterThanOrEqual(earnedBaas + 100);
+  expect((await state(a)).fun.berenkroon).toBe(true);
+  await expect.poll(() => b.evaluate(() => window.__muntstad.avontuur.remoteVijanden.baas), { timeout: 45000 }).toBeNull();
+  expect(errA()).toEqual([]);
+  expect(errB()).toEqual([]);
+  await ctxA.close();
+  await ctxB.close();
+});

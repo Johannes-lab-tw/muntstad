@@ -28,6 +28,7 @@ docs/               the deployed site (open with any static server)
   stem/             Muntje's voice: one mp3 per sentence plus lijst.json (ART-DIRECTION §13); js/stem.js hashes and
                     collects the sentences, js/stem-speler.js plays them, the iPad voice is the fallback
   js/modellen.js    the model catalogue and a tiny GLB reader (pure); js/3d/modellen.js loads, normalises and clones them
+  js/samen-wereld.js  the shared world of SAMEN SPELEN (pure): the host's world message, a guest's shot checked, nearest player
   js/3d/engine.js   the shared WebGL renderer, lights, fitted camera, adaptive quality
   js/3d/build.js    rounded-plastic geometry builder (one merged mesh per object), text planes, materials
   js/3d/world.js    the island: cushion ground, sea, road, park, scenery, clouds, boats, gulls
