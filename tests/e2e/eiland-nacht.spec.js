@@ -28,6 +28,7 @@ test('night falls: Muntje warns, STOOK feeds the fire with the wood in the bag, 
   await startGame(page, { url: '/?lowres=1&phase=0.3' });
   await closePopups(page);
   await openAvontuur(page);
+  await page.evaluate(() => window.__muntstad.avontuur.setWeer('zon'));   // rain burns the heap faster than the poll below
   await page.evaluate(() => window.__muntstad.avontuur.setPhase(0.82));
   await expect.poll(async () => (await hook(page)).darkness, { timeout: 40000 }).toBe(1);
   await expect.poll(() => mentorHas(page, 'donker'), { timeout: 40000 }).toBe(true);
@@ -39,8 +40,9 @@ test('night falls: Muntje warns, STOOK feeds the fire with the wood in the bag, 
   await expect(page.locator('#av-stook')).toBeVisible({ timeout: 40000 });
   const fireBefore = (await state(page)).nacht.fire;
   await page.locator('#av-stook').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+  const fireAfter = (await state(page)).nacht.fire;   // read at once: on a slow runner the heap burns a piece while we poll
   await expect.poll(async () => (await state(page)).eiland.bag.hout, { timeout: 40000 }).toBe(0);
-  expect((await state(page)).nacht.fire).toBeGreaterThan(fireBefore + 2);
+  expect(fireAfter).toBeGreaterThan(fireBefore + 2);
   await expect(page.locator('#av-stook')).toBeHidden({ timeout: 40000 });
   await expect(page.locator('#av-nacht')).toContainText('Nacht 1');
 
@@ -256,17 +258,20 @@ test('V9.2 weapons: SPEER beats a wolf in two hits, WATER poofs a ghost, the ban
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.wolvesAt(x, z + 3), p);
   await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('SPEER');
   const n0 = (await wolves()).length;
-  const walletBefore = Math.floor((await state(page)).wallet);
+  const poefs = () => page.evaluate(() => window.__muntstad.avontuur.poefs);
+  const earned = async () => Math.floor((await state(page)).earnedWork);   // the loot lands here too; a ghost can steal from the wallet meanwhile
+  const earnedBefore = await earned();
   // two hits kill a wolf; on the slow runner the pack moves, lunges or gives up between taps, so place them again and
-  // tap until one is gone (the spear reloads in 0.9 s)
-  for (let i = 0; i < 8 && (await wolves()).length === n0; i++) {
+  // tap until one poofs (the spear reloads in 0.9 s); a wolf that ran off and was removed is not a poof
+  for (let i = 0; i < 10 && (await poefs()) === 0; i++) {
     await page.evaluate(({ x, z }) => window.__muntstad.avontuur.wolvesAt(x, z + 3), p);
     try { await expect.poll(async () => (await hook(page)).action?.label, { timeout: 8000 }).toBe('SPEER'); } catch (e) { continue; }
     await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
     await page.waitForTimeout(1200);
   }
-  await expect.poll(async () => (await wolves()).length, { timeout: 40000 }).toBe(n0 - 1);
-  await expect.poll(async () => Math.floor((await state(page)).wallet), { timeout: 40000 }).toBe(walletBefore + 2);
+  expect(await poefs()).toBe(1);
+  await expect.poll(async () => (await wolves()).length, { timeout: 40000 }).toBeLessThan(n0);
+  await expect.poll(earned, { timeout: 40000 }).toBe(earnedBefore + 2);
   // a ghost right here: the water pistol is the action, one hit and it is gone
   await page.evaluate(() => window.__muntstad.avontuur.scareWolves());
   await expect.poll(async () => (await wolves()).filter((w) => w.state !== 'flee').length, { timeout: 40000 }).toBe(0);
@@ -274,7 +279,7 @@ test('V9.2 weapons: SPEER beats a wolf in two hits, WATER poofs a ghost, the ban
   await page.evaluate(({ x, z }) => window.__muntstad.avontuur.ghostAt(x, z + 2), q);
   await expect.poll(async () => (await hook(page)).action?.label, { timeout: 40000 }).toBe('WATER');
   await page.locator('#av-actie').dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
-  await expect.poll(async () => (await hook(page)).ghosts.length, { timeout: 40000 }).toBe(0);
-  expect(Math.floor((await state(page)).wallet)).toBe(walletBefore + 3);
+  await expect.poll(poefs, { timeout: 40000 }).toBe(2);   // the ghost poofed (another one may have drifted in meanwhile)
+  await expect.poll(earned, { timeout: 40000 }).toBe(earnedBefore + 3);
   expect(errors()).toEqual([]);
 });
